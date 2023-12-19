@@ -1,0 +1,28 @@
+﻿<style>
+    .circle {
+        width: 15vh;
+        height: 15vh;
+        background-color: #fff;
+        border: 3px solid #000;
+        border-radius: 50%;
+        color: #000;
+        font-size: 10vh;
+        place-content: center; /* Centra el contenido vertical y horizontalmente */
+    }
+
+    .container {
+        /* Puedes ajustar el padding según sea necesario */
+        padding-left: 4vh;
+      
+    }
+</style>
+
+<center>
+    <div class="container">
+        <div class="circle">@text</div>
+    </div>
+</center>
+
+@code {
+    [Parameter] public string text { get; set; }
+}

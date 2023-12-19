@@ -1,0 +1,97 @@
+﻿@page "/Addbox"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+
+
+
+@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
+
+<div class="text-center">
+    <h3>Box disponibles</h3>
+    <p>
+        Al agregar un box a tu cuenta,<strong>¡solo podrás utilizarlo una vez!</strong>.
+        Cuando selecciones y aceptes el Box se abrirá permitiendo su utilización.
+        Una vez cerrado, solo podrá abrirlo una sola vez para retirar todas tus pertenencias,
+        al cerrar nuevamente el Box ya no será de tú propiedad.
+    </p>
+    @if (Boxses != null)
+    {
+        <form>
+            <div class="form-group">
+                <label><strong>Asignación o remoción de Box</strong></label>
+                <select @bind="box" class="form-control form-control-user">
+                    @if (Boxses != null)
+                    {
+                        for (int x = 0; x < Boxses.Length; x++)
+                        {
+                            <option value="@Boxses[x]">BOX @(
+                         Boxses[x] + 1
+                         )</option>
+                        }
+                        @if (Boxses.Length == 1)
+                        {
+                            box = Boxses[0];
+                    }
+
+                }
+            </select>
+
+        </div>
+    </form>
+    }else
+    {
+        <div class="form-group">
+            <label><strong>No hay boxes disponibles</strong></label>
+            </div>
+    }
+    @if (!string.IsNullOrEmpty(ErrorMsn))
+    {
+        <div class="alert alert-danger">
+            <strong>@ErrorMsn</strong>
+        </div>
+    }
+
+</div>
+
+<AuthorizeView Roles="User">
+    <a @onclick="ActionOK" class="btn-flotante" title="Agregar" style="background-color:green; color:white;"><span class="oi oi-check"></span></a>
+    <a @onclick="ActionNACK" class="btn-flotante btn-flotante-1" title="Cancelar" style="background-color:red; color:white;"><span class="oi oi-x"></span></a>
+
+</AuthorizeView>
+@code {
+    private int box { get; set; }
+    private bool IsBussy { get; set; }
+    private int[] Boxses { get; set; }
+    private string ErrorMsn;
+
+    protected async override void OnInitialized()
+    {
+        Boxses = await Cliente.GetBoxesSeftManagement();
+        if (Boxses.Length > 1) box = Boxses[0];
+        StateHasChanged();
+    }
+
+    private void ActionNACK()
+    {
+        Navigation.NavigateTo("/User");
+    }
+
+    private async void ActionOK()
+    {
+
+        // Genero la reserva
+        bool x = await Cliente.BoxesSeftManagementReserve(box);
+        if (!x)
+        {
+            // cartel de error
+            ErrorMsn = "EL Box no pudo ser reservado";
+            Boxses = await Cliente.GetBoxesSeftManagement();
+            StateHasChanged();
+        }
+        else Navigation.NavigateTo("/User");
+    }
+}

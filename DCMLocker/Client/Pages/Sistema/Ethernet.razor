@@ -1,0 +1,93 @@
+﻿@page "/ethernet"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
+@inject NotificationService NotificationService
+
+@if (disabled)
+{
+    <div style="display: flex; justify-content: right;">
+        <button class="btn btn-outline-success" title="Guardar" @onclick="(() => test())"><FeatherEdit Color="Blue" /></button>
+    </div>
+
+}
+else
+{
+    <div style="display: flex; justify-content: right;">
+        <button class="btn btn-outline-success" title="Guardar" @onclick="(() => Send())"><FeatherSave Color="green" /></button>
+    </div>
+}
+
+@if (@*ip!=null*@true)
+{
+    <div class="row" style="display:flex;">
+        <div class="col-6" style="padding-left:10px">
+            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Ip</RadzenText>
+            <RadzenTextBox Disabled="@disabled" @bind-Value=ip class="w-100" />
+        </div>
+
+        <div class="col-6" style="padding-left:10px">
+            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Máscara de subred</RadzenText>
+            <RadzenTextBox Disabled="@disabled" @bind-Value=puertaEnlace class="w-100" />
+        </div>
+
+    </div>
+}
+else
+{
+    <RadzenAlert Variant="@variant" AlertStyle="@alertStyle" Size="@size" Shade="Shade.Light" AllowClose=false>
+        No hay conexión Ethernet
+    </RadzenAlert>
+}
+
+@code {
+    string ip;
+    string puertaEnlace;
+    Variant variant = Variant.Flat;
+    AlertSize size = AlertSize.Medium;
+    AlertStyle alertStyle = AlertStyle.Danger;
+    bool disabled = true;
+
+    protected override async void OnInitialized()
+    {
+
+        base.OnInitialized();
+        var ethernetConfig = await Cliente.GetEthernetConfig();
+        ip = ethernetConfig.IP;
+        puertaEnlace = ethernetConfig.NetMask;
+        StateHasChanged();
+    }
+
+    public void test()
+    {
+        disabled = !disabled;
+        StateHasChanged();
+    }
+
+    public async Task Send()
+    {
+        disabled = !disabled;
+        SystemEthernet eth = new() { IP = ip, Mask = puertaEnlace };
+        var orta = await Cliente.SendEthernet(eth);
+        if (orta == false)
+        {
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "No se pudo guardar la configuración.",
+                    Duration = 4000
+                });
+        }
+        StateHasChanged();
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+}

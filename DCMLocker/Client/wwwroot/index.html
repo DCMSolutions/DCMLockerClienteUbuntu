@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>DCMLocker</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="css/Fondo.css" rel="stylesheet" />
+    <link href="css/LoadingBar.css" rel="stylesheet" />
+    <link href="css/ButtonClick.css" rel="stylesheet" />
+    <link href="css/PanelNotify.css" rel="stylesheet" />
+    <link href="DCMLocker.Client.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
+    <link href="_content/Blazored.Modal/blazored-modal.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">
+        <div class="splash-panel">
+            <div class="abs-center">
+                <div class="spinner-grow text-secondary"></div>
+                <div class="spinner-grow text-secondary"></div>
+                <div class="spinner-grow text-secondary"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="js/Funciones.js"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
+    <script src="_content/CurrieTechnologies.Razor.SweetAlert2/sweetAlert2.min.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="_content/Blazored.Modal/blazored.modal.js"></script>
+    
+    <script>
+        window.BlazorDownloadFile = function (fileName, mimeType, base64String) {
+            const link = document.createElement('a');
+            link.href = `data:${mimeType};base64,${base64String}`;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);8
+        };
+    </script>
+
+</body>
+
+</html>

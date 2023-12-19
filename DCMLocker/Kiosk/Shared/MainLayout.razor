@@ -1,0 +1,44 @@
+﻿@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@using System.Media
+@using Microsoft.AspNetCore.SignalR.Client
+@using QRCoder
+@using System.Diagnostics
+
+@inject HttpClient http
+@inject IJSRuntime _jsRuntime
+@inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
+@inject IJSRuntime js
+@inject NavigationManager Nav
+
+
+@inherits LayoutComponentBase
+
+<div style="float:left;" class="pt-2">
+    <img style="width: 20vh;" src="img/Logo.png" />
+</div>
+<div class="page">
+    <div class="main pt-2">
+        <div class="container ">
+            @Body
+        </div>
+    </div>
+</div>
+
+
+
+@code
+{
+    string url = "";
+    private HubConnection hubConnection;
+    private int CantidadItems;
+    private string Mensaje;
+    private bool ISMensaje;
+    private List<string> ErrorMsn = new();
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+
+}

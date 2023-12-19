@@ -1,0 +1,21 @@
+﻿@page "/saludo/{Box}"
+@inject NavigationManager Nav
+
+<div class="alert-success text-center" style="height:80vh; width:100%;">
+    <h1 style="padding-top:20%;">BOX: @Box</h1>
+</div>
+
+@code {
+    [Parameter]
+    public string Box { get; set; }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        System.Threading.Timer tm = new System.Threading.Timer(retorno, null, 15000, System.Threading.Timeout.Infinite);
+    }
+
+    protected void retorno(object state)
+    {
+        Nav.NavigateTo("/");
+    }
+}

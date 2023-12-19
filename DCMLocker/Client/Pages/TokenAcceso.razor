@@ -1,0 +1,137 @@
+﻿@page "/MyTokenBox"
+@using System.Security.Claims
+@using DCMLocker.Client.Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+
+
+
+@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
+@inject HttpClient http
+@inject MOFAuthenticationStateProvider _auth
+@inject HttpClient _cliente
+
+
+<h3>Mis tokens</h3>
+@if (tokensorder != null)
+{
+    if (tokensorder.Count() > 0)
+    {
+
+        <p>
+            Usted dispone de los siguintes tokens de acceso a box,
+            los cuales fueron generados por usted para la apertura de determinados Box.
+        </p>
+
+        <form>
+            <div class="form-group">
+                <label><strong>Tokens de acceso a box</strong></label>
+                <select value=@token class="form-control form-control-user">
+                    @if (tokensorder != null)
+                    {
+                        @* for (int x = 0; x < tokens.Length; x++)
+            {
+            <option value="@tokens[x].Token">@(tokens[x].Token) - BOX:@(tokens[x].Box + 1)</option>
+            }*@
+
+                        foreach (var token in tokensorder)
+                        {
+                            <option value="@token.Token">@(token.Token) (BOX # @(token.Box + 1))   </option>
+
+                        }
+
+                    }
+                </select>
+                <br />
+                <br />
+                <button type="button" disabled="@IsBussy" class="btn btn-warning btn-user btn-block" @onclick="(() => alertaEliminar())">Eliminar</button>
+
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-secondary mt-4" role="alert">
+            <span class="oi oi-pencil mr-2" aria-hidden="true"></span>
+            <strong>
+                No dispone de de tokens de acceso.
+            </strong>
+
+            <span class="text-nowrap">
+                Para generar un token vaya a <a href="user">Mis Boxes</a>
+            </span>
+
+        </div>
+
+    }
+    @if (!string.IsNullOrEmpty(ErrorMsn))
+    {
+        <div class="alert alert-danger">
+            <strong>@ErrorMsn</strong>
+        </div>
+    }
+}
+else
+{
+    <div class="abs-center">
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+    </div>
+}
+@code
+{
+    private bool IsBussy { get; set; }
+    private string token { get; set; }
+    private string ErrorMsn { get; set; }
+    TokenAccessBox[] tokens { get; set; }
+    IOrderedEnumerable<TokenAccessBox> tokensorder;
+    string username;
+
+    protected override async void OnInitialized()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        username = user.Identity.Name;
+        tokens = await Cliente.GetMyTokenKey();
+        tokensorder = tokens.OrderBy(x => x.Box);
+        if (tokensorder.Count() > 0)
+        {
+            token = tokensorder.First().Token;
+        }
+        StateHasChanged();
+    }
+
+    async Task Accion()
+    {
+        Console.WriteLine($"el token es {token}");
+        string[] data = { token, username };
+
+        await http.PostAsJsonAsync("Locker/DeleteToken", data);
+        OnInitialized();
+    }
+    public async Task alertaEliminar()
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "¿Está seguro?",
+                Text = "Eliminará el token",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Confirmar",
+                CancelButtonText = "Cancelar"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            await Accion();
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+        }
+    }
+}

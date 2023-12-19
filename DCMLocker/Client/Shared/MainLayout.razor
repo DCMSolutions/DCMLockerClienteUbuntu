@@ -1,0 +1,141 @@
+﻿
+
+@inherits LayoutComponentBase
+
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <div class="main">
+
+        <RadzenNotification />
+        <div class="top-row px-4" style="z-index: 9999;">
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenProfileMenu Style="background-color:#f7f7f7;padding-bottom:1vh;">
+                        <Template>
+                            <img class="rz-gravatar" src="img/user.png" />
+
+                        </Template>
+                        <ChildContent>
+                            <div @onclick="openprofile">
+                                <RadzenProfileMenuItem Text="Perfil" Icon="account_circle"></RadzenProfileMenuItem>
+                            </div>
+                            <div @onclick="openchangeadminpassword">
+                                <RadzenProfileMenuItem Text="Cambiar Contraseña" Icon="key"></RadzenProfileMenuItem>
+                            </div>
+                            <div @onclick="openabout">
+                                <RadzenProfileMenuItem Text="Acerca de" Icon="info"></RadzenProfileMenuItem>
+                            </div>
+                            <div @onclick="alertaLogout">
+                                <RadzenProfileMenuItem Text="Salir" Icon="logout"></RadzenProfileMenuItem>
+                            </div>
+                        </ChildContent>
+                    </RadzenProfileMenu>
+                </Authorized>
+             
+            </AuthorizeView>
+        </div>
+        <div class="content px-4">
+            @Body
+        </div>
+        @if (ISMensaje)
+        {
+            <div class="btn-flotante">
+                <p>@Mensaje</p>
+            </div>
+        }
+    </div>
+
+</div>
+
+@code
+{
+    private HubConnection hubConnection;
+    [CascadingParameter] public IModalService Modal { get; set; } = default!;
+
+    private int CantidadItems;
+    private string Mensaje;
+    private bool ISMensaje;
+
+
+    protected override Task OnInitializedAsync()
+    {
+
+        hubConnection = new HubConnectionBuilder()
+        .WithUrl(NavigationManager.ToAbsoluteUri("/LockerHub"))
+        .Build();
+
+        hubConnection.On<int, string>("LockerUpdated", (id, message) =>
+        {
+            var encodedMsg = $"{id}: {message}";
+            Console.WriteLine(encodedMsg);
+            Mensaje = encodedMsg;
+            ISMensaje = true;
+            Locker.IsChange();
+            StateHasChanged();
+            new System.Threading.Timer(tm_close, null, 5000, System.Threading.Timeout.Infinite);
+        });
+
+        hubConnection.StartAsync();
+
+        
+
+        return base.OnInitializedAsync();
+    }
+
+    private void tm_close(object state)
+    {
+        ISMensaje = false;
+        StateHasChanged();
+    }
+
+
+    public async Task alertaLogout()
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "¿Está seguro?",
+                Text = "Cerrará su sesión",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Salir",
+                CancelButtonText = "Cancelar"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            BeginSignOut();
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+        }
+    }
+    private async Task BeginSignOut()
+    {
+        await Auth.SetTokenAsync(null, null);
+        NavigationManager.NavigateTo("/");
+
+    }
+    private async Task openchangeadminpassword()
+    {
+      
+        NavigationManager.NavigateTo("/changeadminpassword");
+    }
+    async Task openabout()
+    {
+
+        var formModal = Modal.Show<Modalabout>();
+
+    }
+    async Task openprofile()
+    {
+
+        var formModal = Modal.Show<Modalprofile>();
+
+    }
+
+}

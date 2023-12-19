@@ -1,0 +1,203 @@
+﻿@page "/"
+@using DCMLocker.Kiosk.Pages.Components
+@inject NavigationManager Nav
+@inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
+
+@if (screen == "keyboard")
+{
+    <br />
+    <br />
+    <div class="row justify-content-center align-items-center">
+        <div class="col-12 text-center">
+            <h1 style="margin-bottom: 5px;">Ingrese su código</h1>
+            <h3 style="margin-top: 5px;">(Enter your code)</h3>
+        </div>
+        <div class="row justify-content-center align-items-center pt-4 pb-4">
+
+            @if (isVisible)
+            {
+                @for (int i = 0; i < 6; i++)
+                {
+                    <Circle text=@(token.Length >i ? token[i].ToString():"") />
+                }
+
+
+
+                <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
+                    <Eye />
+                </div>
+            }
+            else
+            {
+                @for (int i = 0; i < 6; i++)
+                {
+                    <Circle text=@(token.Length >i ? "*":"") />
+                }
+
+                <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
+                    <EyeOff />
+                </div>
+            }
+
+
+        </div>
+
+        <div class="row justify-content-center align-items-center">
+
+            <div @onclick="()=>addNumber(1)">
+                <Button text="1" />
+            </div>
+
+
+            <div @onclick="()=>addNumber(2)">
+                <Button text="2" />
+            </div>
+
+
+            <div @onclick="()=>addNumber(3)">
+                <Button text="3" />
+            </div>
+
+
+        </div>
+
+        <div class="row justify-content-center align-items-center">
+
+
+            <div @onclick="()=>addNumber(4)">
+                <Button text="4" />
+            </div>
+
+
+            <div @onclick="()=>addNumber(5)">
+                <Button text="5" />
+            </div>
+
+
+            <div @onclick="()=>addNumber(6)">
+                <Button text="6" />
+            </div>
+
+        </div>
+
+
+        <div class="row justify-content-center align-items-center">
+
+
+            <div @onclick="()=>addNumber(7)">
+                <Button text="7" />
+            </div>
+
+
+            <div @onclick="()=>addNumber(8)">
+                <Button text="8" />
+            </div>
+
+
+            <div @onclick="()=>addNumber(9)">
+                <Button text="9" />
+            </div>
+
+        </div>
+
+        <div class="row justify-content-center align-items-center">
+
+
+            <div @onclick="()=>deleteNumber()">
+                <Button text="delete" />
+            </div>
+
+            <div @onclick="()=>addNumber(0)">
+                <Button text="0" />
+            </div>
+
+            <div @onclick="()=>send()">
+                <Button text="send" />
+            </div>
+
+        </div>
+        <div class="col-12 text-center">
+            <h3>O escanee su QR (or scan your barcode)</h3>
+
+        </div>
+    </div>
+}
+else if (screen == "success")
+{
+    <Success door="door" />
+}
+else if (screen == "invalidToken")
+{
+    <TokenInvalid />
+}
+else if (screen == "connectionError")
+{
+    <ConnectionError />
+}
+
+@code {
+    int[] token = { };
+    bool isVisible;
+    string screen = "keyboard";
+    int door;
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    void visibility()
+    {
+        isVisible = !isVisible;
+        StateHasChanged();
+
+    }
+    void addNumber(int number)
+    {
+        if (token.Length < 6)
+        {
+            Array.Resize(ref token, token.Length + 1);
+            token[token.Length - 1] = number;
+        }
+    }
+
+    void deleteNumber()
+    {
+        if (token.Length > 0)
+        {
+            Array.Resize(ref token, token.Length - 1);
+
+        }
+    }
+
+    async void send()
+    {
+        string resultado = string.Concat(token);
+        if (resultado == "3942")
+        {
+            Nav.NavigateTo($"{Nav.Uri}red");
+        }
+        else
+        {
+            try
+            {
+                door = await Cliente.TokenKey(resultado);
+                screen = "success";
+                StateHasChanged();
+                await Task.Delay(3000);
+                screen = "keyboard";
+            }
+            catch (Exception er)
+            {
+
+                screen = er.Message;
+                StateHasChanged();
+
+                await Task.Delay(3000);
+                screen = "keyboard";
+
+            }
+        }
+        token = new int[0];
+
+        StateHasChanged();
+    }
+}

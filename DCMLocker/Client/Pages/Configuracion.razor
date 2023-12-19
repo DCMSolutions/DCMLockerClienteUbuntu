@@ -1,0 +1,202 @@
+﻿@page "/configuracion"
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Client.Cliente.TLockerCliente cliente
+@inject NotificationService NotificationService
+@inject NavigationManager nav
+<h1>Locker</h1>
+<label><strong>Configuración</strong></label>
+
+
+@if (Config != null)
+{
+    <div class="p-5">
+
+        <hr><br>
+
+        <form class="user">
+
+            <div class="form-group">
+                <label><strong>ID Locker</strong></label>
+                <p>Identificador único de locker.</p>
+                <p>Es utilizado para identificar a un locker en un sistema central.</p>
+                <div style="display: flex; justify-content: center;">
+                    <input type="text" @bind="Config.LockerID" class="form-control form-control-user col-3" />
+                </div>
+            </div>
+            <hr><br>
+            <div class="form-group">
+                <label><strong>URL Servidor</strong></label>
+                <p>Configuración de la dirección que corresponde al servidor central donde se conectará el Locker.</p>
+                <div style="display: flex; justify-content: center;">
+                <input type="text" @bind="Config.UrlServer" class="form-control form-control-user col-6" />
+                </div>
+            </div>
+            <hr><br>
+
+            <div class="form-group">
+                <label>
+                    <strong>
+                        <span class="oi oi-wifi" aria-hidden="true"></span>   Red
+                    </strong>
+                </label>
+
+                <div class="row" style="display: flex; justify-content: center;">
+
+                    <button class="btn btn-outline-dark col-3" @onclick=gotoEthernet>Ethernet</button>
+                    <button class="btn btn-outline-dark col-3" style="margin-left:10vw;" @onclick=gotoWifi>WiFi</button>
+                </div>
+            </div>
+            <hr><br>
+
+            <div class="form-group">
+                <label><strong>Sensor presente</strong></label>
+                <p>
+                    Indica si el sensor de detección de objetos esta habilitado para su lectura
+                </p>
+                <input type="checkbox" class="form-control form-control-user" />
+            </div>
+            <hr><br>
+
+            <div class="form-group">
+                <label><strong>Alarma</strong></label>
+                <p>
+                    Indica el Nro de Alarma que se dispara en un cambio de estado de la caja
+                </p>
+                <input type="number" class="form-control form-control-user" />
+            </div>
+
+            <div class="form-group">
+                <label><strong>Logo</strong></label>
+                <p>
+                    Cargar un logo
+                </p>
+
+            </div>
+
+
+
+            @*<div class="form-group">
+        <label><strong>Tipo de Locker</strong></label>
+        <p>Contorlador utilizado por el locker para la apertura y sensado de box. Verifique con el instalador la correcta configuración.</p>
+        <select @bind="Config.LockerType" class="form-control form-control-user">
+        <option value="0">TCP</option>
+        <option value="1">RS</option>
+        </select>
+
+        </div>
+        <div class="form-group">
+        <label><strong>Modo de funcionamiento</strong></label>
+        <p>
+        Modo de funcionamiento del locker.<br />
+        NORMAL: los box son utilizados por usuarios registrados. <br />
+        QR:Los box son utilizador por medios de tocken en formato QR
+        </p>
+        <select @bind="Config.LockerMode" class="form-control form-control-user">
+        <option value="0">Normal</option>
+        <option value="1">QR</option>
+        </select>
+
+        </div>
+        <div class="form-group">
+        <label><strong>Confirmación de Email</strong></label>
+        <p>
+        Utilize la confirmación de email para validar la información de los usuarios.
+        El email es utilizado para blanquear el password del usuario en caso de olvido.
+        </p>
+        <input type="checkbox" @bind="Config.IsConfirmarEmail" class="form-control form-control-user" />
+        </div>
+        <div class="border-dark" style="border-style:solid; border:1px;">
+        <h3>Servidor de Email</h3>
+        <p>Servidor de Email a utilizar para el envio de email, tanto para alarmas y notificaciones.</p>
+        <div class="form-group">
+        <label><strong>Servidor Smtp</strong></label>
+        <input type="text" @bind="Config.SmtpServer.Host" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Port</strong></label>
+        <input type="number" @bind="Config.SmtpServer.Port" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>From</strong></label>
+        <input type="email" @bind="Config.SmtpServer.From" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Asunto</strong></label>
+        <input type="text" @bind="Config.SmtpServer.Asunto" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Usuario</strong></label>
+        <input type="text" @bind="Config.SmtpServer.UserName" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Password</strong></label>
+        <input type="password" @bind="Config.SmtpServer.Password" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Requiere SSL</strong></label>
+        <input type="checkbox" @bind="Config.SmtpServer.EnableSSL" class="form-control form-control-user" />
+        </div>
+        </div>*@
+
+
+
+            <button type="button" class="btn btn-primary btn-user btn-block" @onclick="(() => Save())">Guardar</button>
+
+        </form>
+    </div>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+
+@code {
+    LockerConfig Config;
+    protected override async Task OnInitializedAsync()
+    {
+        Config = await cliente.GetConfig();
+    }
+
+    async Task Save()
+    {
+        bool r = await cliente.SetConfig(Config);
+        if (r)
+        {
+            //notificamos que los cambios fueron registrados
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Exito",
+                    Detail = "Se guardaron con éxito los cambios.",
+                    Duration = 4000
+                });
+        }
+        else
+        {
+            //advertencia porque no se grabaron los datos
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "Hubo un error en el guardado.",
+                    Duration = 4000
+                });
+        }
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+
+    async Task gotoWifi()
+    {
+        nav.NavigateTo("/wifi");
+    }
+    async Task gotoEthernet()
+    {
+        nav.NavigateTo("/ethernet");
+    }
+}

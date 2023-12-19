@@ -1,0 +1,216 @@
+﻿@page "/BoxesAdmin"
+@inject NavigationManager Nav
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Client.Cliente.TLockerCliente cliente
+@inject NotificationService NotificationService
+@using OfficeOpenXml.Table;
+@using OfficeOpenXml.LoadFunctions.Params;
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+@using System.IO;
+
+<h1>Boxes</h1>
+<label><strong>Configuración de los parámetros de los boxes</strong></label>
+
+@if (listaDeBoxes != null)
+{
+    <div class="tablacontent" style="position:relative;">
+
+        <RadzenDataGrid AllowColumnResize="true" AllowAllowAlternatingRows="true" FilterMode="FilterMode.Simple" AllowSorting="false" PageSize="8"
+                    AllowPaging="true" ShowPagingSummary="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" EmptyText="No hay boxes asignados."
+                    Data="@listaDeBoxes" TItem="TLockerMap" LogicalFilterOperator="LogicalFilterOperator.Or" PagerHorizontalAlign="HorizontalAlign.Center">
+            <Columns>
+                <RadzenDataGridColumn TItem="TLockerMap" Property="Id" Title="Box" />
+                <RadzenDataGridColumn TItem="TLockerMap" Property="BoxAddr" Title="Id físico" />
+                <RadzenDataGridColumn TItem="TLockerMap" Property="Size" Title="Tamaño" />
+                <RadzenDataGridColumn TItem="TLockerMap" Property="Enable" Title="Habilitado">
+                    <Template Context="data">
+                        @if (data.Enable)
+                        {
+                            <FeatherCheck Color="green" />
+                        }
+                        else
+                        {
+                            <FeatherX Color="red" />
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+
+                <RadzenDataGridColumn TItem="TLockerMap" Title="Editar">
+                    <Template Context="data">
+                        <button class="btn" title="Editar" @onclick="() => gotoAddBox(data.Id)"><FeatherEdit Color="green" /></button>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="TLockerMap" Title="Eliminar">
+                    <Template Context="data">
+                        <button class="btn" title="Eliminar" @onclick="() => alertaDeleteBox(data)"><FeatherTrash2 Color="red" /></button>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+    </div>
+    <br />
+
+
+    <button style="outline:none;height:100%;" class="btn btn-outline" @onclick="() => DownloadTxtBoxes()"><FeatherDownload Color="Black"></FeatherDownload></button>
+    <button style="outline:none;height:100%;" class="btn btn-outline" @onclick="() => gotoSubirTxtBoxes()"><FeatherUpload Color="Black"></FeatherUpload></button>
+
+    <br />
+    <br />
+
+
+    <form>
+        <label><strong>Seleccionar box para asignar configuración</strong></label>
+        <div class="form-group">
+            <RadzenDropDown @bind-Value=@idBox Change="@verpropietario" Data=@listaDeIdsSinAsignar AllowFiltering="true" class="form-control form-control-user" />
+        </div>
+        <button type="button" class="btn btn-primary btn-user btn-block" @onclick="(() => gotoAddBox(idBox))">Agregar</button>
+        <br />
+        <br />
+        @*@if (users != null)
+        {
+            <h3>Usuarios del Box</h3>
+            <p>pulse sobre el usuario para ver sus propiedades.</p>
+            <ul>
+                @foreach (string s in users)
+                {
+                    var y = s;
+                    <li><a @onclick="(()=>GetUser(y))">@s</a></li>
+                }
+            </ul>
+
+        }*@
+    </form>
+}
+
+@code {
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    [CascadingParameter] public IModalService Modal { get; set; } = default!;
+
+    List<TLockerMap> listaDeBoxes;
+    List<int> listaDeIdsSinAsignar = new();
+
+    string fileContent;
+
+    int idBox;
+    string[] users { get; set; }
+
+
+
+    async void verpropietario()
+    {
+        //users = await cliente.SearchUserFromBox(Box);
+        //StateHasChanged();
+    }
+
+    void GetUser(string s)
+    {
+        Nav.NavigateTo($"/Usuario/{s.Replace("@", "%40").Replace(".", "%_")}");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaDeBoxes = await cliente.GetAllBoxConfig();
+        listaDeIdsSinAsignar = new();
+
+        for (int i = 1; i <= 255; i++)
+        {
+            if (!listaDeBoxes.Select(box => box.Id).ToList().Contains(i))
+            {
+                listaDeIdsSinAsignar.Add(i);
+            }
+        }
+        idBox = listaDeIdsSinAsignar.Min();
+
+    }
+
+    public async Task alertaDeleteBox(TLockerMap box)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "¿Está seguro?",
+                Text = $"Eliminará la informacion guardada del box {box.Id}",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Eliminar",
+                CancelButtonText = "Cancelar"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            await deleteBox(box);
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+        }
+    }
+
+    async Task deleteBox(TLockerMap box)
+    {
+        await cliente.DeleteBoxConfig(box);
+        listaDeBoxes = await cliente.GetAllBoxConfig();
+        StateHasChanged();
+    }
+
+    private async Task DownloadTxtBoxes()
+    {
+        if (listaDeBoxes.Count > 0)
+        {
+            string fileName = "boxes.ans";
+            string fileContent = JsonSerializer.Serialize<List<TLockerMap>>(listaDeBoxes);
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileContent, fileName);
+
+
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Exito",
+                    Detail = "Se descargo el archivo de boxes.",
+                    Duration = 10000
+                });
+        }
+        else
+        {
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "La lista esta vacia.",
+                    Duration = 4000
+                });
+        }
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+
+    void gotoAddBox(int idBox)
+    {
+        Nav.NavigateTo($"/BoxesAdmin/{idBox}");
+    }
+
+    public async Task gotoSubirTxtBoxes()
+    {
+        var parameters = new ModalParameters();
+        var options = new ModalOptions()
+            {
+                HideHeader = true,
+                HideCloseButton = true
+            };
+
+        var formModal = Modal.Show<SubirTxtBoxes>("", parameters, options);
+        var result = await formModal.Result;
+
+        OnInitializedAsync();
+        StateHasChanged();
+
+    }
+}

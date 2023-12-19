@@ -1,0 +1,162 @@
+﻿@page "/UsersAdmin"
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Client.Cliente.TLockerCliente cliente
+@inject NavigationManager Nav
+@inject HttpClient http
+
+<style>
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .sidebar {
+            display: none !important;
+        }
+
+        .style1 {
+            -webkit-print-color-adjust: exact;
+        }
+
+        table {
+            -webkit-print-color-adjust: exact;
+        }
+
+
+            table tr:nth-child(odd) {
+                background-color: #f2f2f2;
+                -webkit-print-color-adjust: exact;
+            }
+
+            table thead tr:nth-child(odd) {
+                background-color: transparent;
+                -webkit-print-color-adjust: exact;
+            }
+    }
+</style>
+
+
+
+<h3>Usuarios</h3>
+<p>Buscador de usuarios</p>
+<form>
+    <div class="form-group">
+        <input type="text" @bind="keyword" class="form-control form-control-user" />
+    </div>
+    <button type="button" class="btn btn-primary btn-user btn-block" @onclick="(() => Search())"><span class="oi oi-magnifying-glass"></span> Buscar</button>
+
+</form>
+<br />
+@if (usuarios != null)
+{
+    <ul>
+        @foreach (string s in usuarios)
+        {
+            var y = s;
+            <li><a @onclick="(()=>GetUser(y))">@s</a></li>
+        }
+    </ul>
+}
+<center>
+    <table>
+        <thead>
+
+            <tr>
+
+                <th>Usuario</th>
+
+                <th>Activo</th>
+
+                <th>Bloqueado</th>
+
+                <th></th>
+
+                <th></th>
+
+                <th></th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+            @foreach (var data in users)
+            {
+                <tr>
+
+                    <td>
+                        <a>@data.user</a>
+                    </td>
+
+                    <td>
+                        <a>@data.Enable</a>
+                    </td>
+
+                    <td>
+                        <a>@data.IsLocked</a>
+                    </td>
+
+                    <td>
+                        <button class="btn" title="Ver info" @onclick="(()=>GetUser(data.user))"><FeatherInfo Color="blue" /></button>
+                    </td>
+
+                    <td>
+                        <button class="btn" title="Eliminar" @onclick="() => alertaDelete(data.user)"><FeatherTrash2 Color="red" /></button>
+                    </td>
+
+
+                </tr>
+            }
+        </tbody>
+    </table>
+</center>
+
+@code {
+    private string keyword;
+    private string[] usuarios = null;
+    List<LockerUserPerfil> users = new();
+    protected override async Task OnInitializedAsync()
+    {
+
+        users = await cliente.GetAllUsers();
+
+    }
+    async void Search()
+    {
+        usuarios = null;
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            usuarios = await cliente.Search(keyword);
+
+            StateHasChanged();
+        }
+    }
+
+    void GetUser(string s)
+    {
+        Nav.NavigateTo($"/Usuario/{s.Replace("@", "%40").Replace(".", "%_")}");
+    }
+
+    public async Task alertaDelete(string user)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "¿Está seguro?",
+                Text = "Se eliminará este usuario",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Eliminar",
+                CancelButtonText = "Cancelar"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            //delete(id);
+
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+        }
+    }
+}

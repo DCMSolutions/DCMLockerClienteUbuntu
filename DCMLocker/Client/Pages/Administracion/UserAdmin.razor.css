@@ -1,0 +1,29 @@
+﻿
+
+table, td, th {
+    padding-bottom: 10px;
+    padding-top: 10px;
+    padding-left: 40px;
+    padding-right: 40px;
+    text-align: center;
+    font-size: 16;
+    white-space: nowrap;
+    overflow: auto;
+}
+
+    table tr td:first-child {
+        width: 200px;
+        border-right: 1px solid #D6D6D6;
+    }
+
+th {
+    border-bottom: 1px solid #D6D6D6;
+}
+
+table tr:nth-child(odd) {
+    background-color: #f2f2f2;
+}
+
+table thead tr:nth-child(odd) {
+    background-color: transparent;
+}

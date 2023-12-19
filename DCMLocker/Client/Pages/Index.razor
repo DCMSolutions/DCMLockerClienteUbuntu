@@ -1,0 +1,83 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject Authentication.MOFAuthenticationStateProvider Auth
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
+<div class="text-center">
+    <h1>Locker</h1>
+    Bienvenido al locker inteligente. Esperamos que tengas una muy buena experiencia.
+    <br />
+    <AuthorizeView>
+        <NotAuthorized>
+            Si sos propietario de una caja <a href="/login">ingresa</a>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+<br />
+<hr />
+<br />
+
+<div class="text-center">
+    <h2>Token de acceso</h2>
+    <p>
+        Los token de acceso permiten la utilización de las cajas sin ser un usuario del locker.
+        <br />
+        Si alguien dejo algun paquete o producto para tí, solicita que te comparta el token de acceso y listo.
+    </p>
+    <form>
+        <div class="form-group">
+            <label><strong>Ingrese su token</strong></label>
+            <input type="text" @bind="token" class="form-control form-control-user" />
+        </div>
+        <button type="button" disabled="@IsBussy" class="btn btn-primary btn-user btn-block" @onclick="(() => Accion())">Activar</button>
+    </form>
+
+    @if (!string.IsNullOrEmpty(ErrorMsn))
+    {
+        <div class="alert alert-danger">
+            <strong>@ErrorMsn</strong>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Msn))
+    {
+        <div class="alert alert-success">
+            <strong>@Msn</strong>
+        </div>
+    }
+</div>
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<div class="fixed-bottom">
+    <SurveyPrompt Title="¿Desea más información?" />
+</div>
+
+@code
+{
+    bool IsBussy = false;
+    string token;
+    string ErrorMsn = "";
+    string Msn = "";
+    async void Accion()
+    {
+        try
+        {
+            Msn = "";
+            ErrorMsn = "";
+            int r = await Cliente.TokenKey(token);
+            Msn = $"BOX abierto {(r + 1)}";
+        }
+        catch (Exception er)
+        {
+            Console.WriteLine(er.Message);
+            ErrorMsn = "Error al utilizar token de apertura";
+        }
+        StateHasChanged();
+
+
+    }
+}

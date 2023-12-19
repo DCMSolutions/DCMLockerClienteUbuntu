@@ -1,0 +1,77 @@
+﻿@page "/subirtxtboxes"
+@inject NavigationManager Nav
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@using Microsoft.AspNetCore.Components.Forms
+@inject DCMLocker.Client.Cliente.TLockerCliente cliente
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+@using System.IO;
+
+
+<h1>Cargar boxes</h1>
+
+<InputFile OnChange="@OnInputFileChange" multiple><FeatherUpload Color="Black"></FeatherUpload></InputFile>
+<button style="outline:none;height:100%;" class="btn btn-outline" @onclick="() => alertaUpload()"><FeatherUpload Color="Black"></FeatherUpload></button>
+
+
+@code {
+    MultipartFormDataContent content = new MultipartFormDataContent();
+
+    string fileContent;
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file != null)
+        {
+            using (var streamReader = new StreamReader(file.OpenReadStream()))
+            {
+                fileContent = await streamReader.ReadToEndAsync();
+            }
+        }
+
+    }
+
+    public async Task alertaUpload()
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "¿Está seguro?",
+                Text = "Actualizará la lista de boxes completamente",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Subir",
+                CancelButtonText = "Cancelar"
+            });
+
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            await UploadTxtBoxes();
+        }
+        else if (result.Dismiss == DismissReason.Cancel)
+        {
+
+        }
+    }
+
+
+    private async Task UploadTxtBoxes()
+    {
+        try
+        {
+            List<TLockerMap> listaDeBoxesUpload = JsonSerializer.Deserialize<List<TLockerMap>>(fileContent);
+            foreach(var locker in listaDeBoxesUpload)
+            {
+                await cliente.SetBoxConfig(locker);
+            }
+            Nav.NavigateTo("/boxesadmin");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+}

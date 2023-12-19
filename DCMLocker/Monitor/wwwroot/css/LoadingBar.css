@@ -1,0 +1,50 @@
+﻿
+.abs-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.loading-bar {
+    position: absolute;
+    width: 500px;
+    height: 10px;
+    background-color: wheat;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    top: calc(50% - 5px);
+    left: calc(50% - 250px);
+    animation: progressbaropacy-slide 2s infinite;
+    animation-timing-function: ease-in-out;
+}
+
+    .loading-bar::after {
+        content: '';
+        display: block;
+        width: 200px;
+        height: 100%;
+        background-color: rgb(105, 39, 103);
+        animation: progressbar-slide 1s infinite;
+        animation-timing-function: ease-in-out;
+    }
+
+@keyframes progressbaropacy-slide {
+    0% {
+        opacity: 0;
+    }
+
+    70%, 100% {
+        opacity: 1;
+    }
+}
+
+@keyframes progressbar-slide {
+    0% {
+        transform: translateX(-200px);
+    }
+
+    70%, 100% {
+        transform: translateX(500px);
+    }
+}

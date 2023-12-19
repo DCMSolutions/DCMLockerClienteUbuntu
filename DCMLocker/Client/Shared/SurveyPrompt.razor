@@ -1,0 +1,24 @@
+﻿@if (isvisible)
+{
+<div class="alert alert-secondary mt-4" role="alert">
+    <a @onclick="Action"><span class="oi oi-circle-x mr-2" aria-hidden="true"></span></a>
+    <strong>@Title</strong>
+
+    <span class="text-nowrap">
+        Por favor ir a 
+        <a target="_blank" class="font-weight-bold" href="https://www.dcm.com.ar"> DCM Solution S.A</a>
+    </span>
+    
+</div>
+}
+@code {
+    // Demonstrates how a parent component can supply parameters
+    [Parameter]
+    public string Title { get; set; }
+    bool isvisible = true;
+
+    private void Action()
+    {
+        isvisible = false;
+    }
+}

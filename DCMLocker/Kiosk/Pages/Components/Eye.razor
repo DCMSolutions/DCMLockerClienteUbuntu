@@ -1,0 +1,34 @@
+﻿<style>
+
+
+
+
+
+    button {
+        background-color: white;
+        padding: 10px;
+        border: 0;
+        border-radius: 5px;
+        font-weight: 700;
+        font-size: 16px;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+    
+
+   
+
+    .no-outline:focus {
+        outline: 0;
+    }
+</style>
+<center>
+    <div class="container">
+        <button class="no-outline"> <FeatherEye Color="black" Size="60" /></button>
+    </div>
+</center>
+
+@code {
+    [Parameter] public string text { get; set; }
+}

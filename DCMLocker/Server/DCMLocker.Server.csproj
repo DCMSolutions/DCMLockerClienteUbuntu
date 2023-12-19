@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RuntimeIdentifiers>linux-arm</RuntimeIdentifiers>
+    <UserSecretsId>0f21a8db-e679-4779-87c9-41928924ee3e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Base\**" />
+    <Content Remove="Base\**" />
+    <EmbeddedResource Remove="Base\**" />
+    <None Remove="Base\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Content\icon-512.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Content\icon-512.png">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="5.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.12.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DCMLockerCommunication\DCMLockerCommunication.csproj" />
+    <ProjectReference Include="..\Client\DCMLocker.Client.csproj" />
+    <ProjectReference Include="..\Kiosk\DCMLocker.Kiosk.csproj" />
+    <ProjectReference Include="..\Monitor\DCMLocker.Monitor.csproj" />
+    <ProjectReference Include="..\Shared\DCMLocker.Shared.csproj" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Update="Content\clientesplash.jpg">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	
+</Project>

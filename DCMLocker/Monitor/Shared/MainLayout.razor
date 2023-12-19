@@ -1,0 +1,36 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+
+
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="main">
+        <div class="content px-4">
+            @Body
+        </div>
+        @if (ISMensaje)
+        {
+            <div class="btn-flotante">
+                <p>@Mensaje</p>
+            </div>
+        }
+    </div>
+
+</div>
+
+@code
+{
+    private HubConnection hubConnection;
+
+    private int CantidadItems;
+    private string Mensaje;
+    private bool ISMensaje;
+
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+}

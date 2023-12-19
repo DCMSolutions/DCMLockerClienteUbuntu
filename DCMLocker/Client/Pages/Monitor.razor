@@ -1,0 +1,90 @@
+﻿@page "/monitor"
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Client.Cliente.TLockerCliente Http
+@inject DCMLocker.Client.Cliente.TLocker locker
+
+<h1>Monitor</h1>
+
+@if (locker.LockerCUs == null)
+{
+<div class="abs-center">
+    <div class="spinner-grow text-secondary"></div>
+    <div class="spinner-grow text-secondary"></div>
+    <div class="spinner-grow text-secondary"></div>
+</div>
+}
+else
+{
+
+
+
+
+
+    <table class="table text-center">
+        <thead>
+            <tr>
+                <th>Locker</th>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+                <th>6</th>
+                <th>7</th>
+                <th>8</th>
+                <th>9</th>
+                <th>10</th>
+                <th>11</th>
+                <th>12</th>
+                <th>13</th>
+                <th>14</th>
+                <th>15</th>
+                <th>16</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var CU in locker.LockerCUs)
+            {
+                if (CU != null)
+                {
+                    <tr>
+                        <td>@CU.CU.ToString()</td>
+
+                        @for (int x = 0; x < CU.Box.Length; x++)
+                        {
+                            var f = x;
+                            <td style="background-color:@(!CU.Box[x].Sensor?"red":"green")">
+                                <a @onclick="args => Abrir(CU.CU, f)" style="text-decoration:none; color:white;"><span class="oi @(CU.Box[x].Door?"oi-lock-locked":"oi-lock-unlocked" )"></span></a>
+                            </td>
+                        }
+
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    private WeatherForecast[] forecasts;
+    protected override async Task OnInitializedAsync()
+    {
+        locker.OnChange += Change;
+        locker.LockerCUs = await Http.GetState();
+    }
+
+    private async void Change(object sender, EventArgs arg)
+    {
+        locker.LockerCUs = await Http.GetState();
+        StateHasChanged();
+    }
+
+    protected void Abrir(int locker, int box)
+    {
+        Console.WriteLine($"Set Locker {locker} - Box {box}");
+        Http.OpenLocker(locker,box, "Miguel", "123456");
+    }
+
+}

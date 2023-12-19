@@ -1,0 +1,8 @@
+Notas sobre la versión 4 (25/09/2023)
+
+- Se modificó el funcionamiento del locker. Se creó un protocolo HTTP para asilar la lógica del negocio del funcionamiento del locker.
+- En la página localhost:5020 (IP:5020) se encuentra el acceso al módulo de administración del locker.
+
+Configuraciones:
+
+- Desde el módulo de configuración se debe asociar una medida física (tamaño) a cada locker.

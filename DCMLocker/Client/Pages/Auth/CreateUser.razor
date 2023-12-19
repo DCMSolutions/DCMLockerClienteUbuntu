@@ -1,0 +1,56 @@
+﻿@page "/registrar"
+@using DCMLocker.Shared.MOFLogin
+@inject DCMLocker.Client.Authentication.TAuthCliente cliente
+@inject NavigationManager Nav
+
+<h3>Crear un usuario</h3>
+<p>Crea un usuario para el Locker, 
+    recuerda que estos usuarios pertenecen 
+    al locker fisico que por seguridad 
+    no son compartido con otros.</p>
+@if(!string.IsNullOrEmpty(ErrorMsn))
+{
+    <div class="alert alert-danger">
+        <strong>@ErrorMsn</strong>
+    </div>
+}
+<form class="user">
+
+    <div class="form-group">
+        <label>Email</label>
+        <input type="text" @bind="user" class="form-control form-control-user" />
+
+
+    </div>
+    <div class="form-group">
+        <label>Clave</label>
+        <input type="password" @bind="pass" class="form-control form-control-user" />
+    </div>
+    <div class="form-group">
+        <label>Confirmación</label>
+        <input type="password" @bind="confirmpass" class="form-control form-control-user" />
+    </div>
+
+    <button type="button" class="btn btn-primary btn-user btn-block" @onclick="(() => createuser())">Crear</button>
+
+</form>
+
+@code {
+    string user = "";
+    string pass = "";
+    string confirmpass = "";
+    string ErrorMsn = "";
+    async Task createuser()
+    {
+        ErrorMsn = "";
+        bool s = await cliente.CreateUser(user, pass, confirmpass);
+        if (s)
+        {
+            Nav.NavigateTo("/login");
+        }
+        else
+        {
+            ErrorMsn = "Error al intentar crear usuario.";
+        }
+    }
+}

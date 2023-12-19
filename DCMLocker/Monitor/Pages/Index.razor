@@ -1,0 +1,148 @@
+﻿@page "/"
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Monitor.Cliente.TLockerCliente Cliente
+@inject DCMLocker.Monitor.Cliente.ConfigLocal LConfig
+
+@inject IJSRuntime js
+@inject NavigationManager Nav
+
+@if (VideoVersion != 0)
+{
+    <video class="video-all" autoplay muted loop id="myVideo">
+        <source src="Content/monitor.mp4?v=@VideoVersion" type="video/mp4">
+    </video>
+    
+
+}
+
+<div class="row">
+    <div class="d-md-block col-lg-4 col-md-4 col-sm-12 col-xs-12">
+        <div class="div-turnero">
+
+            <div class="divtable">
+
+                <div class="divtitle mx-auto">TITLE</div>
+
+                <div class="divheading">
+
+                    <div class="divcell1"><span class="Estilo6">BOX</span></div>
+                    <div class="divcell2"><span class="Estilo6">TICKET</span></div>
+                </div>
+                @for (int x = 0; x < 5; x++)
+                {
+                    int offset = 1;
+                    int i = (offset + x + (15 * _visualScrollState));
+                    <div class="divrow">
+                        <div class="divcellresto1 text-center"><span class="Estilo7">@(i)</span></div>
+                        <div class="divcellresto1 text-center"><span class="Estilo7">@LConfig.Box[i - 1]</span></div>
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    </div>
+    <div class="d-md-block col-lg-4 col-md-4 col-sm-12 col-xs-12">
+        <div class="div-turnero">
+
+            <div class="divtable">
+
+                <div class="divtitle mx-auto">TITLE</div>
+
+                <div class="divheading">
+
+                    <div class="divcell1"><span class="Estilo6">BOX</span></div>
+                    <div class="divcell2"><span class="Estilo6">TICKET</span></div>
+                </div>
+                @for (int x = 0; x < 5; x++)
+                {
+                    int offset = 6;
+                    int i = (offset + x + (15 * _visualScrollState));
+                    <div class="divrow">
+                        <div class="divcellresto1 text-center"><span class="Estilo7">@(i)</span></div>
+                        <div class="divcellresto1 text-center"><span class="Estilo7">@LConfig.Box[i - 1]</span></div>
+                    </div>
+                }
+            </div>
+
+        </div>
+    </div>
+    <div class="d-md-block col-lg-4 col-md-4 col-sm-12 col-xs-12">
+        <div class="div-turnero">
+
+            <div class="divtable">
+
+                <div class="divtitle mx-auto">TITLE</div>
+
+                <div class="divheading">
+
+                    <div class="divcell1"><span class="Estilo6">BOX</span></div>
+                    <div class="divcell2"><span class="Estilo6">TICKET</span></div>
+                </div>
+
+                @for (int x = 0; x < 5; x++)
+                {
+                    int offset = 11;
+                    int i = (offset + x + (15 * _visualScrollState));
+                <div class="divrow">
+                    <div class="divcellresto1 text-center"><span class="Estilo7">@(i)</span></div>
+                    <div class="divcellresto1 text-center"><span class="Estilo7">@LConfig.Box[i - 1]</span></div>
+                </div>
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code
+{
+    private int VideoVersion = 0;
+    System.Threading.Timer _tmrScroll;
+    int _visualScrollState = 0;
+    protected override void OnInitialized()
+    {
+        VideoVersion = (new Random()).Next(1, 1000);
+        LConfig.OnChange += Change;
+        LConfig.OnRepaint += Repain;
+        _visualScrollState = 0;
+        if (_tmrScroll == null) _tmrScroll = new System.Threading.Timer(tmrscroll_tick, null, 5000, System.Threading.Timeout.Infinite);
+    }
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            LConfig.VideoMute();
+        }
+    }
+
+    protected async void Change(object sender, EventArgs arg)
+    {
+        LConfig.VideoMute();
+        try
+        {
+        }
+        catch { }
+        StateHasChanged();
+
+    }
+    protected void Repain(object sender, EventArgs arg)
+    {
+        StateHasChanged();
+
+    }
+
+    void tmrscroll_tick(object state)
+    {
+        try
+        {
+            _visualScrollState++;
+            if (_visualScrollState > 1) _visualScrollState = 0;
+        }
+        catch { }
+        _tmrScroll.Change(5000, System.Threading.Timeout.Infinite);
+        StateHasChanged();
+    }
+
+}

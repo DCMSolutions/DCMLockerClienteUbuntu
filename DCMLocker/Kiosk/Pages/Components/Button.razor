@@ -1,0 +1,60 @@
+﻿<style>
+    .keyboard-button {
+        width: 25vh;
+        height: 10vh;
+        background-color: blue; /* Fondo azul */
+        border-radius: 2px;
+        color: #fff; /* Texto blanco */
+        font-size: 5vh;
+        outline: none;
+    }
+
+        .keyboard-button:hover {
+            background-color: #2980b9; /* Cambia el color de fondo al pasar el ratón */
+        }
+
+        .keyboard-button:active {
+            background-color: #1f618d; /* Cambia el color de fondo cuando se está presionando */
+        }
+
+    .container {
+        padding-left: 1vh;
+        padding-bottom: 2vh;
+    }
+
+    .no-outline:focus {
+        outline: 0;
+    }
+</style>
+@if (text == "delete")
+{
+
+    <center>
+        <div class="container">
+            <button class="keyboard-button no-outline">⌫</button>
+        </div>
+    </center>
+}
+else
+{
+    @if (text == "send")
+    {
+
+        <center>
+            <div class="container">
+                <button class="keyboard-button no-outline">✔</button>
+            </div>
+        </center>
+    }
+    else
+    {
+        <center>
+            <div class="container">
+                <button class="keyboard-button no-outline">@text</button>
+            </div>
+        </center>
+    }       }
+@code {
+    [Parameter] public string text { get; set; }
+
+}

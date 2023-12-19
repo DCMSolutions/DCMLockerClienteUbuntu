@@ -1,0 +1,156 @@
+﻿@page "/BoxesAdmin/{idBox:int}"
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+@inject DCMLocker.Client.Cliente.TLockerCliente cliente
+@inject NavigationManager Nav
+
+<h1>Box @(idBox)</h1>
+
+@if (Config != null)
+{
+    <div class="p-1">
+        <form class="user">
+
+            <div class="form-group">
+                <label><strong>Habilitar</strong></label>
+                <p>
+                    Habilita el uso de caja
+                </p>
+                <input type="checkbox" @bind="Config.Enable" class="form-control form-control-user" />
+            </div>
+
+            <div class="form-group">
+                <label><strong>Id</strong></label>
+                <p>
+                    Indica el id físico del box.
+                </p>
+                <RadzenDropDown @bind-Value=@Config.BoxAddr Data=@listaDeIdsDisponibles />
+            </div>
+
+            <div class="form-group">
+                <label><strong>Tamaño</strong></label>
+                <p>
+                    Indica el tamaño del box.
+                </p>
+                <RadzenDropDown @bind-Value=@Config.Size Data=@listaDeTamaños TextProperty="Name" ValueProperty="Name" Disabled="@(listaDeTamaños.Count == 0)">
+                    <Template>
+                        @((context as Tamaño).Name) @*: @((context as Tamaño).Alto) x @((context as Tamaño).Ancho)*@
+                    </Template>
+                </RadzenDropDown>
+            </div>
+
+
+            @* <div class="form-group">
+        <label><strong>Sensor presente</strong></label>
+        <p>
+        Indica si el sensor de detección de objetos esta habilitado para su lectura
+        </p>
+        <input type="checkbox" @bind="Config.IsSensorPresent" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Usuario propietario</strong></label>
+        <p>
+        Indica si el usuario es propietario de la caja o es una caja de usuario variable
+        </p>
+        <input type="checkbox" @bind="Config.IsUserFixed" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Tipo de Caja</strong></label>
+        <p>Indica el modo de funcionamiento de la caja.</p>
+        <select @bind="typetemp" class="form-control form-control-user">
+        <option value="0">Normal</option>
+        <option value="1">Refrigerada</option>
+        <option value="2">Ctrl Temperatura</option>
+        </select>
+
+        </div>
+
+        <div class="form-group">
+        <label><strong>Temperatura Máxima</strong></label>
+        <p>
+        Máxima temperatura admitida para la caja
+        </p>
+        <input type="number" @bind="Config.TempMax" class="form-control form-control-user" />
+        </div>
+        <div class="form-group">
+        <label><strong>Temperatura Mínima</strong></label>
+        <p>
+        Mínima temperatura admitida para la caja
+        </p>
+        <input type="number" @bind="Config.TempMin" class="form-control form-control-user" />
+        </div>*@
+
+        </form>
+        <br />
+        <br />
+        <br />
+        <a @onclick="Save" class="btn-flotante" title="Guardar" style="background-color:green; color:white;"><span class="oi oi-check"></span></a>
+        <a @onclick="Retornar" class="btn-flotante btn-flotante-1" title="Cancelar" style="background-color:red; color:white;"><span class="oi oi-x"></span></a>
+
+    </div>
+}
+else
+{
+    <div class="abs-center">
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+    </div>
+}
+@code {
+    [Parameter]
+    public int idBox { get; set; }
+    TLockerMap Config;
+    int typetemp = 0;
+    string ErrorMsn { get; set; }
+    List<Tamaño> listaDeTamaños;
+    List<int> listaDeIdsDisponibles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaDeTamaños = await cliente.GetListaDeTamaños();
+        listaDeIdsDisponibles = await cliente.GetListaDeBoxAddrDisponibles();
+        Config = await cliente.GetBoxConfigPorId(idBox);
+        Config.Id = idBox;
+
+        //pinto tirar magia para que quede ordenada la lista cuando agregas el boxaddr que ya tenia el box
+        if (Config.BoxAddr != 0)
+        {
+            // Use BinarySearch to find the index where the Config.BoxAddr should be inserted
+            int index = listaDeIdsDisponibles.BinarySearch(Config.BoxAddr);
+            // If the element is not found, BinarySearch returns the bitwise complement of the index, obvio capo
+            if (index < 0)
+            {
+                index = ~index; //??????????????????????? xd
+            }
+            // Insert the Config.BoxAddr at the correct position to maintain the order
+            listaDeIdsDisponibles.Insert(index, Config.BoxAddr);
+        }
+
+        typetemp = (int)Config.LockerType;
+    }
+
+    void Retornar()
+    {
+        Nav.NavigateTo("BoxesAdmin");
+    }
+
+    async Task Save()
+    {
+        ErrorMsn = "";
+        Config.LockerType = (TLockerMap.EnumLockerType)typetemp;
+        bool r = await cliente.SetBoxConfig(Config);
+        if (r)
+        {
+            //notificamos que los cambios fueron registrados
+            Nav.NavigateTo("BoxesAdmin");
+        }
+        else
+        {
+            ErrorMsn = "Error al guardar la información.";
+            StateHasChanged();
+            //advertencia porque no se grabaron los datos
+
+        }
+    }
+}

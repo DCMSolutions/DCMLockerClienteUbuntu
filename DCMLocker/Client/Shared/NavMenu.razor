@@ -1,0 +1,114 @@
+﻿
+<div class="top-row pl-4 navbar navbar-dark">
+    <div class="container-fluid">
+        <img width="55px" src="/img/Logo.png" />
+        <text class="navbar-brand" href="">SLI - Admin</text>
+        <button class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass" style="align-content:center; text-align:center;" @onclick="ToggleNavMenu">
+  
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Inicio
+            </NavLink>
+        </li>
+
+        <AuthorizeView>
+           @* <Authorized>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link"
+                             title="@context.User.Identity.Name"
+                             href="User">
+                        <span class="oi oi-person" aria-hidden="true"> </span> Mis Boxes
+                    </NavLink>
+                </li>
+            </Authorized>*@
+            <NotAuthorized>
+                <li class="nav-item px-3">
+
+                    <NavLink class="nav-link"
+                             title="Ingresar"
+                             href="login">
+                        <span class="oi oi-key" aria-hidden="true"> </span> Ingresar
+                    </NavLink>
+                </li>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="User">
+           @* <li class="nav-item px-3">
+                <NavLink class="nav-link" href="MyTokenBox">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Mis Tokens
+                </NavLink>
+            </li>*@
+            @*<li class="nav-item px-3">
+            <NavLink class="nav-link" href="UsersAdmin">
+            <span class="oi oi-person" aria-hidden="true"></span> Usuarios
+            </NavLink>
+            </li>*@
+            @*<li class="nav-item px-3">
+            <NavLink class="nav-link" href="AlarmsAdmin">
+            <span class="oi oi-warning" aria-hidden="true"></span> Alarmas
+            </NavLink>
+            </li>*@
+
+
+        </AuthorizeView>
+        <AuthorizeView Roles="Admin">
+           
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="tamaños">
+                    <span class="oi oi-resize-both" aria-hidden="true"></span> Tamaños
+                </NavLink>
+            </li>
+
+            
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="configuracion">
+                    <span class="oi oi-wrench" aria-hidden="true"></span> Locker
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="BoxesAdmin">
+                    <span class="oi oi-box" aria-hidden="true"></span> Boxes
+                </NavLink>
+            </li>
+            
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="monitor">
+                    <span class="oi oi-camera-slr" aria-hidden="true"></span> Monitor
+                </NavLink>
+            </li>
+            
+            
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="power">
+                    <span class="oi oi-power-standby" aria-hidden="true"></span> Control
+                </NavLink>
+            </li>
+
+
+        </AuthorizeView>
+     
+    </ul>
+
+
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+ 
+   
+}
