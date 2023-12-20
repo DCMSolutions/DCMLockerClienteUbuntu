@@ -142,13 +142,7 @@ namespace DCMLocker.Server.Controllers
                     {
                         try
                         {
-                            var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();
-                            Console.WriteLine("--------------------------------------");
-                            Console.WriteLine(serverResponse.Locker);
-                            Console.WriteLine(serverResponse.NroSerie);
-                            Console.WriteLine(serverResponse.Token);
-                            Console.WriteLine("--------------------------------------");
-
+                            var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();                          
                             if (serverResponse.Locker != null)
                             {
                                 //recibo el id de mentira y tengo que abrir un box

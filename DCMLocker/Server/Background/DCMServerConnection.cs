@@ -60,7 +60,6 @@ namespace DCMLocker.Server.Background
                         lockerDTO.Enable = locker.Enable;
                         lockerDTO.AlamrNro = locker.AlamrNro;
                         lockerDTO.Size = locker.Size;
-                        lockerDTO.State = locker.State;
                         lockerDTO.TempMax = locker.TempMax;
                         lockerDTO.TempMin = locker.TempMin;
                         lockerDTO.Puerta = _puerta;
