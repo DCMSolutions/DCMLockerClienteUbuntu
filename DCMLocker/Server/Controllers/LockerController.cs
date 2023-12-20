@@ -135,6 +135,7 @@ namespace DCMLocker.Server.Controllers
 
                     serverComunication.NroSerie = _base.Config.LockerID;
                     serverComunication.Token = Token;
+                    _http.Timeout = TimeSpan.FromSeconds(5);
                     var response = await _http.PostAsJsonAsync(uri, serverComunication);
 
                     if (response.IsSuccessStatusCode)
@@ -142,7 +143,11 @@ namespace DCMLocker.Server.Controllers
                         try
                         {
                             var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();
-
+                            Console.WriteLine("--------------------------------------");
+                            Console.WriteLine(serverResponse.Locker);
+                            Console.WriteLine(serverResponse.NroSerie);
+                            Console.WriteLine(serverResponse.Token);
+                            Console.WriteLine("--------------------------------------");
 
                             if (serverResponse.Locker != null)
                             {
@@ -153,24 +158,29 @@ namespace DCMLocker.Server.Controllers
                                 _Box = _boxAddr % 16;
 
                                 _driver.SetBox(_CU, _Box);
+                                Console.WriteLine(serverResponse.Locker);
+                                Console.WriteLine(1);
                                 return Ok(serverResponse.Locker);
                             }
                             else
                             {
-                                return Ok(response.StatusCode);
+                                Console.WriteLine(2);
+                                return StatusCode(203);
 
                             }
                         }
                         catch (Exception ex)
                         {
+                                Console.WriteLine(3);
                             Console.WriteLine(ex.ToString());
-                            return Ok(response.StatusCode);
+                            return StatusCode((int)response.StatusCode);
                         }
 
                         //await _chatHub.UpdateStatus("Connected");
                     }
                     else
                     {
+                                Console.WriteLine(4);
                         // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                         Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                         return StatusCode((int)response.StatusCode);

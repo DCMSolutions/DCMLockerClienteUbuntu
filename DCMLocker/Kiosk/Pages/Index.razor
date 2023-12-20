@@ -187,15 +187,15 @@ else if (screen == "connectionError")
             }
             catch (Exception er)
             {
-
+                Console.WriteLine(er.Message);
                 screen = er.Message;
                 StateHasChanged();
-
                 await Task.Delay(3000);
                 screen = "keyboard";
 
             }
         }
+        Console.WriteLine($"screen {screen}");
         token = new int[0];
 
         StateHasChanged();
