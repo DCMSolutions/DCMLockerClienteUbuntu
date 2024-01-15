@@ -43,7 +43,7 @@ namespace DCMLocker.Server.Background
 
                 try
                 {
-                    ServerStatus serverCommunication = new();
+                    ServerStatus  serverCommunication = new();
                     serverCommunication.NroSerie = _base.Config.LockerID;
                     List<TLockerMapDTO> newList = new();
 

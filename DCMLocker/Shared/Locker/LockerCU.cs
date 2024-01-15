@@ -44,4 +44,20 @@ namespace DCMLocker.Shared.Locker
         public LockerBox[] Box { get; set; }
 
     }
+
+    public class Tokenasd
+    {
+        public int idPK { get; set; }
+        public int idLockerRel { get; set; }
+        public int TamañoRel { get; set; }
+        public int? BoxRel { get; set; }
+        public DateTime FechaCreacion { get; set; }
+        public int? Token { get; set; }
+        public bool Confirmado { get; set; }
+        public DateTime FechaInicio { get; set; }
+        public DateTime FechaFin { get; set; }
+        public string Modo { get; set; }
+        public int Contador { get; set; }
+        
+    }
 }

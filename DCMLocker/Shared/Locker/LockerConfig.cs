@@ -49,7 +49,6 @@ namespace DCMLocker.Shared.Locker
 
     public class LockerEmail
     {
-
         public string From { get; set; }
         public string Asunto { get; set; }
         public string UserName { get; set; }
@@ -57,7 +56,6 @@ namespace DCMLocker.Shared.Locker
         public string Host { get; set; }
         public int Port { get; set; }
         public bool EnableSSL { get; set; }
-
     }
 
     public class LockerConfig
