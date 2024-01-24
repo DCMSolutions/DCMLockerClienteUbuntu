@@ -118,20 +118,20 @@ namespace DCMLocker.Server.BaseController
         }
         #endregion-----------------------------------------------------------
         #region GESTION DE USER BOX AUTOGESTIONABLES ------------------------
-        public bool BoxSelfManagement_IsFree(int boxaddr)
+        public bool BoxSelfManagement_IsFree(int IdBox)
         {
-            string fBox = $"box{boxaddr.ToString().PadLeft(3, '0')}.box";
+            string fBox = $"box{IdBox.ToString().PadLeft(3, '0')}.box";
             string sf = Path.Combine(PathBase, fBox);
             return !File.Exists(sf);
         }
-        public bool BoxSelfManagement_Reserve(int boxaddr, string user)
+        public bool BoxSelfManagement_Reserve(int IdBox, string user)
         {
-            string fBox = $"box{boxaddr.ToString().PadLeft(3, '0')}.box";
+            string fBox = $"box{IdBox.ToString().PadLeft(3, '0')}.box";
             string sf = Path.Combine(PathBase, fBox);
             if (!File.Exists(sf))
             {
                 File.AppendAllLines(sf, new string[] { user });
-                IndexBox[boxaddr].Add(user);
+                IndexBox[IdBox].Add(user);
                 return true;
             }
             else return false;

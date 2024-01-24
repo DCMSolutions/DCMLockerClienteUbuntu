@@ -24,7 +24,7 @@
                 <p>
                     Indica el id físico del box.
                 </p>
-                <RadzenDropDown @bind-Value=@Config.BoxAddr Data=@listaDeIdsDisponibles />
+                <RadzenDropDown @bind-Value=@Config.IdFisico Data=@listaDeIdsDisponibles  Disabled="@(listaDeIdsDisponibles.Count == 0)" />
             </div>
 
             <div class="form-group">
@@ -32,9 +32,9 @@
                 <p>
                     Indica el tamaño del box.
                 </p>
-                <RadzenDropDown @bind-Value=@Config.Size Data=@listaDeTamaños TextProperty="Name" ValueProperty="Name" Disabled="@(listaDeTamaños.Count == 0)">
+                <RadzenDropDown @bind-Value=@Config.Size Data=@listaDeTamaños TextProperty="Nombre" ValueProperty="Id" Disabled="@(listaDeTamaños.Count == 0)">
                     <Template>
-                        @((context as Tamaño).Name) @*: @((context as Tamaño).Alto) x @((context as Tamaño).Ancho)*@
+                        @((context as Tamaño).Nombre) @*: @((context as Tamaño).Alto) x @((context as Tamaño).Ancho)*@
                     </Template>
                 </RadzenDropDown>
             </div>
@@ -109,24 +109,13 @@ else
     protected override async Task OnInitializedAsync()
     {
         listaDeTamaños = await cliente.GetListaDeTamaños();
-        listaDeIdsDisponibles = await cliente.GetListaDeBoxAddrDisponibles();
-        Config = await cliente.GetBoxConfigPorId(idBox);
-        Config.Id = idBox;
-
-        //pinto tirar magia para que quede ordenada la lista cuando agregas el boxaddr que ya tenia el box
-        if (Config.BoxAddr != 0)
+        listaDeIdsDisponibles = await cliente.GetListaDeIdBoxDisponibles();
+        if (idBox != 0)
         {
-            // Use BinarySearch to find the index where the Config.BoxAddr should be inserted
-            int index = listaDeIdsDisponibles.BinarySearch(Config.BoxAddr);
-            // If the element is not found, BinarySearch returns the bitwise complement of the index, obvio capo
-            if (index < 0)
-            {
-                index = ~index; //??????????????????????? xd
-            }
-            // Insert the Config.BoxAddr at the correct position to maintain the order
-            listaDeIdsDisponibles.Insert(index, Config.BoxAddr);
+            Console.WriteLine(idBox);
+            Config = await cliente.GetBoxConfigPorId(idBox);
+            Config.IdBox = idBox;
         }
-
         typetemp = (int)Config.LockerType;
     }
 

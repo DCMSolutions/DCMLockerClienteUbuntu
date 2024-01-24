@@ -18,11 +18,11 @@
     <div class="tablacontent" style="position:relative;">
 
         <RadzenDataGrid AllowColumnResize="true" AllowAllowAlternatingRows="true" FilterMode="FilterMode.Simple" AllowSorting="false" PageSize="8"
-                    AllowPaging="true" ShowPagingSummary="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" EmptyText="No hay boxes asignados."
-                    Data="@listaDeBoxes" TItem="TLockerMap" LogicalFilterOperator="LogicalFilterOperator.Or" PagerHorizontalAlign="HorizontalAlign.Center">
+                        AllowPaging="true" ShowPagingSummary="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" EmptyText="No hay boxes asignados."
+                        Data="@listaDeBoxes" TItem="TLockerMap" LogicalFilterOperator="LogicalFilterOperator.Or" PagerHorizontalAlign="HorizontalAlign.Center">
             <Columns>
-                <RadzenDataGridColumn TItem="TLockerMap" Property="Id" Title="Box" />
-                <RadzenDataGridColumn TItem="TLockerMap" Property="BoxAddr" Title="Id físico" />
+                <RadzenDataGridColumn TItem="TLockerMap" Property="IdBox" Title="Box" />
+                <RadzenDataGridColumn TItem="TLockerMap" Property="IdFisico" Title="Id físico" />
                 <RadzenDataGridColumn TItem="TLockerMap" Property="Size" Title="Tamaño" />
                 <RadzenDataGridColumn TItem="TLockerMap" Property="Enable" Title="Habilitado">
                     <Template Context="data">
@@ -39,7 +39,7 @@
 
                 <RadzenDataGridColumn TItem="TLockerMap" Title="Editar">
                     <Template Context="data">
-                        <button class="btn" title="Editar" @onclick="() => gotoAddBox(data.Id)"><FeatherEdit Color="green" /></button>
+                        <button class="btn" title="Editar" @onclick="() => gotoAddBox(data.IdBox)"><FeatherEdit Color="green" /></button>
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="TLockerMap" Title="Eliminar">
@@ -70,18 +70,18 @@
         <br />
         <br />
         @*@if (users != null)
-        {
-            <h3>Usuarios del Box</h3>
-            <p>pulse sobre el usuario para ver sus propiedades.</p>
-            <ul>
-                @foreach (string s in users)
-                {
-                    var y = s;
-                    <li><a @onclick="(()=>GetUser(y))">@s</a></li>
-                }
-            </ul>
+    {
+    <h3>Usuarios del Box</h3>
+    <p>pulse sobre el usuario para ver sus propiedades.</p>
+    <ul>
+    @foreach (string s in users)
+    {
+    var y = s;
+    <li><a @onclick="(()=>GetUser(y))">@s</a></li>
+    }
+    </ul>
 
-        }*@
+    }*@
     </form>
 }
 
@@ -115,16 +115,11 @@
     protected override async Task OnInitializedAsync()
     {
         listaDeBoxes = await cliente.GetAllBoxConfig();
-        listaDeIdsSinAsignar = new();
+        listaDeIdsSinAsignar = await cliente.GetIdSinAsignar();
+        idBox = listaDeIdsSinAsignar.First();
 
-        for (int i = 1; i <= 255; i++)
-        {
-            if (!listaDeBoxes.Select(box => box.Id).ToList().Contains(i))
-            {
-                listaDeIdsSinAsignar.Add(i);
-            }
-        }
-        idBox = listaDeIdsSinAsignar.Min();
+
+
 
     }
 
@@ -133,7 +128,7 @@
         SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
             {
                 Title = "¿Está seguro?",
-                Text = $"Eliminará la informacion guardada del box {box.Id}",
+                Text = $"Eliminará la informacion guardada del box {box.IdBox}",
                 Icon = SweetAlertIcon.Warning,
                 ShowCancelButton = true,
                 ConfirmButtonText = "Eliminar",
@@ -153,7 +148,7 @@
     async Task deleteBox(TLockerMap box)
     {
         await cliente.DeleteBoxConfig(box);
-        listaDeBoxes = await cliente.GetAllBoxConfig();
+        await OnInitializedAsync();
         StateHasChanged();
     }
 

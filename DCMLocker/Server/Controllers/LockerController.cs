@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Dynamic.Core.Tokenizer;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
@@ -142,30 +143,33 @@ namespace DCMLocker.Server.Controllers
                     {
                         try
                         {
-                            var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();                          
-                            if (serverResponse.Locker != null)
+                            var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();
+                            if (serverResponse.Box != null)
                             {
                                 //recibo el id de mentira y tengo que abrir un box
-                                var _boxAddr = _base.LockerMap.LockerMaps.Where(b => b.Value.Id == Convert.ToInt32(serverResponse.Locker)).First().Value.BoxAddr;
+                                var _IdBox = _base.LockerMap.LockerMaps.Where(b => b.Value.IdBox == serverResponse.Box).First().Value.IdFisico;
+                                if (_IdBox != null)
+                                {
+                                    _CU = _IdBox.GetValueOrDefault() / 16;
+                                    _Box = _IdBox.GetValueOrDefault() % 16;
+                                    _driver.SetBox(_CU, _Box );
+                                    return Ok(serverResponse.Box);
+                                }
+                                else
+                                {
+                                    return StatusCode(203);
 
-                                _CU = _boxAddr / 16;
-                                _Box = _boxAddr % 16;
-
-                                _driver.SetBox(_CU, _Box);
-                                Console.WriteLine(serverResponse.Locker);
-                                Console.WriteLine(1);
-                                return Ok(serverResponse.Locker);
+                                }
                             }
                             else
                             {
-                                Console.WriteLine(2);
+
                                 return StatusCode(203);
 
                             }
                         }
                         catch (Exception ex)
                         {
-                                Console.WriteLine(3);
                             Console.WriteLine(ex.ToString());
                             return StatusCode((int)response.StatusCode);
                         }
@@ -174,7 +178,6 @@ namespace DCMLocker.Server.Controllers
                     }
                     else
                     {
-                                Console.WriteLine(4);
                         // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                         Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                         return StatusCode((int)response.StatusCode);
@@ -210,23 +213,16 @@ namespace DCMLocker.Server.Controllers
 
         //Cosas de tamaños
         [HttpGet("tamaño")]
-        public IActionResult GetDelTxtTamaños()
+        public async Task<IActionResult> GetTamaños()
         {
             try
             {
-                string sf = Path.Combine(_base.PathBase, "tamaños.ans");
+                //var path = $"{_base.Config.UrlServer}api/size";
+                Uri resultUri = new Uri(_base.Config.UrlServer, "api/size");
 
-                if (System.IO.File.Exists(sf))
-                {
-                    string content = System.IO.File.ReadAllText(sf);
-                    return Ok(content);
-                }
-                else
-                {
-                    List<Tamaño> emptyList = new List<Tamaño>();
-                    string emptyListJson = JsonSerializer.Serialize<List<Tamaño>>(emptyList);
-                    return Ok(emptyListJson); // devolver lista vacia si el archivo no existe.
-                }
+
+                var response = await _http.GetFromJsonAsync<List<Tamaño>>(resultUri);
+                return Ok(response);
             }
             catch
             {
@@ -394,18 +390,18 @@ namespace DCMLocker.Server.Controllers
                 }
                 else
                 {
-                    int boxAddr = (Box.CU << 4) + Box.Box;
+                    int IdBox = (Box.CU << 4) + Box.Box;
                     // verifico si el Box pertenece al usuario
                     if (!_base.LockerUser.Users[User.Identity.Name].IsLocked)
                     {
-                        bool Pertenese = _base.IsBoxUser(boxAddr, User.Identity.Name);
+                        bool Pertenese = _base.IsBoxUser(IdBox, User.Identity.Name);
                         if (Pertenese)
                         {
-                            if (!_base.LockerMap.LockerMaps[boxAddr].IsUserFixed)
+                            if (!_base.LockerMap.LockerMaps[IdBox].IsUserFixed)
                             {
-                                _base.BoxRemoveUser(boxAddr, User.Identity.Name);
+                                _base.BoxRemoveUser(IdBox, User.Identity.Name);
 
-                                DeleteToken(User.Identity.Name, _base.TokenBox(boxAddr.ToString()).ToString());
+                                DeleteToken(User.Identity.Name, _base.TokenBox(IdBox.ToString()).ToString());
 
 
 
@@ -452,15 +448,14 @@ namespace DCMLocker.Server.Controllers
         /// <summary>-----------------------------------------------------------------------
         /// Retorna una llave para la apertura del Box
         /// </summary>
-        /// <param name="BoxAddr"></param>
+        /// <param name="IdBox"></param>
         /// <returns></returns>-------------------------------------------------------------
         [HttpGet("GenerateTokenKey")]
         //[Authorize(Roles = "User")]
-        public string[] GenearateTokenKey(int BoxAddr)
+        public string[] GenearateTokenKey(int IdBox)
         {
-            string Token = _base.GetTokenBox(BoxAddr, "a@.");
-            //string Token = _base.GetTokenBox(BoxAddr, User.Identity.Name);
-            Console.WriteLine($"El token es {Token}");
+            string Token = _base.GetTokenBox(IdBox, "a@.");
+            //string Token = _base.GetTokenBox(IdBox, User.Identity.Name);
             return new string[] { Token };
         }
 
@@ -532,7 +527,6 @@ namespace DCMLocker.Server.Controllers
         {
 
             Console.WriteLine("-----------------------------------------------------------");
-            Console.WriteLine(newPass);
             try
             {
                 string filePath = Path.Combine(_base.PathBase, "adminHash.ans");
@@ -647,13 +641,13 @@ namespace DCMLocker.Server.Controllers
         /// <summary>--------------------------------------------------------------
         /// Retorna los usuarios de un box
         /// </summary>
-        /// <param name="boxaddr"></param>
+        /// <param name="IdBox"></param>
         /// <returns></returns>----------------------------------------------------
         [HttpGet("GetUserFromBox")]
         [Authorize(Roles = "Admin")]
-        public string[] GetUserFromBox(int boxaddr)
+        public string[] GetUserFromBox(int IdBox)
         {
-            return _base.UserFromBox(boxaddr);
+            return _base.UserFromBox(IdBox);
         }
         /// <summary>------------------------------------------------------------------------
         /// Buscador de usuarios
@@ -698,6 +692,7 @@ namespace DCMLocker.Server.Controllers
         [Authorize(Roles = "Admin")]
         public ActionResult SetLockerConfig([FromBody] LockerConfig data)
         {
+
             try
             {
                 _base.Config.LockerID = data.LockerID;
@@ -725,14 +720,14 @@ namespace DCMLocker.Server.Controllers
         /// <summary>--------------------------------------------------------------------
         ///  GetBoxConfig: Retorna la configuracion del Box
         /// </summary>
-        /// <param name="BoxAddr"></param>
+        /// <param name="IdBox"></param>
         /// <returns></returns>----------------------------------------------------------
         [HttpGet("GetBoxConfig")]
-        public TLockerMap GetBoxConfig(int BoxAddr)
+        public TLockerMap GetBoxConfig(int IdBox)
         {
-            if (_base.LockerMap.LockerMaps.ContainsKey(BoxAddr))
+            if (_base.LockerMap.LockerMaps.ContainsKey(IdBox))
             {
-                return _base.LockerMap.LockerMaps[BoxAddr];
+                return _base.LockerMap.LockerMaps[IdBox];
             }
             return null;
         }
@@ -743,7 +738,7 @@ namespace DCMLocker.Server.Controllers
             if (idBox == 0) return lockerVacio;
             foreach (var lockerMap in _base.LockerMap.LockerMaps.Values)
             {
-                if (lockerMap.Id == idBox)
+                if (lockerMap.IdBox == idBox)
                 {
                     return lockerMap;
                 }
@@ -754,7 +749,22 @@ namespace DCMLocker.Server.Controllers
         [HttpGet("GetAllBoxConfig")]
         public List<TLockerMap> GetAllBoxConfig()
         {
-            return _base.LockerMap.LockerMaps.Values.Where(x => x.Id != 0).OrderBy(x => x.Id).ToList();
+            var response = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).OrderBy(x => x.IdBox).ToList();
+            return response;
+        }
+        [HttpGet("GetIdSinAsignar")]
+        public List<int> GetIdSinAsignar()
+        {
+            //creo la lista con todos los id fisicos disponibles.
+            List<int> listaLibres = Enumerable.Range(1, 257).ToList();
+
+            //creo una lista con los usados
+            List<int> listaUsados = _base.LockerMap.LockerMaps.Values.ToList().Where(x => x.IdFisico != null).ToList().Select(x => x.IdBox).ToList();
+
+            // elimino los usados de los libres
+            listaLibres.RemoveAll(numero => listaUsados.Contains(numero));
+
+            return listaLibres;
         }
 
 
@@ -767,18 +777,47 @@ namespace DCMLocker.Server.Controllers
         [HttpPost("SetBoxConfig")]
         public ActionResult SetBoxConfig([FromBody] TLockerMap data)
         {
-            if (_base.LockerMap.LockerMaps.ContainsKey(data.BoxAddr))
+
+            //var box = _base.LockerMap.LockerMaps.Where(x => x.Value.Id == data.Id).First().Value;
+
+            //box.Enable = data.Enable;
+            //box.AlamrNro = data.AlamrNro;
+            //box.IsSensorPresent = data.IsSensorPresent;
+            //box.IsUserFixed = data.IsUserFixed;
+            //box.LockerType = data.LockerType;
+            //box.TempMax = data.TempMax;
+            //box.TempMin = data.TempMin;
+            //box.State = data.State;
+            //box.Size = data.Size;
+            //box.Id = data.Id;
+            //_base.LockerMap.Save(_base.PathBase);
+            //return Ok();
+            if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
             {
-                _base.LockerMap.LockerMaps[data.BoxAddr].Enable = data.Enable;
-                _base.LockerMap.LockerMaps[data.BoxAddr].AlamrNro = data.AlamrNro;
-                _base.LockerMap.LockerMaps[data.BoxAddr].IsSensorPresent = data.IsSensorPresent;
-                _base.LockerMap.LockerMaps[data.BoxAddr].IsUserFixed = data.IsUserFixed;
-                _base.LockerMap.LockerMaps[data.BoxAddr].LockerType = data.LockerType;
-                _base.LockerMap.LockerMaps[data.BoxAddr].TempMax = data.TempMax;
-                _base.LockerMap.LockerMaps[data.BoxAddr].TempMin = data.TempMin;
-                _base.LockerMap.LockerMaps[data.BoxAddr].State = data.State;
-                _base.LockerMap.LockerMaps[data.BoxAddr].Size = data.Size;
-                _base.LockerMap.LockerMaps[data.BoxAddr].Id = data.Id;
+                var box = _base.LockerMap.LockerMaps.Where(x => x.Key == data.IdBox).First().Value;
+
+                box.Enable = data.Enable;
+                box.AlamrNro = data.AlamrNro;
+                box.IsSensorPresent = data.IsSensorPresent;
+                box.IsUserFixed = data.IsUserFixed;
+                box.LockerType = data.LockerType;
+                box.TempMax = data.TempMax;
+                box.TempMin = data.TempMin;
+                box.State = data.State;
+                box.Size = data.Size;
+                box.IdFisico = data.IdFisico;
+                _base.LockerMap.Save(_base.PathBase);
+
+                //_base.LockerMap.LockerMaps[data.IdBox].Enable = data.Enable;
+                //_base.LockerMap.LockerMaps[data.IdBox].AlamrNro = data.AlamrNro;
+                //_base.LockerMap.LockerMaps[data.IdBox].IsSensorPresent = data.IsSensorPresent;
+                //_base.LockerMap.LockerMaps[data.IdBox].IsUserFixed = data.IsUserFixed;
+                //_base.LockerMap.LockerMaps[data.IdBox].LockerType = data.LockerType;
+                //_base.LockerMap.LockerMaps[data.IdBox].TempMax = data.TempMax;
+                //_base.LockerMap.LockerMaps[data.IdBox].TempMin = data.TempMin;
+                //_base.LockerMap.LockerMaps[data.IdBox].State = data.State;
+                //_base.LockerMap.LockerMaps[data.IdBox].Size = data.Size;
+                //_base.LockerMap.LockerMaps[data.IdBox].Id = data.Id;
                 _base.LockerMap.Save(_base.PathBase);
                 return Ok();
             }
@@ -792,18 +831,33 @@ namespace DCMLocker.Server.Controllers
         [HttpPost("DeleteBoxConfig")]
         public ActionResult DeleteBoxConfig([FromBody] TLockerMap data)
         {
-            if (_base.LockerMap.LockerMaps.ContainsKey(data.BoxAddr))
+            //if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
+            //{
+            //    _base.LockerMap.LockerMaps[data.IdBox].Enable = false;
+            //    _base.LockerMap.LockerMaps[data.IdBox].AlamrNro = data.AlamrNro;
+            //    _base.LockerMap.LockerMaps[data.IdBox].IsSensorPresent = data.IsSensorPresent;
+            //    _base.LockerMap.LockerMaps[data.IdBox].IsUserFixed = data.IsUserFixed;
+            //    _base.LockerMap.LockerMaps[data.IdBox].LockerType = data.LockerType;
+            //    _base.LockerMap.LockerMaps[data.IdBox].TempMax = data.TempMax;
+            //    _base.LockerMap.LockerMaps[data.IdBox].TempMin = data.TempMin;
+            //    _base.LockerMap.LockerMaps[data.IdBox].State = data.State;
+            //    _base.LockerMap.LockerMaps[data.IdBox].Size = 0;
+            //    _base.LockerMap.LockerMaps[data.IdBox].Id = 0;
+            //    _base.LockerMap.Save(_base.PathBase);
+            //    return Ok();
+            //}
+            if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
             {
-                _base.LockerMap.LockerMaps[data.BoxAddr].Enable = false;
-                _base.LockerMap.LockerMaps[data.BoxAddr].AlamrNro = data.AlamrNro;
-                _base.LockerMap.LockerMaps[data.BoxAddr].IsSensorPresent = data.IsSensorPresent;
-                _base.LockerMap.LockerMaps[data.BoxAddr].IsUserFixed = data.IsUserFixed;
-                _base.LockerMap.LockerMaps[data.BoxAddr].LockerType = data.LockerType;
-                _base.LockerMap.LockerMaps[data.BoxAddr].TempMax = data.TempMax;
-                _base.LockerMap.LockerMaps[data.BoxAddr].TempMin = data.TempMin;
-                _base.LockerMap.LockerMaps[data.BoxAddr].State = data.State;
-                _base.LockerMap.LockerMaps[data.BoxAddr].Size = "";
-                _base.LockerMap.LockerMaps[data.BoxAddr].Id = 0;
+                _base.LockerMap.LockerMaps[data.IdBox].Enable = false;
+                _base.LockerMap.LockerMaps[data.IdBox].AlamrNro = data.AlamrNro;
+                _base.LockerMap.LockerMaps[data.IdBox].IsSensorPresent = data.IsSensorPresent;
+                _base.LockerMap.LockerMaps[data.IdBox].IsUserFixed = data.IsUserFixed;
+                _base.LockerMap.LockerMaps[data.IdBox].LockerType = data.LockerType;
+                _base.LockerMap.LockerMaps[data.IdBox].TempMax = data.TempMax;
+                _base.LockerMap.LockerMaps[data.IdBox].TempMin = data.TempMin;
+                _base.LockerMap.LockerMaps[data.IdBox].State = data.State;
+                _base.LockerMap.LockerMaps[data.IdBox].Size = 0;
+                _base.LockerMap.LockerMaps[data.IdBox].IdFisico = null;
                 _base.LockerMap.Save(_base.PathBase);
                 return Ok();
             }
@@ -898,7 +952,7 @@ namespace DCMLocker.Server.Controllers
                     //Busco todas las cajas fijas
                     if (_base.LockerMap.LockerMaps[box].Enable)
                     {
-                        lista.Add(new BoxState() { Box = _base.LockerMap.LockerMaps[box].BoxAddr, IsAssigned = false, IsFixed = true });
+                        lista.Add(new BoxState() { Box = _base.LockerMap.LockerMaps[box].IdBox, IsAssigned = false, IsFixed = true });
                     }
                     //Verifico si estan ocupadas mediante el indice
 
@@ -919,29 +973,18 @@ namespace DCMLocker.Server.Controllers
             return new BoxState[0];
         }
 
-        [HttpGet("GetIdBoxAddrList")]
-        public List<int> GetIdBoxAddrList()
+        [HttpGet("GetIdIdBoxList")]
+        public List<int> GetIdIdBoxList()
         {
-            List<int> listaLibres = new List<int>();
+            //creo la lista con todos los id fisicos disponibles.
+            List<int> listaLibres = Enumerable.Range(0, 257).ToList();
 
-            try
-            {
-                for (var i = 1; i < _base.LockerMap.LockerMaps.Count; i++)
-                {
-                    listaLibres.Add(i);
-                }
-                foreach (var locker in _base.LockerMap.LockerMaps.Values)
-                {
-                    if (locker.Id != 0)
-                    {
-                        listaLibres.Remove(locker.BoxAddr);
-                    }
-                }
-            }
-            catch (Exception er)
-            {
-                Console.WriteLine(er.Message);
-            }
+            //creo una lista con los usados
+            List<int> listaUsados = _base.LockerMap.LockerMaps.Values.ToList().Where(x => x.IdFisico == null).ToList().Select(x => x.IdBox).ToList();
+
+            // elimino los usados de los libres
+            listaLibres.RemoveAll(numero => !listaUsados.Contains(numero));
+
             return listaLibres;
         }
 

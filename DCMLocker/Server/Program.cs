@@ -30,10 +30,10 @@ namespace DCMLocker.Server
                 {
 
                     services.AddHostedService<DCMLockerController>();
+                    services.AddSingleton<IDCMLockerController, DCMLockerConector>();
                     services.AddHostedService<DCMServerConnection>();
                     services.AddSingleton<ServerHub>();
 
-                    services.AddSingleton<IDCMLockerController, DCMLockerConector>();
                     
                 });
     }

@@ -9,7 +9,7 @@ namespace DCMLocker.Server.BaseController
 {
     public class TLockerBoxUsed
     {
-        public int BoxAddr { get; set; }
+        public int IdBox { get; set; }
         public string User { get; set; }
         public DateTime DTCreate { get; set; }
     }
@@ -62,7 +62,7 @@ namespace DCMLocker.Server.BaseController
                 {
                     TLockerBoxUsedContent r = new TLockerBoxUsedContent();
                     r.BoxUsed = new Dictionary<int, TLockerBoxUsed>();
-                    r.BoxUsed.Add(15, new TLockerBoxUsed() { BoxAddr=15, User="INVITADO", DTCreate= DateTime.Now });
+                    r.BoxUsed.Add(15, new TLockerBoxUsed() { IdBox=15, User="INVITADO", DTCreate= DateTime.Now });
                     r.Save(Path);
                     return r;
                 }

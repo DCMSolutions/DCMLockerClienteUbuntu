@@ -137,9 +137,9 @@ namespace DCMLocker.Kiosk.Cliente
         /// <summary>---------------------------------------------------------------------
         ///   Solicitud de configuracion de caja
         /// </summary>
-        /// <param name="BoxAddr"></param>
+        /// <param name="IdBox"></param>
         /// <returns></returns>-----------------------------------------------------------
-        public async Task<TLockerMap> GetBoxConfig(int BoxAddr)
+        public async Task<TLockerMap> GetBoxConfig(int IdBox)
         {
             TLockerMap retorno = null;
             var token = await _auth.GetTokenAsync();
@@ -150,7 +150,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
             try
             {
-                retorno = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfig?BoxAddr={BoxAddr}");
+                retorno = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfig?IdBox={IdBox}");
                 return retorno;
             }
             catch (HttpRequestException er)
@@ -312,7 +312,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
             return new string[0];
         }
-        public async Task<string[]> SearchUserFromBox(int boxaddr)
+        public async Task<string[]> SearchUserFromBox(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -322,7 +322,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
             try
             {
-                return await _cliente.GetFromJsonAsync<string[]>($"Locker/GetUserFromBox?boxaddr={boxaddr}");
+                return await _cliente.GetFromJsonAsync<string[]>($"Locker/GetUserFromBox?IdBox={IdBox}");
             }
             catch (HttpRequestException er)
             {
@@ -554,7 +554,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
 
         }
-        public async Task<bool> BoxesSeftManagementReserve(int boxaddr)
+        public async Task<bool> BoxesSeftManagementReserve(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -565,7 +565,7 @@ namespace DCMLocker.Kiosk.Cliente
             try
             {
                 Console.WriteLine("Box en reserva");
-                var r = await _cliente.PostAsJsonAsync<int>("Locker/BoxSelfManagementReserve", boxaddr);
+                var r = await _cliente.PostAsJsonAsync<int>("Locker/BoxSelfManagementReserve", IdBox);
                 if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
                 else return false;
             }
@@ -591,7 +591,7 @@ namespace DCMLocker.Kiosk.Cliente
         /// Genera Token de acceso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
-        public async Task<string> GenerateTokenKey(int BoxAddr)
+        public async Task<string> GenerateTokenKey(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -603,7 +603,7 @@ namespace DCMLocker.Kiosk.Cliente
             {
                 Console.WriteLine("TOKEN--------");
 
-                var s = await _cliente.GetFromJsonAsync<string[]>($"Locker/GenerateTokenKey?BoxAddr={BoxAddr}");
+                var s = await _cliente.GetFromJsonAsync<string[]>($"Locker/GenerateTokenKey?IdBox={IdBox}");
                 Console.WriteLine(s);
                 Console.WriteLine(s[0]);
 
@@ -647,6 +647,9 @@ namespace DCMLocker.Kiosk.Cliente
 
                 var r = await _cliente.PostAsJsonAsync<string>("Locker/Token", tokenkey);
                 Console.WriteLine($"status code is {r.StatusCode}");
+                var response =  r.Content;
+                Console.WriteLine($"response code is { response}");
+                Console.WriteLine($"response code is {await response.ReadAsStringAsync()}");
                 //(er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
                 if (r.StatusCode == System.Net.HttpStatusCode.Forbidden|| r.StatusCode == System.Net.HttpStatusCode.BadRequest|| r.StatusCode == System.Net.HttpStatusCode.NotFound|| r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout) throw new Exception("connectionError");
                 if (r.StatusCode == System.Net.HttpStatusCode.OK) return await r.Content.ReadFromJsonAsync<int>();

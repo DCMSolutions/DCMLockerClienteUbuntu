@@ -61,7 +61,7 @@ namespace DCMLocker.Server.BaseController
                     r.LockerMaps = new Dictionary<int, TLockerMap>();
                     for (int x = 0; x < 256; x++)
                     {
-                        r.LockerMaps.Add(x, new TLockerMap() { BoxAddr = x, Enable = false, IsUserFixed = false, IsSensorPresent = false, AlamrNro = 0, LockerType = TLockerMap.EnumLockerType.NORMAL, TempMin = 0, TempMax = 0, State="Libre",Size="",Id=0}); ;
+                        r.LockerMaps.Add(x, new TLockerMap() { IdBox = x, Enable = false, IsUserFixed = false, IsSensorPresent = false, AlamrNro = 0, LockerType = TLockerMap.EnumLockerType.NORMAL, TempMin = 0, TempMax = 0, State="Libre",Size=0,IdFisico=null}); ;
                     }
                     r.Save(Path);
                     return r;

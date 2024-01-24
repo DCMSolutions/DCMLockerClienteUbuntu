@@ -20,17 +20,15 @@ namespace DCMLocker.Shared.Locker
     public class Tamaño
     {
         public int Id { get; set; }
-        [Required(ErrorMessage = "El nombre es obligatorio.")]
-        public string Name { get; set; }
-        [Required(ErrorMessage = "El alto es obligatorio.")]
-        [Range(1, int.MaxValue, ErrorMessage = "El alto debe ser mayor que 0.")]
-        public int Alto { get; set; }
-        [Required(ErrorMessage = "El ancho es obligatorio.")]
-        [Range(1, int.MaxValue, ErrorMessage = "El ancho debe ser mayor que 0.")]
-        public int Ancho { get; set; }
-        [Required(ErrorMessage = "La profundidad es obligatorio.")]
-        [Range(1, int.MaxValue, ErrorMessage = "La profundidad debe ser mayor que 0.")]
-        public int Profundidad { get; set; }
+
+        public string? Nombre { get; set; }
+
+        public int? Alto { get; set; }
+
+        public int? Ancho { get; set; }
+
+        public int? Profundidad { get; set; }
+        
 
     }
 
@@ -72,7 +70,7 @@ namespace DCMLocker.Shared.Locker
     {
        
         public enum EnumLockerType { NORMAL = 0, COOL = 1, TEMP = 2 }
-        public int BoxAddr { get; set; }
+        public int IdBox { get; set; }
         /// <summary>
         /// Indica si el Box esta habilitado para usarse
         /// </summary>
@@ -103,7 +101,7 @@ namespace DCMLocker.Shared.Locker
         /// </summary>
         public int AlamrNro { get; set; }
         public string State { get; set; }
-        public string Size { get; set; }
-        public int Id { get; set; }
+        public int Size { get; set; }
+        public int? IdFisico { get; set; }
     }
 }

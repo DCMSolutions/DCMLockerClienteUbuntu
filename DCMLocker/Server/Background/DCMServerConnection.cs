@@ -47,16 +47,16 @@ namespace DCMLocker.Server.Background
                     serverCommunication.NroSerie = _base.Config.LockerID;
                     List<TLockerMapDTO> newList = new();
 
-                    var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.Id != 0 && x.Enable).ToList();
+                    var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
                     foreach (var locker in lockers)
                     {
-                        var cu = locker.BoxAddr / 16;
-                        var box = locker.BoxAddr % 16;
+                        var cu = locker.IdBox / 16;
+                        var box = locker.IdBox % 16;
                         CU status = _driver.GetCUState(cu);
                         var _puerta = status.DoorStatus[box];
                         var _ocupacion = status.SensorStatus[box];
                         TLockerMapDTO lockerDTO = new();
-                        lockerDTO.Id = locker.Id;
+                        lockerDTO.Id = locker.IdBox;
                         lockerDTO.Enable = locker.Enable;
                         lockerDTO.AlamrNro = locker.AlamrNro;
                         lockerDTO.Size = locker.Size;

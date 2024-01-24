@@ -1,6 +1,7 @@
 ﻿@page "/configuracion"
 @using DCMLocker.Shared
 @using DCMLocker.Shared.Locker
+@using System.Net.NetworkInformation
 @inject DCMLocker.Client.Cliente.TLockerCliente cliente
 @inject NotificationService NotificationService
 @inject NavigationManager nav
@@ -29,7 +30,7 @@
                 <label><strong>URL Servidor</strong></label>
                 <p>Configuración de la dirección que corresponde al servidor central donde se conectará el Locker.</p>
                 <div style="display: flex; justify-content: center;">
-                <input type="text" @bind="Config.UrlServer" class="form-control form-control-user col-6" />
+                    <input type="text" @bind="url" class="form-control form-control-user col-6" />
                 </div>
             </div>
             <hr><br>
@@ -154,36 +155,56 @@ else
 
 @code {
     LockerConfig Config;
+    string url;
     protected override async Task OnInitializedAsync()
     {
         Config = await cliente.GetConfig();
+        url = $"{Config.UrlServer}";
     }
 
     async Task Save()
     {
-        bool r = await cliente.SetConfig(Config);
-        if (r)
+        try
         {
-            //notificamos que los cambios fueron registrados
-            ShowNotification(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Exito",
-                    Detail = "Se guardaron con éxito los cambios.",
-                    Duration = 4000
-                });
+            var uriBuilder = new UriBuilder(url);
+            Config.UrlServer = uriBuilder.Uri;
+            // Config.UrlServer = new Uri($"http://{Config.UrlServer.IdnHost}:{Config.UrlServer.Port}/");
+            bool r = await cliente.SetConfig(Config);
+            if (r)
+            {
+                //notificamos que los cambios fueron registrados
+                ShowNotification(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Exito",
+                        Detail = "Se guardaron con éxito los cambios.",
+                        Duration = 4000
+                    });
+            }
+            else
+            {
+                //advertencia porque no se grabaron los datos
+                ShowNotification(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Error",
+                        Detail = "Hubo un error en el guardado.",
+                        Duration = 4000
+                    });
+            }
         }
-        else
+        catch
         {
-            //advertencia porque no se grabaron los datos
             ShowNotification(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Error,
                     Summary = "Error",
-                    Detail = "Hubo un error en el guardado.",
+                    Detail = "Url del servidor no válido.",
                     Duration = 4000
                 });
+
         }
+
     }
 
     void ShowNotification(NotificationMessage message)

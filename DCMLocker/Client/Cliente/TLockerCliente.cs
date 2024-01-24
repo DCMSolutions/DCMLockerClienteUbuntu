@@ -273,11 +273,11 @@ namespace DCMLocker.Client.Cliente
         ///  Configuracion de ids boxes
         /// </summary>
         /// <returns></returns>-----------------------------------------------------------
-        public async Task<List<int>> GetListaDeBoxAddrDisponibles()
+        public async Task<List<int>> GetListaDeIdBoxDisponibles()
         {
             try
             {
-                var oRta = await _cliente.GetFromJsonAsync<List<int>>("Locker/GetIdBoxAddrList");
+                var oRta = await _cliente.GetFromJsonAsync<List<int>>("Locker/GetIdIdBoxList");
                 return oRta;
             }
             catch (Exception ex)
@@ -298,13 +298,25 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+        public async Task<List<int>> GetIdSinAsignar()
+        {
+            try
+            {
+                var oRta = await _cliente.GetFromJsonAsync<List<int>>("Locker/GetIdSinAsignar");
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
 
         /// <summary>---------------------------------------------------------------------
         ///   Solicitud de configuracion de caja
         /// </summary>
-        /// <param name="BoxAddr"></param>
+        /// <param name="IdBox"></param>
         /// <returns></returns>-----------------------------------------------------------
-        public async Task<TLockerMap> GetBoxConfig(int BoxAddr)
+        public async Task<TLockerMap> GetBoxConfig(int IdBox)
         {
             TLockerMap retorno = null;
             var token = await _auth.GetTokenAsync();
@@ -315,7 +327,7 @@ namespace DCMLocker.Client.Cliente
             }
             try
             {
-                retorno = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfig?BoxAddr={BoxAddr}");
+                retorno = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfig?IdBox={IdBox}");
                 return retorno;
             }
             catch (HttpRequestException er)
@@ -603,7 +615,7 @@ namespace DCMLocker.Client.Cliente
             }
             return false;
         }
-        public async Task<string[]> SearchUserFromBox(int boxaddr)
+        public async Task<string[]> SearchUserFromBox(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -613,7 +625,7 @@ namespace DCMLocker.Client.Cliente
             }
             try
             {
-                return await _cliente.GetFromJsonAsync<string[]>($"Locker/GetUserFromBox?boxaddr={boxaddr}");
+                return await _cliente.GetFromJsonAsync<string[]>($"Locker/GetUserFromBox?IdBox={IdBox}");
             }
             catch (HttpRequestException er)
             {
@@ -845,7 +857,7 @@ namespace DCMLocker.Client.Cliente
             }
 
         }
-        public async Task<bool> BoxesSeftManagementReserve(int boxaddr)
+        public async Task<bool> BoxesSeftManagementReserve(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -856,7 +868,7 @@ namespace DCMLocker.Client.Cliente
             try
             {
                 Console.WriteLine("Box en reserva");
-                var r = await _cliente.PostAsJsonAsync<int>("Locker/BoxSelfManagementReserve", boxaddr);
+                var r = await _cliente.PostAsJsonAsync<int>("Locker/BoxSelfManagementReserve", IdBox);
                 if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
                 else return false;
             }
@@ -882,7 +894,7 @@ namespace DCMLocker.Client.Cliente
         /// Genera Token de acceso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
-        public async Task<string> GenerateTokenKey(int BoxAddr)
+        public async Task<string> GenerateTokenKey(int IdBox)
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -894,7 +906,7 @@ namespace DCMLocker.Client.Cliente
             {
                 Console.WriteLine("TOKEN--------");
 
-                var s = await _cliente.GetFromJsonAsync<string[]>($"Locker/GenerateTokenKey?BoxAddr={BoxAddr}");
+                var s = await _cliente.GetFromJsonAsync<string[]>($"Locker/GenerateTokenKey?IdBox={IdBox}");
                 Console.WriteLine(s);
                 Console.WriteLine(s[0]);
 

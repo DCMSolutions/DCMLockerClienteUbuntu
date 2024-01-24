@@ -21,7 +21,7 @@ namespace DCMLocker.Shared.Locker
         public string Token { get; set; }
     }
 
-    public class BoxAddr
+    public class IdBox
     {
         public int CU { get; set; }
         public int Box { get; set; }
