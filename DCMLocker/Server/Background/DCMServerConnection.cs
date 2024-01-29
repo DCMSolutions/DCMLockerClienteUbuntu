@@ -1,6 +1,7 @@
 ﻿using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Hubs;
 using DCMLocker.Shared;
+using DCMLocker.Shared.Locker;
 using DCMLockerCommunication;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,18 +44,24 @@ namespace DCMLocker.Server.Background
 
                 try
                 {
-                    ServerStatus  serverCommunication = new();
+                    ServerStatus serverCommunication = new();
                     serverCommunication.NroSerie = _base.Config.LockerID;
                     List<TLockerMapDTO> newList = new();
 
                     var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
                     foreach (var locker in lockers)
                     {
-                        var cu = locker.IdBox / 16;
-                        var box = locker.IdBox % 16;
-                        CU status = _driver.GetCUState(cu);
-                        var _puerta = status.DoorStatus[box];
-                        var _ocupacion = status.SensorStatus[box];
+                        bool _puerta = false;
+                        bool _ocupacion = false;
+                        if (locker.IdFisico != null)
+                        {
+                            var _CU = locker.IdFisico.GetValueOrDefault() / 16;
+                            var _Box = locker.IdFisico.GetValueOrDefault() % 16;
+
+                            CU status = _driver.GetCUState(_CU);
+                            _puerta = status.DoorStatus[_Box];
+                            _ocupacion = status.SensorStatus[_Box];
+                        }
                         TLockerMapDTO lockerDTO = new();
                         lockerDTO.Id = locker.IdBox;
                         lockerDTO.Enable = locker.Enable;

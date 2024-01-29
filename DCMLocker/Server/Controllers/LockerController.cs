@@ -776,22 +776,7 @@ namespace DCMLocker.Server.Controllers
         /// <returns></returns>------------------------------------------------------------
         [HttpPost("SetBoxConfig")]
         public ActionResult SetBoxConfig([FromBody] TLockerMap data)
-        {
-
-            //var box = _base.LockerMap.LockerMaps.Where(x => x.Value.Id == data.Id).First().Value;
-
-            //box.Enable = data.Enable;
-            //box.AlamrNro = data.AlamrNro;
-            //box.IsSensorPresent = data.IsSensorPresent;
-            //box.IsUserFixed = data.IsUserFixed;
-            //box.LockerType = data.LockerType;
-            //box.TempMax = data.TempMax;
-            //box.TempMin = data.TempMin;
-            //box.State = data.State;
-            //box.Size = data.Size;
-            //box.Id = data.Id;
-            //_base.LockerMap.Save(_base.PathBase);
-            //return Ok();
+        { 
             if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
             {
                 var box = _base.LockerMap.LockerMaps.Where(x => x.Key == data.IdBox).First().Value;
@@ -807,18 +792,6 @@ namespace DCMLocker.Server.Controllers
                 box.Size = data.Size;
                 box.IdFisico = data.IdFisico;
                 _base.LockerMap.Save(_base.PathBase);
-
-                //_base.LockerMap.LockerMaps[data.IdBox].Enable = data.Enable;
-                //_base.LockerMap.LockerMaps[data.IdBox].AlamrNro = data.AlamrNro;
-                //_base.LockerMap.LockerMaps[data.IdBox].IsSensorPresent = data.IsSensorPresent;
-                //_base.LockerMap.LockerMaps[data.IdBox].IsUserFixed = data.IsUserFixed;
-                //_base.LockerMap.LockerMaps[data.IdBox].LockerType = data.LockerType;
-                //_base.LockerMap.LockerMaps[data.IdBox].TempMax = data.TempMax;
-                //_base.LockerMap.LockerMaps[data.IdBox].TempMin = data.TempMin;
-                //_base.LockerMap.LockerMaps[data.IdBox].State = data.State;
-                //_base.LockerMap.LockerMaps[data.IdBox].Size = data.Size;
-                //_base.LockerMap.LockerMaps[data.IdBox].Id = data.Id;
-                _base.LockerMap.Save(_base.PathBase);
                 return Ok();
             }
             return BadRequest();
@@ -831,21 +804,7 @@ namespace DCMLocker.Server.Controllers
         [HttpPost("DeleteBoxConfig")]
         public ActionResult DeleteBoxConfig([FromBody] TLockerMap data)
         {
-            //if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
-            //{
-            //    _base.LockerMap.LockerMaps[data.IdBox].Enable = false;
-            //    _base.LockerMap.LockerMaps[data.IdBox].AlamrNro = data.AlamrNro;
-            //    _base.LockerMap.LockerMaps[data.IdBox].IsSensorPresent = data.IsSensorPresent;
-            //    _base.LockerMap.LockerMaps[data.IdBox].IsUserFixed = data.IsUserFixed;
-            //    _base.LockerMap.LockerMaps[data.IdBox].LockerType = data.LockerType;
-            //    _base.LockerMap.LockerMaps[data.IdBox].TempMax = data.TempMax;
-            //    _base.LockerMap.LockerMaps[data.IdBox].TempMin = data.TempMin;
-            //    _base.LockerMap.LockerMaps[data.IdBox].State = data.State;
-            //    _base.LockerMap.LockerMaps[data.IdBox].Size = 0;
-            //    _base.LockerMap.LockerMaps[data.IdBox].Id = 0;
-            //    _base.LockerMap.Save(_base.PathBase);
-            //    return Ok();
-            //}
+            
             if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
             {
                 _base.LockerMap.LockerMaps[data.IdBox].Enable = false;
@@ -980,10 +939,10 @@ namespace DCMLocker.Server.Controllers
             List<int> listaLibres = Enumerable.Range(0, 257).ToList();
 
             //creo una lista con los usados
-            List<int> listaUsados = _base.LockerMap.LockerMaps.Values.ToList().Where(x => x.IdFisico == null).ToList().Select(x => x.IdBox).ToList();
+            List<int?> listaUsados = _base.LockerMap.LockerMaps.Values.ToList().Where(x => x.IdFisico != null).ToList().Select(x => x.IdFisico).ToList();
 
             // elimino los usados de los libres
-            listaLibres.RemoveAll(numero => !listaUsados.Contains(numero));
+            listaLibres.RemoveAll(numero => listaUsados.Contains(numero));
 
             return listaLibres;
         }
