@@ -23,7 +23,11 @@
             <Columns>
                 <RadzenDataGridColumn TItem="TLockerMap" Property="IdBox" Title="Box" />
                 <RadzenDataGridColumn TItem="TLockerMap" Property="IdFisico" Title="Id físico" />
-                <RadzenDataGridColumn TItem="TLockerMap" Property="Size" Title="Tamaño" />
+                <RadzenDataGridColumn TItem="TLockerMap" Property="Size" Title="Tamaño" >
+                    <Template Context="data">
+                        @(listaDeTamaños.FirstOrDefault(x => x.Id == data.Size)?.Nombre ?? "No encontrado")
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn TItem="TLockerMap" Property="Enable" Title="Habilitado">
                     <Template Context="data">
                         @if (data.Enable)
@@ -91,6 +95,7 @@
 
     [CascadingParameter] public IModalService Modal { get; set; } = default!;
 
+    List<Tamaño> listaDeTamaños;
     List<TLockerMap> listaDeBoxes;
     List<int> listaDeIdsSinAsignar = new();
 
@@ -114,12 +119,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        listaDeTamaños = await cliente.GetListaDeTamaños();
         listaDeBoxes = await cliente.GetAllBoxConfig();
         listaDeIdsSinAsignar = await cliente.GetIdSinAsignar();
         idBox = listaDeIdsSinAsignar.First();
-
-
-
 
     }
 
