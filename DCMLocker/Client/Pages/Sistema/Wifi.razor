@@ -1,14 +1,6 @@
 ﻿@page "/wifi"
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
 
 
-
-@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
-@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
 <h3>Red</h3>
 @if (Ips != null)
 {

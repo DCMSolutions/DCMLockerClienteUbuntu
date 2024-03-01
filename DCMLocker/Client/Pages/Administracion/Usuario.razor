@@ -1,8 +1,6 @@
 ﻿@page "/Usuario/{id}"
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@inject NavigationManager nav
+
+
 <h3>Usuario</h3>
 <p>@realid</p>
 
@@ -72,8 +70,8 @@
     private async Task ActualizarInfo()
     {
         Console.WriteLine("Datos actualizando..");
-        perfil = await cliente.GetBoxFromUser(realid);
-        Boxes = await cliente.GetBoxesFixedState();
+        perfil = await Cliente.GetBoxFromUser(realid);
+        Boxes = await Cliente.GetBoxesFixedState();
         Console.WriteLine("Datos actualizados");
     }
 
@@ -92,7 +90,7 @@
         {
             Msn = "";
             ErrorMsn = "";
-            bool r = await cliente.SetUserToBox(realid, box);
+            bool r = await Cliente.SetUserToBox(realid, box);
             if (r)
             {
                 //actualizar
@@ -117,7 +115,7 @@
         try
         {
             ErrorMsn = "";
-            bool r = await cliente.SetUserRemoveBox(realid, box);
+            bool r = await Cliente.SetUserRemoveBox(realid, box);
             if (r)
             {
                 //actualizar
@@ -141,11 +139,11 @@
         try
         {
             ErrorMsn = "";
-            bool r = await cliente.SetLockUser(realid);
+            bool r = await Cliente.SetLockUser(realid);
             if (r)
             {
                 //actualizar
-                perfil = await cliente.GetBoxFromUser(realid);
+                perfil = await Cliente.GetBoxFromUser(realid);
             }
             else
             {

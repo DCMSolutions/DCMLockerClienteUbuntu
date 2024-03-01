@@ -1,9 +1,5 @@
 ﻿@page "/UsersAdmin"
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@inject NavigationManager Nav
-@inject HttpClient http
+
 
 <style>
     @@media print {
@@ -118,7 +114,7 @@
     protected override async Task OnInitializedAsync()
     {
 
-        users = await cliente.GetAllUsers();
+        users = await Cliente.GetAllUsers();
 
     }
     async void Search()
@@ -126,7 +122,7 @@
         usuarios = null;
         if (!string.IsNullOrEmpty(keyword))
         {
-            usuarios = await cliente.Search(keyword);
+            usuarios = await Cliente.Search(keyword);
 
             StateHasChanged();
         }
@@ -134,7 +130,7 @@
 
     void GetUser(string s)
     {
-        Nav.NavigateTo($"/Usuario/{s.Replace("@", "%40").Replace(".", "%_")}");
+        NavigationManager.NavigateTo($"/Usuario/{s.Replace("@", "%40").Replace(".", "%_")}");
     }
 
     public async Task alertaDelete(string user)

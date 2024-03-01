@@ -1,6 +1,5 @@
 ﻿@page "/test"
-@using Microsoft.AspNetCore.SignalR.Client
-@inject NavigationManager NavigationManager
+
 @implements IAsyncDisposable
 
 Status is: @Status
@@ -18,6 +17,7 @@ Status is: @Status
     private string userInput;
     private string messageInput;
     private string Status;
+
     protected override async Task OnInitializedAsync()
     {
         hubConnection = new HubConnectionBuilder()

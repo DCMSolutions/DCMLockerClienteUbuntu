@@ -1,14 +1,5 @@
 ﻿@page "/Verificar"
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
 
-
-
-@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
-@inject DCMLocker.Client.Authentication.TAuthCliente Cliente
 
 <h3>Verificar Email</h3>
 @if (!string.IsNullOrEmpty(ErrorMsn))
@@ -48,8 +39,8 @@
         {
             Console.WriteLine("VERIFICAR");
             ErrorMsn = "";
-            bool r = await Cliente.Verificar(nro.ToString());
-            if (r) Navigation.NavigateTo("/User");
+            bool r = await ClienteAuth.Verificar(nro.ToString());
+            if (r) NavigationManager.NavigateTo("/User");
             else
             {
                 Console.WriteLine("ff");
@@ -68,7 +59,7 @@
         {
             ErrorMsn = "";
             Msn = "";
-            bool r = await Cliente.SendConfirmation();
+            bool r = await ClienteAuth.SendConfirmation();
             if (r) Msn = "Verifique su cuente de Email enviado";
             else { ErrorMsn = "No se pudo enviar confirmación"; }
 

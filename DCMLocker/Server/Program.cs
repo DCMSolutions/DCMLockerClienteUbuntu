@@ -30,6 +30,12 @@ namespace DCMLocker.Server
                 {
 
                     services.AddHostedService<DCMLockerController>();
+
+                    services.AddHostedService<AppInitializationService>();
+                    services.AddSingleton<AppInitializationService>();
+
+                    services.AddSingleton<QRReaderHub>();
+
                     services.AddSingleton<IDCMLockerController, DCMLockerConector>();
                     services.AddHostedService<DCMServerConnection>();
                     services.AddSingleton<ServerHub>();

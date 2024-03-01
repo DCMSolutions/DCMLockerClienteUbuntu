@@ -44,7 +44,7 @@ namespace DCMLocker.Server
             //    options.KnownProxies.Add(IPAddress.Parse("192.168.0.5"));
             //});
 
-            // SignalR
+            // SignalR 
             services.AddSignalR();
             
             services.AddControllersWithViews();
@@ -85,6 +85,7 @@ namespace DCMLocker.Server
         {
             // SignalR
             app.UseResponseCompression();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -197,17 +198,12 @@ namespace DCMLocker.Server
                     second.UseEndpoints(endpoints =>
                     {
                         endpoints.MapControllers();
+                        endpoints.MapRazorPages();
+                        endpoints.MapHub<QRReaderHub>("/KioskApp/QRReaderHub");
                         endpoints.MapFallbackToFile("/KioskApp/{*path:nonfile}",
                         "KioskApp/index.html");
                     });
                 });
-            
-
-
-
-
-
-
             
             // app.UseHttpsRedirection();
             app.UseBlazorFrameworkFiles();

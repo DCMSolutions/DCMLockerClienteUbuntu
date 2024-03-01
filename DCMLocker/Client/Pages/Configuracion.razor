@@ -1,10 +1,6 @@
 ﻿@page "/configuracion"
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@using System.Net.NetworkInformation
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@inject NotificationService NotificationService
-@inject NavigationManager nav
+
+
 <h1>Locker</h1>
 <label><strong>Configuración</strong></label>
 
@@ -158,7 +154,7 @@ else
     string url;
     protected override async Task OnInitializedAsync()
     {
-        Config = await cliente.GetConfig();
+        Config = await Cliente.GetConfig();
         url = $"{Config.UrlServer}";
     }
 
@@ -169,7 +165,7 @@ else
             var uriBuilder = new UriBuilder(url);
             Config.UrlServer = uriBuilder.Uri;
             // Config.UrlServer = new Uri($"http://{Config.UrlServer.IdnHost}:{Config.UrlServer.Port}/");
-            bool r = await cliente.SetConfig(Config);
+            bool r = await Cliente.SetConfig(Config);
             if (r)
             {
                 //notificamos que los cambios fueron registrados
@@ -214,10 +210,10 @@ else
 
     async Task gotoWifi()
     {
-        nav.NavigateTo("/wifi");
+        NavigationManager.NavigateTo("/wifi");
     }
     async Task gotoEthernet()
     {
-        nav.NavigateTo("/ethernet");
+        NavigationManager.NavigateTo("/ethernet");
     }
 }

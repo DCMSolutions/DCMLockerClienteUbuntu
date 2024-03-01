@@ -1,8 +1,5 @@
 ﻿@page "/BoxesAdmin/{idBox:int}"
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@inject NavigationManager Nav
+
 
 <h1>Box @(idBox)</h1>
 
@@ -108,12 +105,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        listaDeTamaños = await cliente.GetListaDeTamaños();
-        listaDeIdsDisponibles = await cliente.GetListaDeIdBoxDisponibles();
+        listaDeTamaños = await Cliente.GetListaDeTamaños();
+        listaDeIdsDisponibles = await Cliente.GetListaDeIdBoxDisponibles();
         if (idBox != 0)
         {
             Console.WriteLine(idBox);
-            Config = await cliente.GetBoxConfigPorId(idBox);
+            Config = await Cliente.GetBoxConfigPorId(idBox);
             Config.IdBox = idBox;
         }
         typetemp = (int)Config.LockerType;
@@ -121,18 +118,18 @@ else
 
     void Retornar()
     {
-        Nav.NavigateTo("BoxesAdmin");
+        NavigationManager.NavigateTo("BoxesAdmin");
     }
 
     async Task Save()
     {
         ErrorMsn = "";
         Config.LockerType = (TLockerMap.EnumLockerType)typetemp;
-        bool r = await cliente.SetBoxConfig(Config);
+        bool r = await Cliente.SetBoxConfig(Config);
         if (r)
         {
             //notificamos que los cambios fueron registrados
-            Nav.NavigateTo("BoxesAdmin");
+            NavigationManager.NavigateTo("BoxesAdmin");
         }
         else
         {

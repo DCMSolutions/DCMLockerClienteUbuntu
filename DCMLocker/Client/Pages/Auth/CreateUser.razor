@@ -1,7 +1,5 @@
 ﻿@page "/registrar"
-@using DCMLocker.Shared.MOFLogin
-@inject DCMLocker.Client.Authentication.TAuthCliente cliente
-@inject NavigationManager Nav
+
 
 <h3>Crear un usuario</h3>
 <p>Crea un usuario para el Locker, 
@@ -43,10 +41,10 @@
     async Task createuser()
     {
         ErrorMsn = "";
-        bool s = await cliente.CreateUser(user, pass, confirmpass);
+        bool s = await ClienteAuth.CreateUser(user, pass, confirmpass);
         if (s)
         {
-            Nav.NavigateTo("/login");
+            NavigationManager.NavigateTo("/login");
         }
         else
         {

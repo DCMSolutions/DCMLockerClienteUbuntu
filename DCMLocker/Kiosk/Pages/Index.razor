@@ -1,7 +1,9 @@
 ﻿@page "/"
 @using DCMLocker.Kiosk.Pages.Components
+@using Microsoft.AspNetCore.SignalR.Client;
 @inject NavigationManager Nav
 @inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
+@inject NotificationService NotificationService
 
 @if (screen == "keyboard")
 {
@@ -140,16 +142,63 @@ else if (screen == "connectionError")
     bool isVisible;
     string screen = "keyboard";
     int door;
+    private HubConnection hubConnection;
+
     protected override async Task OnInitializedAsync()
     {
+        hubConnection = new HubConnectionBuilder()
+        .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
+        .Build();
+
+        hubConnection.On<string>("ReceiveToken", (string text) =>
+        {
+            text = text.Substring(0, Math.Min(text.Length, 6));
+
+            if (text.Length <= 8)
+            {
+                Array.Resize(ref token, text.Length);
+                bool validText = true;
+                for (int i = 0; i < text.Length; i++)
+                {
+                    if (char.IsDigit(text[i]))
+                    {
+                        token[i] = text[i] - '0'; // Convert character to integer
+                    }
+                    else
+                    {
+                        validText = false;
+                        break;
+                    }
+                }
+                if (validText)
+                {
+                    send();
+                }
+                else
+                {
+                    Console.WriteLine("Input contains non-numeric characters.");
+                    ShowNotificationError("Input contains non-numeric characters.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Input contains more than 6 numbers.");
+                ShowNotificationError("Input contains more than 6 numbers.");
+            }
+
+
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
     }
 
     void visibility()
     {
         isVisible = !isVisible;
         StateHasChanged();
-
     }
+
     void addNumber(int number)
     {
         if (token.Length < 6)
@@ -200,4 +249,17 @@ else if (screen == "connectionError")
 
         StateHasChanged();
     }
+
+    void ShowNotificationError(string message)
+    {
+        Console.WriteLine("notif error");
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Error",
+                Detail = message,
+                Duration = 4000
+            });
+    }
+
 }

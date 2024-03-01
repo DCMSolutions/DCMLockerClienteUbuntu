@@ -1,15 +1,4 @@
 ﻿@page "/User"
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@inject HttpClient http
-
-
-@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
-@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
 
 
 @if (!string.IsNullOrEmpty(username))
@@ -186,7 +175,7 @@ else
 
     protected async override void OnInitialized()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await Auth.GetAuthenticationStateAsync();
         var user = authState.User;
         username = user.Identity.Name;
         IsAdmin = user.IsInRole("Admin");
@@ -218,7 +207,7 @@ else
     {
         Console.WriteLine($"entra y el object es {a}");
         box = Convert.ToInt16(a);
-        Config = await cliente.GetBoxConfig(box);
+        Config = await Cliente.GetBoxConfig(box);
         Perfil = await Cliente.GetMyBox();
         StateHasChanged();
     }
@@ -242,7 +231,7 @@ else
     {
         ErrorMsn = "";
         StateHasChanged();
-        Config = await cliente.GetBoxConfig(box);
+        Config = await Cliente.GetBoxConfig(box);
         if (Config.State == "Libre")
         {
             OnInitialized();
@@ -250,7 +239,7 @@ else
         if (Config.State == "Entregado")
         {
             Config.State = "Esperando retiro";
-            bool r = await cliente.SetBoxConfig(Config);
+            bool r = await Cliente.SetBoxConfig(Config);
             try
             {
                 tokenkey = await Cliente.GenerateTokenKey(box);
@@ -282,7 +271,7 @@ else
     {
         ErrorMsn = "";
         StateHasChanged();
-        Config = await cliente.GetBoxConfig(box);
+        Config = await Cliente.GetBoxConfig(box);
         if (Config.State == "Libre")
         {
             OnInitialized();
@@ -290,7 +279,7 @@ else
         if (Config.State == "Asignado")
         {
             Config.State = "Esperando abrir";
-            bool r = await cliente.SetBoxConfig(Config);
+            bool r = await Cliente.SetBoxConfig(Config);
 
             IsBussy = true;
             try
@@ -313,6 +302,6 @@ else
     /************************/
     private void ActionAdd()
     {
-        Navigation.NavigateTo("/Addbox");
+        NavigationManager.NavigateTo("/Addbox");
     }
 }

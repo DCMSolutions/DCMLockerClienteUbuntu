@@ -1,14 +1,5 @@
 ﻿@page "/Addbox"
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
 
-
-
-@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
-@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
 
 <div class="text-center">
     <h3>Box disponibles</h3>
@@ -77,7 +68,7 @@
 
     private void ActionNACK()
     {
-        Navigation.NavigateTo("/User");
+        NavigationManager.NavigateTo("/User");
     }
 
     private async void ActionOK()
@@ -92,6 +83,6 @@
             Boxses = await Cliente.GetBoxesSeftManagement();
             StateHasChanged();
         }
-        else Navigation.NavigateTo("/User");
+        else NavigationManager.NavigateTo("/User");
     }
 }

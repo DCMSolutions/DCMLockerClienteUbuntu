@@ -1,12 +1,8 @@
 ﻿@page "/monitor"
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@inject DCMLocker.Client.Cliente.TLockerCliente Http
-@inject DCMLocker.Client.Cliente.TLocker locker
 
 <h1>Monitor</h1>
 
-@if (locker.LockerCUs == null)
+@if (Locker.LockerCUs == null)
 {
 <div class="abs-center">
     <div class="spinner-grow text-secondary"></div>
@@ -44,7 +40,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var CU in locker.LockerCUs)
+            @foreach (var CU in Locker.LockerCUs)
             {
                 if (CU != null)
                 {
@@ -71,20 +67,20 @@ else
     private WeatherForecast[] forecasts;
     protected override async Task OnInitializedAsync()
     {
-        locker.OnChange += Change;
-        locker.LockerCUs = await Http.GetState();
+        Locker.OnChange += Change;
+        Locker.LockerCUs = await Cliente.GetState();
     }
 
     private async void Change(object sender, EventArgs arg)
     {
-        locker.LockerCUs = await Http.GetState();
+        Locker.LockerCUs = await Cliente.GetState();
         StateHasChanged();
     }
 
     protected void Abrir(int locker, int box)
     {
         Console.WriteLine($"Set Locker {locker} - Box {box}");
-        Http.OpenLocker(locker,box, "Miguel", "123456");
+        Cliente.OpenLocker(locker, box, "Miguel", "123456");
     }
 
 }

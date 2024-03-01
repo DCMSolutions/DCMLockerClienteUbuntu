@@ -1,21 +1,8 @@
 ﻿@page "/MyTokenBox"
-@using System.Security.Claims
-@using DCMLocker.Client.Authentication
-@using Microsoft.AspNetCore.Components.Authorization
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-
-
-
-@inject Authentication.MOFAuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
-@inject DCMLocker.Client.Cliente.TLockerCliente Cliente
-@inject HttpClient http
-@inject MOFAuthenticationStateProvider _auth
-@inject HttpClient _cliente
 
 
 <h3>Mis tokens</h3>
+
 @if (tokensorder != null)
 {
     if (tokensorder.Count() > 0)
@@ -93,7 +80,7 @@ else
 
     protected override async void OnInitialized()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState = await Auth.GetAuthenticationStateAsync();
         var user = authState.User;
         username = user.Identity.Name;
         tokens = await Cliente.GetMyTokenKey();
@@ -110,7 +97,7 @@ else
         Console.WriteLine($"el token es {token}");
         string[] data = { token, username };
 
-        await http.PostAsJsonAsync("Locker/DeleteToken", data);
+        await Http.PostAsJsonAsync("Locker/DeleteToken", data);
         OnInitialized();
     }
     public async Task alertaEliminar()

@@ -1,14 +1,5 @@
 ﻿@page "/BoxesAdmin"
-@inject NavigationManager Nav
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@inject NotificationService NotificationService
-@using OfficeOpenXml.Table;
-@using OfficeOpenXml.LoadFunctions.Params;
-@using System.Text.Json;
-@using System.Text.Json.Serialization;
-@using System.IO;
+
 
 <h1>Boxes</h1>
 <label><strong>Configuración de los parámetros de los boxes</strong></label>
@@ -108,20 +99,21 @@
 
     async void verpropietario()
     {
-        //users = await cliente.SearchUserFromBox(Box);
+        //users = await Cliente.SearchUserFromBox(Box);
         //StateHasChanged();
     }
 
     void GetUser(string s)
     {
-        Nav.NavigateTo($"/Usuario/{s.Replace("@", "%40").Replace(".", "%_")}");
+        NavigationManager.NavigateTo($"/Usuario/{s.Replace("@", "%40").Replace(".", "%_")}");
     }
 
     protected override async Task OnInitializedAsync()
     {
-        listaDeTamaños = await cliente.GetListaDeTamaños();
-        listaDeBoxes = await cliente.GetAllBoxConfig();
-        listaDeIdsSinAsignar = await cliente.GetIdSinAsignar();
+        
+        listaDeTamaños = await Cliente.GetListaDeTamaños();
+        listaDeBoxes = await Cliente.GetAllBoxConfig();
+        listaDeIdsSinAsignar = await Cliente.GetIdSinAsignar();
         idBox = listaDeIdsSinAsignar.First();
 
     }
@@ -150,7 +142,7 @@
 
     async Task deleteBox(TLockerMap box)
     {
-        await cliente.DeleteBoxConfig(box);
+        await Cliente.DeleteBoxConfig(box);
         await OnInitializedAsync();
         StateHasChanged();
     }
@@ -192,7 +184,7 @@
 
     void gotoAddBox(int idBox)
     {
-        Nav.NavigateTo($"/BoxesAdmin/{idBox}");
+        NavigationManager.NavigateTo($"/BoxesAdmin/{idBox}");
     }
 
     public async Task gotoSubirTxtBoxes()
@@ -207,7 +199,7 @@
         var formModal = Modal.Show<SubirTxtBoxes>("", parameters, options);
         var result = await formModal.Result;
 
-        OnInitializedAsync();
+        await OnInitializedAsync();
         StateHasChanged();
 
     }

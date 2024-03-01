@@ -1,8 +1,4 @@
 ﻿@page "/login"
-@using DCMLocker.Shared.MOFLogin
-@inject DCMLocker.Client.Authentication.TAuthCliente cliente
-@inject Authentication.MOFAuthenticationStateProvider Auth
-@inject NavigationManager Nav
 
 
 <div class="container" style="color:black;">
@@ -73,12 +69,12 @@
     async Task loginuser()
     {
         ErrorMsn = "";
-        bool r = await cliente.Login(user, pass);
+        bool r = await ClienteAuth.Login(user, pass);
         if (r)
         {
 
             StateHasChanged();
-            Nav.NavigateTo("/User");
+            NavigationManager.NavigateTo("/User");
         }
         else
         {

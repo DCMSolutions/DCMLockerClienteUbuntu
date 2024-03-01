@@ -1,13 +1,4 @@
 ﻿@page "/subirtxtboxes"
-@inject NavigationManager Nav
-@using DCMLocker.Shared
-@using DCMLocker.Shared.Locker
-@using Microsoft.AspNetCore.Components.Forms
-@inject DCMLocker.Client.Cliente.TLockerCliente cliente
-@using System.Text.Json;
-@using System.Text.Json.Serialization;
-@using System.IO;
-
 
 <h1>Cargar boxes</h1>
 
@@ -64,9 +55,9 @@
             List<TLockerMap> listaDeBoxesUpload = JsonSerializer.Deserialize<List<TLockerMap>>(fileContent);
             foreach(var locker in listaDeBoxesUpload)
             {
-                await cliente.SetBoxConfig(locker);
+                await Cliente.SetBoxConfig(locker);
             }
-            Nav.NavigateTo("/boxesadmin");
+            NavigationManager.NavigateTo("/boxesadmin");
         }
         catch (Exception ex)
         {
