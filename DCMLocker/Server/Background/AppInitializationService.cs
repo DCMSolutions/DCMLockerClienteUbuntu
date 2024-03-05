@@ -3,7 +3,7 @@ using System.Threading;
 using System;
 using DCMLocker.Server.Hubs;
 using System.Threading.Tasks;
-using System.IO.Ports;
+using RJCP.IO.Ports;
 
 namespace DCMLocker.Server.Background
 {
@@ -19,9 +19,15 @@ namespace DCMLocker.Server.Background
             _qrReaderHub = qrReaderHub;
         }
 
+        public async Task Start()
+        {
+            StartAsync(cancellationToken: System.Threading.CancellationToken.None);
+        }
+
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            // Inicia el servicio en un hilo aparte
+            // Coloca aquí el código que deseas ejecutar al iniciar la aplicación
+            // Por ejemplo, puedes realizar configuraciones iniciales, cargar datos, etc.
             try
             {
                 _work = new Thread(StartReading);
@@ -49,30 +55,34 @@ namespace DCMLocker.Server.Background
 
         public async void StartReading()
         {
+
             while (true)
             {
-                //foreach (string portName in SerialPort.GetPortNames()) // Cambiado a SerialPort.GetPortNames()
-                //{
-                string portName = "ttyACM0";
-                _portReader = new SerialPortReader(portName);
-                if (_portReader.HayQR())
+                foreach (string portName in SerialPortStream.GetPortNames())
                 {
-                    Console.WriteLine("Hay lector QR conectado");
-                    string data = "";
-                    while (data != null)
+                    //string portName = "ttyACM0";
+                    _portReader = new SerialPortReader(portName);
+                    if (_portReader.HayQR())
                     {
-                        data = _portReader.ReadData();
-                        Console.WriteLine("read " + data);
-                        if (data != "") await _qrReaderHub.SendToken(data);
+                        Console.WriteLine("Hay lector QR conectado");
+                        string data = "";
+                        while (data != null)
+                        {
+                            data = _portReader.ReadData();
+                            Console.WriteLine("read " + data);
+                            if (data != "") await _qrReaderHub.SendToken(data);
+                        }
                     }
                 }
-                //}
                 Console.WriteLine("chequeo los puertos y no hay qr, espera 10seg");
-                Task.Delay(TimeSpan.FromSeconds(10)).Wait(); // Cambiado a Task.Delay(TimeSpan.FromSeconds(10)).Wait()
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
+
 
             // Cerrar el puerto cuando ya no se necesite
             _portReader.Close();
         }
+
+
     }
 }

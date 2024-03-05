@@ -1,18 +1,18 @@
-﻿using System;
-using System.IO.Ports;
+﻿using RJCP.IO.Ports;
+using System;
 using System.Text;
 
 public class SerialPortReader
 {
-    private SerialPort _serialPort;
+    private SerialPortStream _serialPort;
 
     public SerialPortReader(string portName)
     {
         try
         {
-            _serialPort = new SerialPort(portName, 9600);
-            _serialPort.DataReceived += SerialPortDataReceived;
-            _serialPort.Open();
+            _serialPort = new SerialPortStream(portName, 9600); // portName con velocidad de baudios de 9600 (ajusta según la configuración del dispositivo)
+            _serialPort.DataReceived += SerialPortDataReceived; // Suscripción al evento de recepción de datos
+            _serialPort.Open(); // Abre el puerto
         }
         catch (Exception ex)
         {
@@ -20,16 +20,18 @@ public class SerialPortReader
         }
     }
 
-    private void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
+    private async void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
     {
-        SerialPort sp = (SerialPort)sender;
-        string data = sp.ReadLine();
-        Console.WriteLine("Datos recibidos: " + data);
+        SerialPortStream sp = (SerialPortStream)sender;
+        byte[] buffer = new byte[sp.BytesToRead];
+        sp.Read(buffer, 0, buffer.Length);
+        string data = System.Text.Encoding.UTF8.GetString(buffer); // Decodifica los bytes recibidos
     }
 
     public bool HayQR()
     {
-        return _serialPort != null && _serialPort.IsOpen;
+        if (_serialPort == null || !_serialPort.IsOpen) return false;
+        return true;
     }
 
     public string ReadData()
@@ -40,7 +42,17 @@ public class SerialPortReader
         }
         else
         {
-            return _serialPort.ReadLine();
+            byte[] buffer = new byte[1024]; // Buffer para almacenar los datos leídos del puerto serie
+            int bytesRead = _serialPort.Read(buffer, 0, buffer.Length);
+            if (bytesRead > 0)
+            {
+                string data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                return data;
+            }
+            else
+            {
+                return "";
+            }
         }
     }
 
