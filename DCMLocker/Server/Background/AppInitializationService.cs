@@ -1,13 +1,9 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System;
 using DCMLocker.Server.Hubs;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Net.Http.Json;
-using RJCP.IO.Ports;
-using System.Linq;
+using System.IO.Ports;
 
 namespace DCMLocker.Server.Background
 {
@@ -23,15 +19,9 @@ namespace DCMLocker.Server.Background
             _qrReaderHub = qrReaderHub;
         }
 
-        public async Task Start()
-        {
-            StartAsync(cancellationToken: System.Threading.CancellationToken.None);
-        }
-
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            // Coloca aquí el código que deseas ejecutar al iniciar la aplicación
-            // Por ejemplo, puedes realizar configuraciones iniciales, cargar datos, etc.
+            // Inicia el servicio en un hilo aparte
             try
             {
                 _work = new Thread(StartReading);
@@ -59,10 +49,9 @@ namespace DCMLocker.Server.Background
 
         public async void StartReading()
         {
-
             while (true)
             {
-                //foreach (string portName in SerialPortStream.GetPortNames())
+                //foreach (string portName in SerialPort.GetPortNames()) // Cambiado a SerialPort.GetPortNames()
                 //{
                 string portName = "ttyACM0";
                 _portReader = new SerialPortReader(portName);
@@ -79,14 +68,11 @@ namespace DCMLocker.Server.Background
                 }
                 //}
                 Console.WriteLine("chequeo los puertos y no hay qr, espera 10seg");
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                Task.Delay(TimeSpan.FromSeconds(10)).Wait(); // Cambiado a Task.Delay(TimeSpan.FromSeconds(10)).Wait()
             }
-
 
             // Cerrar el puerto cuando ya no se necesite
             _portReader.Close();
         }
-
-
     }
 }

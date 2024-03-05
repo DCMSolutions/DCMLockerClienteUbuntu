@@ -1,21 +1,18 @@
-﻿using RJCP.IO.Ports;
-using System;
-using System.Net.Http;
-using System.Net.Http.Json;
+﻿using System;
+using System.IO.Ports;
 using System.Text;
-using System.Threading.Tasks;
 
 public class SerialPortReader
 {
-    private SerialPortStream _serialPort;
+    private SerialPort _serialPort;
 
     public SerialPortReader(string portName)
     {
         try
         {
-            _serialPort = new SerialPortStream(portName, 9600); // portName con velocidad de baudios de 9600 (ajusta según la configuración del dispositivo)
-            _serialPort.DataReceived += SerialPortDataReceived; // Suscripción al evento de recepción de datos
-            _serialPort.Open(); // Abre el puerto
+            _serialPort = new SerialPort(portName, 9600);
+            _serialPort.DataReceived += SerialPortDataReceived;
+            _serialPort.Open();
         }
         catch (Exception ex)
         {
@@ -23,18 +20,16 @@ public class SerialPortReader
         }
     }
 
-    private async void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
+    private void SerialPortDataReceived(object sender, SerialDataReceivedEventArgs e)
     {
-        SerialPortStream sp = (SerialPortStream)sender;
-        byte[] buffer = new byte[sp.BytesToRead];
-        sp.Read(buffer, 0, buffer.Length);
-        string data = System.Text.Encoding.UTF8.GetString(buffer); // Decodifica los bytes recibidos
+        SerialPort sp = (SerialPort)sender;
+        string data = sp.ReadLine();
+        Console.WriteLine("Datos recibidos: " + data);
     }
 
     public bool HayQR()
     {
-        if (_serialPort == null || !_serialPort.IsOpen) return false;
-        return true;
+        return _serialPort != null && _serialPort.IsOpen;
     }
 
     public string ReadData()
@@ -45,17 +40,7 @@ public class SerialPortReader
         }
         else
         {
-            byte[] buffer = new byte[1024]; // Buffer para almacenar los datos leídos del puerto serie
-            int bytesRead = _serialPort.Read(buffer, 0, buffer.Length);
-            if (bytesRead > 0)
-            {
-                string data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                return data;
-            }
-            else
-            {
-                return "";
-            }
+            return _serialPort.ReadLine();
         }
     }
 
