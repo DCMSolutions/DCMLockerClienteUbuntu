@@ -9,17 +9,17 @@ public class SerialPortReader
 {
     private SerialPortStream _serialPort;
 
-    public SerialPortReader()
+    public SerialPortReader(string portName)
     {
         try
         {
-            _serialPort = new SerialPortStream("COM5", 9600); // COM5 con velocidad de baudios de 9600 (ajusta según la configuración del dispositivo)
+            _serialPort = new SerialPortStream(portName, 9600); // portName con velocidad de baudios de 9600 (ajusta según la configuración del dispositivo)
             _serialPort.DataReceived += SerialPortDataReceived; // Suscripción al evento de recepción de datos
             _serialPort.Open(); // Abre el puerto
         }
         catch (Exception ex)
         {
-            Console.WriteLine("No hay lector QR conectado.");
+            Console.WriteLine($"No hay lector QR conectado en {portName}.");
         }
     }
 

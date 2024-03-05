@@ -6,6 +6,8 @@ using DCMLocker.Server.Hubs;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Net.Http.Json;
+using RJCP.IO.Ports;
+using System.Linq;
 
 namespace DCMLocker.Server.Background
 {
@@ -60,7 +62,10 @@ namespace DCMLocker.Server.Background
 
             while (true)
             {
-                _portReader = new SerialPortReader();
+                //foreach (string portName in SerialPortStream.GetPortNames())
+                //{
+                string portName = "ttyACM0";
+                _portReader = new SerialPortReader(portName);
                 if (_portReader.HayQR())
                 {
                     Console.WriteLine("Hay lector QR conectado");
@@ -72,7 +77,9 @@ namespace DCMLocker.Server.Background
                         if (data != "") await _qrReaderHub.SendToken(data);
                     }
                 }
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                //}
+                Console.WriteLine("chequeo los puertos y no hay qr, espera 10seg");
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
 
 
