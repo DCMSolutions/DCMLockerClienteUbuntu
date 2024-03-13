@@ -3,14 +3,15 @@ using System.Threading;
 using System;
 using DCMLocker.Server.Hubs;
 using System.Threading.Tasks;
-using RJCP.IO.Ports;
+using System.IO;
+using System.Text;
 
 namespace DCMLocker.Server.Background
 {
     public class AppInitializationService : IHostedService
     {
         private Thread _work;
-        private SerialPortReader _portReader;
+
 
         private readonly QRReaderHub _qrReaderHub;
 
@@ -55,34 +56,52 @@ namespace DCMLocker.Server.Background
 
         public async void StartReading()
         {
+            // Directorio donde se encuentran los dispositivos serie en Linux
+            string devicesDirectory = "/dev/";
 
-            while (true)
+            // Obtener todos los archivos en el directorio de dispositivos
+            string[] devices = Directory.GetFiles(devicesDirectory);
+
+            // Filtrar solo los dispositivos serie (puertos COM)
+            var serialDevices = Array.FindAll(devices, d => d.StartsWith("/dev/tty"));
+
+            if (serialDevices.Length == 0)
             {
-                foreach (string portName in SerialPortStream.GetPortNames())
+                Console.WriteLine("No se encontraron puertos COM activos.");
+            }
+            else
+            {
+                // Tomar el primer puerto serie disponible
+                string firstPort = serialDevices[0];
+
+                Console.WriteLine("Intentando conectar al primer puerto disponible: " + firstPort);
+
+                try
                 {
-                    //string portName = "ttyACM0";
-                    _portReader = new SerialPortReader(portName);
-                    if (_portReader.HayQR())
+                    // Abrir el flujo de archivos para el puerto serie
+                    using (FileStream serialStream = new FileStream(firstPort, FileMode.Open))
                     {
-                        Console.WriteLine("Hay lector QR conectado");
-                        string data = "";
-                        while (data != null)
+                        Console.WriteLine("Conexión establecida correctamente. Esperando datos...");
+
+                        // Bucle continuo para leer los datos del puerto serie
+                        while (true)
                         {
-                            data = _portReader.ReadData();
-                            Console.WriteLine("read " + data);
-                            if (data != "") await _qrReaderHub.SendToken(data);
+                            byte[] buffer = new byte[1024];
+                            int bytesRead = serialStream.Read(buffer, 0, buffer.Length);
+
+                            if (bytesRead > 0)
+                            {
+                                string data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                                if (data != null) await _qrReaderHub.SendToken(data);
+                            }
                         }
                     }
                 }
-                Console.WriteLine("chequeo los puertos y no hay qr, espera 10seg");
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error al conectar al puerto serie: " + ex.Message);
+                }
             }
-
-
-            // Cerrar el puerto cuando ya no se necesite
-            _portReader.Close();
         }
-
-
     }
 }
