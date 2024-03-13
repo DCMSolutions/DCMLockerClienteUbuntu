@@ -26,6 +26,7 @@ namespace DCMLocker.Server
                 {
                     webBuilder.UseStartup<Startup>();
                 })
+                .UseConsoleLifetime() // Enable Ctrl + C handling
                 .ConfigureServices(services=> 
                 {
 

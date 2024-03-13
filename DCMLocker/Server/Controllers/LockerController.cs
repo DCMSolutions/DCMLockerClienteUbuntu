@@ -219,7 +219,6 @@ namespace DCMLocker.Server.Controllers
             {
                 //var path = $"{_base.Config.UrlServer}api/size";
                 Uri resultUri = new Uri(_base.Config.UrlServer, "api/size");
-                Console.WriteLine("cacsadasdasAAAAAAAAAAAAAAAAAAAAAAAAAAd tmaño");
                 var response = await _http.GetFromJsonAsync<List<Tamaño>>(resultUri);
                 return Ok(response);
             }
