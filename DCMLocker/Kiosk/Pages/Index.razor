@@ -228,10 +228,8 @@ else if (screen == "connectionError")
         {
             try
             {
-                door = await Cliente.TokenKey(resultado);
-
                 Console.WriteLine("esperandoo");
-                await esperarQueSeAbra();
+                await esperarQueSeAbra(resultado);
                 Console.WriteLine("esperose");
 
                 screen = "success";
@@ -267,23 +265,33 @@ else if (screen == "connectionError")
             });
     }
 
-    async Task esperarQueSeAbra()
+    async Task esperarQueSeAbra(string resultado)
     {
         int iter = 0;
         bool abierta = false;
-        while (iter < 10 && abierta != true)
-        {
-            Console.WriteLine("iter: " + $"{iter+1}");
-            
-            var a = await Cliente.GetBoxConfig(door);       // opa.
 
-            Console.WriteLine("id fisico "+a.IdFisico);
-            
-            abierta = a.AlamrNro == 1;
-            iter++;
-            if (iter == 10) throw new Exception ("connectionError" );
-            await Task.Delay(500);
-        }
+        var inicialState = await Cliente.GetState();
+
+        door = await Cliente.TokenKey(resultado);
+
+        //while (iter < 10 && abierta != true)
+        //{
+        //    Console.WriteLine("iter: " + $"{iter + 1}");
+
+        //    var otroState = await Cliente.GetState();
+
+        //    abierta = inicialState.Zip(otroState, (initial, otro) =>
+        //            initial.Box.Zip(otro.Box, (initialBox, otroBox) =>
+        //                initialBox.Door != otroBox.Door))
+        //        .SelectMany(x => x)
+        //        .Any(x => x);
+
+        //    Console.WriteLine("abierta " + abierta);
+
+        //    iter++;
+        //    if (iter == 10) throw new Exception("connectionError");
+        //    await Task.Delay(500);
+        //}
     }
 
 }
