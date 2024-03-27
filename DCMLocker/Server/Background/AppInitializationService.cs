@@ -56,51 +56,58 @@ namespace DCMLocker.Server.Background
 
         public async void StartReading()
         {
-            // Directorio donde se encuentran los dispositivos serie en Linux
-            string devicesDirectory = "/dev/";
-
-            // Obtener todos los archivos en el directorio de dispositivos
-            string[] devices = Directory.GetFiles(devicesDirectory);
-
-            // Filtrar solo los dispositivos serie (puertos COM)
-            var serialDevices = Array.FindAll(devices, d => d.StartsWith("/dev/tty"));
-
-            if (serialDevices.Length == 0)
+            try
             {
-                Console.WriteLine("No se encontraron puertos COM activos.");
-            }
-            else
-            {
-                // Tomar el primer puerto serie disponible
-                string firstPort = serialDevices[0];
+                // Directorio donde se encuentran los dispositivos serie en Linux
+                string devicesDirectory = "/dev/";
 
-                Console.WriteLine("Intentando conectar al primer puerto disponible: " + firstPort);
+                // Obtener todos los archivos en el directorio de dispositivos
+                string[] devices = Directory.GetFiles(devicesDirectory);
 
-                try
+                // Filtrar solo los dispositivos serie (puertos COM)
+                var serialDevices = Array.FindAll(devices, d => d.StartsWith("/dev/tty"));
+
+                if (serialDevices.Length == 0)
                 {
-                    // Abrir el flujo de archivos para el puerto serie
-                    using (FileStream serialStream = new FileStream(firstPort, FileMode.Open))
+                    Console.WriteLine("No se encontraron puertos COM activos.");
+                }
+                else
+                {
+                    // Tomar el primer puerto serie disponible
+                    string firstPort = serialDevices[0];
+
+                    Console.WriteLine("Intentando conectar al primer puerto disponible: " + firstPort);
+
+                    try
                     {
-                        Console.WriteLine("Conexión establecida correctamente. Esperando datos...");
-
-                        // Bucle continuo para leer los datos del puerto serie
-                        while (true)
+                        // Abrir el flujo de archivos para el puerto serie
+                        using (FileStream serialStream = new FileStream(firstPort, FileMode.Open))
                         {
-                            byte[] buffer = new byte[1024];
-                            int bytesRead = serialStream.Read(buffer, 0, buffer.Length);
+                            Console.WriteLine("Conexión establecida correctamente. Esperando datos...");
 
-                            if (bytesRead > 0)
+                            // Bucle continuo para leer los datos del puerto serie
+                            while (true)
                             {
-                                string data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                                if (data != null) await _qrReaderHub.SendToken(data);
+                                byte[] buffer = new byte[1024];
+                                int bytesRead = serialStream.Read(buffer, 0, buffer.Length);
+
+                                if (bytesRead > 0)
+                                {
+                                    string data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                                    if (data != null) await _qrReaderHub.SendToken(data);
+                                }
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error al conectar al puerto serie: " + ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error al conectar al puerto serie: " + ex.Message);
-                }
+            }
+            catch
+            {
+                Console.WriteLine("Hubo un error con el lector QR.");
             }
         }
     }

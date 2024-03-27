@@ -41,7 +41,6 @@ namespace DCMLocker.Server.Background
         {
             while (true)
             {
-
                 try
                 {
                     ServerStatus serverCommunication = new();
@@ -109,13 +108,8 @@ namespace DCMLocker.Server.Background
 
                 //await _chatHub.SendMessage("Ejemplo", "Prueba");
 
-
                 await Task.Delay(1000);
             }
         }
-
-
     }
-
-
 }

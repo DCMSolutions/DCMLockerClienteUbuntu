@@ -177,13 +177,13 @@ else if (screen == "connectionError")
                 else
                 {
                     Console.WriteLine("Input contains non-numeric characters.");
-                    ShowNotificationError("Input contains non-numeric characters.");
+                    ShowNotificationError("El código contiene caracteres no numericos.");
                 }
             }
             else
             {
                 Console.WriteLine("Input contains more than 6 numbers.");
-                ShowNotificationError("Input contains more than 6 numbers.");
+                ShowNotificationError("El código contiene mas de 6 números.");
             }
 
 
@@ -229,6 +229,11 @@ else if (screen == "connectionError")
             try
             {
                 door = await Cliente.TokenKey(resultado);
+
+                Console.WriteLine("esperandoo");
+                await esperarQueSeAbra();
+                Console.WriteLine("esperose");
+
                 screen = "success";
                 StateHasChanged();
                 await Task.Delay(3000);
@@ -260,6 +265,25 @@ else if (screen == "connectionError")
                 Detail = message,
                 Duration = 4000
             });
+    }
+
+    async Task esperarQueSeAbra()
+    {
+        int iter = 0;
+        bool abierta = false;
+        while (iter < 10 && abierta != true)
+        {
+            Console.WriteLine("iter: " + $"{iter+1}");
+            
+            var a = await Cliente.GetBoxConfig(door);       // opa.
+
+            Console.WriteLine("id fisico "+a.IdFisico);
+            
+            abierta = a.AlamrNro == 1;
+            iter++;
+            if (iter == 10) throw new Exception ("connectionError" );
+            await Task.Delay(500);
+        }
     }
 
 }

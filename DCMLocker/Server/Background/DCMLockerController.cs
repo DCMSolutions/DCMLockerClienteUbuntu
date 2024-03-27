@@ -76,6 +76,7 @@ namespace DCMLocker.Server.Background
             driver.IP = "192.168.2.178";
             driver.Port = 4001;
             driver.Start();
+
             return Task.CompletedTask;
         }
         //-----------------------------------------------------------------------------
@@ -94,7 +95,7 @@ namespace DCMLocker.Server.Background
             }
             catch (Exception er)
             {
-                Console.WriteLine($"Error en STOP de servicio Backgroun: {er.Message}");
+                Console.WriteLine($"Error en STOP de servicio Background: {er.Message}");
             }
             return Task.CompletedTask;
         }

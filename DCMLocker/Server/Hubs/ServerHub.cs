@@ -23,7 +23,6 @@ namespace DCMLocker.Server.Hubs
 
         public async Task UpdateStatus(string status)
         {
-
             if (Clients != null)
             {
                 await Clients.All.SendAsync("STATUS", status);
