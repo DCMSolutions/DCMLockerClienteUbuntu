@@ -60,7 +60,6 @@ namespace DCMLocker.Server.Background
         //---------------------------------------------------------------------------
         public void Dispose()
         {
-
             driver = null;
         }
         //---------------------------------------------------------------------------
@@ -75,8 +74,9 @@ namespace DCMLocker.Server.Background
         {
             driver.IP = "192.168.2.178";
             driver.Port = 4001;
-            driver.Start();
 
+            driver.Start();
+            Console.WriteLine("despues del start.............................................................");
             return Task.CompletedTask;
         }
         //-----------------------------------------------------------------------------
