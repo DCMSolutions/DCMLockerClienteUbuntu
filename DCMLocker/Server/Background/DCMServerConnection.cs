@@ -126,7 +126,7 @@ namespace DCMLocker.Server.Background
                 netinters = netinters.Where(item => ((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
                         (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up).ToArray();
                 var ips = netinters.First();
-                UnicastIPAddressInformation ip = ips.GetIPProperties().UnicastAddresses.Last();
+                UnicastIPAddressInformation ip = ips.GetIPProperties().UnicastAddresses.First();
                 if (ip.Address.ToString() != null) return ip.Address.ToString();
                 return "";
             }
