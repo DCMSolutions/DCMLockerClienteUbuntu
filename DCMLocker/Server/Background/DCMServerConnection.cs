@@ -132,7 +132,7 @@ namespace DCMLocker.Server.Background
                     Console.WriteLine($"{ni.Name} - {ni.Description}");
                 }
 
-                var ips = netinters.First();
+                var ips = netinters.Last();
 
                 Console.WriteLine("Direcciones unicast encontradas:");
                 foreach (var address in ips.GetIPProperties().UnicastAddresses)
