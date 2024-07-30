@@ -58,7 +58,7 @@ namespace DCMLocker.Server.BaseController
                     r.IsConfirmarEmail = false;
                     r.LockerMode = 0;
                     r.LockerType = 0;
-                    r.UrlServer = new Uri("https://localhost:7206/");
+                    r.UrlServer = new Uri("https://testing.server.dcm.com.ar/");
                     r.Save(Path);
                     return r;
                 }

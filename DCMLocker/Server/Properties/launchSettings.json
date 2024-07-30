@@ -13,7 +13,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "dotnetRunMessages": "true",
+      "dotnetRunMessages": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
       "applicationUrl": "https://0.0.0.0:5021;http://0.0.0.0:5020;https://0.0.0.0:5023;http://0.0.0.0:5022;https://0.0.0.0:5025;http://0.0.0.0:5024"
     }

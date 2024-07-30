@@ -85,6 +85,7 @@
         SSID = await Cliente.System_GetSSID();
         StateHasChanged();
     }
+
     protected async void Save()
     {
         bool r = await Cliente.System_SetSSID(wifi_SSID, wifi_Pass);

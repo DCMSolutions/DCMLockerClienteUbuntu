@@ -69,6 +69,7 @@ else
     {
         Locker.OnChange += Change;
         Locker.LockerCUs = await Cliente.GetState();
+        Console.WriteLine("coun" + Locker.LockerCUs.Count());
     }
 
     private async void Change(object sender, EventArgs arg)

@@ -4,6 +4,7 @@ using DCMLocker.Shared;
 using DCMLocker.Shared.Locker;
 using DCMLockerCommunication;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -27,14 +28,16 @@ namespace DCMLocker.Server.Background
         private readonly HttpClient _httpClient;
         private readonly TBaseLockerController _base;
         private readonly IDCMLockerController _driver;
+        private readonly IConfiguration _configuration;
 
-        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver)
+        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration)
         {
             _logger = logger;
             _chatHub = chatHub;
             _httpClient = httpClient;
             _base = Base;
             _driver = driver;
+            _configuration = configuration;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,6 +48,9 @@ namespace DCMLocker.Server.Background
                 {
                     ServerStatus serverCommunication = new();
                     serverCommunication.NroSerie = _base.Config.LockerID;
+                    serverCommunication.Version = _configuration["Version"];
+                    serverCommunication.IP = GetIP();
+                    serverCommunication.EstadoCerraduras = "";
                     List<TLockerMapDTO> newList = new();
 
                     var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
@@ -109,6 +115,24 @@ namespace DCMLocker.Server.Background
                 //await _chatHub.SendMessage("Ejemplo", "Prueba");
 
                 await Task.Delay(1000);
+            }
+        }
+
+        string GetIP()
+        {
+            try
+            {
+                var netinters = NetworkInterface.GetAllNetworkInterfaces();
+                netinters = netinters.Where(item => ((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
+                        (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up).ToArray();
+                var ips = netinters.First();
+                UnicastIPAddressInformation ip = ips.GetIPProperties().UnicastAddresses.Last();
+                if (ip.Address.ToString() != null) return ip.Address.ToString();
+                return "";
+            }
+            catch
+            {
+                return "";
             }
         }
     }

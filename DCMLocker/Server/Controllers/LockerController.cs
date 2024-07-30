@@ -20,6 +20,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -1002,5 +1003,58 @@ namespace DCMLocker.Server.Controllers
         }
 
 
+        /// <summary>
+        /// Cosas de version
+        /// </summary>
+        /// <returns></returns>
+
+        [HttpGet("GetVersion")]
+        public IActionResult GetVersion()
+        {
+            try
+            {
+                var configPath = "appsettings.json";
+                var json = System.IO.File.ReadAllText(configPath);
+                using var doc = JsonDocument.Parse(json);
+                var root = JsonNode.Parse(json)!.AsObject();
+
+                if (root.TryGetPropertyValue("Version", out JsonNode? intervalNode))
+                {
+                    string version = intervalNode.GetValue<string>();
+                    return Ok(version);
+                }
+
+                return NotFound("No se encontro el valor.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpGet("GetFecha")]
+        public IActionResult GetFecha()
+        {
+            try
+            {
+                var configPath = "appsettings.json";
+                var json = System.IO.File.ReadAllText(configPath);
+                using var doc = JsonDocument.Parse(json);
+                var root = JsonNode.Parse(json)!.AsObject();
+
+                if (root.TryGetPropertyValue("Fecha", out JsonNode? intervalNode))
+                {
+                    string fecha = intervalNode.GetValue<string>();
+                    return Ok(fecha);
+                }
+
+                return NotFound("No se encontro el valor.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

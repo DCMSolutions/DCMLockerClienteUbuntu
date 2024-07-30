@@ -1261,5 +1261,41 @@ namespace DCMLocker.Client.Cliente
             }
         }
 
+
+        /// <summary>--------------------------------------------------------------------
+        /// La version y eso
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+        public async Task<string> GetVersion()
+        {
+
+            try
+            {
+                var response = await _cliente.GetAsync("Locker/GetVersion");
+                var oRta = await response.Content.ReadAsStringAsync();
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+        
+        public async Task<string> GetFecha()
+        {
+
+            try
+            {
+                var response = await _cliente.GetAsync("Locker/GetFecha");
+                var oRta = await response.Content.ReadAsStringAsync();
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+
     }
 }

@@ -14,6 +14,9 @@ namespace DCMLocker.Shared
         public DateTime? LastUpdateTime { get; set; }
         public string? Status { get; set; }
         public int? Empresa { get; set; }
+        public string? Version { get; set; }
+        public string? IP { get; set; }
+        public string? EstadoCerraduras { get; set; }
     }
 
     public class ServerConfig
