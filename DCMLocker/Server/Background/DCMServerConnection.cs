@@ -125,7 +125,21 @@ namespace DCMLocker.Server.Background
                 var netinters = NetworkInterface.GetAllNetworkInterfaces();
                 netinters = netinters.Where(item => ((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
                         (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up).ToArray();
+
+                Console.WriteLine("Interfaces de red activas encontradas:");
+                foreach (var ni in netinters)
+                {
+                    Console.WriteLine($"{ni.Name} - {ni.Description}");
+                }
+
                 var ips = netinters.First();
+
+                Console.WriteLine("Direcciones unicast encontradas:");
+                foreach (var address in ips.GetIPProperties().UnicastAddresses)
+                {
+                    Console.WriteLine(address.Address.ToString());
+                }
+
                 UnicastIPAddressInformation ip = ips.GetIPProperties().UnicastAddresses.First();
                 if (ip.Address.ToString() != null) return ip.Address.ToString();
                 return "";
