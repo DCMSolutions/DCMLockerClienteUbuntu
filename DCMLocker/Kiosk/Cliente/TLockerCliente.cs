@@ -647,11 +647,11 @@ namespace DCMLocker.Kiosk.Cliente
 
                 var r = await _cliente.PostAsJsonAsync<string>("Locker/Token", tokenkey);
                 Console.WriteLine($"status code is {r.StatusCode}");
-                var response =  r.Content;
-                Console.WriteLine($"response code is { response}");
+                var response = r.Content;
+                Console.WriteLine($"response code is {response}");
                 Console.WriteLine($"response code is {await response.ReadAsStringAsync()}");
                 //(er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
-                if (r.StatusCode == System.Net.HttpStatusCode.Forbidden|| r.StatusCode == System.Net.HttpStatusCode.BadRequest|| r.StatusCode == System.Net.HttpStatusCode.NotFound|| r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout) throw new Exception("connectionError");
+                if (r.StatusCode == System.Net.HttpStatusCode.Forbidden || r.StatusCode == System.Net.HttpStatusCode.BadRequest || r.StatusCode == System.Net.HttpStatusCode.NotFound || r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout) throw new Exception("connectionError");
                 if (r.StatusCode == System.Net.HttpStatusCode.OK) return await r.Content.ReadFromJsonAsync<int>();
                 else throw new Exception("invalidToken");
             }
@@ -861,8 +861,8 @@ namespace DCMLocker.Kiosk.Cliente
                 Console.WriteLine("EEROR:" + er.Message);
                 return false;
             }
-
         }
+
         public async Task<bool> System_Shutdown()
         {
             var token = await _auth.GetTokenAsync();
@@ -893,7 +893,42 @@ namespace DCMLocker.Kiosk.Cliente
                 Console.WriteLine("EEROR:" + er.Message);
                 return false;
             }
+        }
 
+        /// <summary>--------------------------------------------------------------------
+        /// Actualizar locker
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+        public async Task<bool> System_Update()
+        {
+            var token = await _auth.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _cliente.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+            try
+            {
+                var r = await _cliente.PostAsJsonAsync($"System/Update", "");
+                if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
+                return false;
+            }
+            catch (HttpRequestException er)
+            {
+                Console.WriteLine(er.Message);
+                if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
+                   (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
+                {
+                    _nav.NavigateTo("/login");
+                    return false;
+                }
+                else throw;
+            }
+            catch (Exception er)
+            {
+                Console.WriteLine("ERROR:" + er.Message);
+                return false;
+            }
         }
     }
 }

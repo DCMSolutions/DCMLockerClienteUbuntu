@@ -199,6 +199,7 @@ namespace DCMLocker.Server.Controllers
                 return BadRequest(er.Message);
             }
         }
+
         [HttpPost("Shutdown")]
         [Authorize(Roles = "Admin")]
         public ActionResult Shutdown()
@@ -214,6 +215,19 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpPost("Update")]
+        public ActionResult Update()
+        {
+            try
+            {
+                string s0 = cmd("wget -O - https://github.com/DCMSolutions/DCMLockerUpdate/blob/main/update.sh | bash");
+                return Ok(s0);
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
+            }
+        }
 
         [HttpGet("ResetService")]
         public string ResetService()
