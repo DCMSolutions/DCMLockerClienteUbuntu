@@ -220,7 +220,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                string s0 = cmd("wget -O - https://github.com/DCMSolutions/DCMLockerUpdate/blob/main/update.sh | bash");
+                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
                 return Ok(s0);
             }
             catch (Exception er)
