@@ -133,7 +133,8 @@
 
     protected async void SendActualizar()
     {
-        await Cliente.System_Update();
+        var asd = await Cliente.System_Update();
+        Console.WriteLine("asd = "+asd);
         Navigation.NavigateTo("/Actualizando");
     }
 

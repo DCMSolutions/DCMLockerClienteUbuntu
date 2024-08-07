@@ -54,7 +54,7 @@ namespace DCMLocker.Server.BaseController
                         UserName = "temp",
                         Password = "temp"
                     };
-                    r.LockerID = "";
+                    r.LockerID = DateTime.Now.ToString();
                     r.IsConfirmarEmail = false;
                     r.LockerMode = 0;
                     r.LockerType = 0;
