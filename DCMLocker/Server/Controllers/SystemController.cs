@@ -215,20 +215,6 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpPost("Update")]
-        public ActionResult Update()
-        {
-            try
-            {
-                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
-                return Ok(s0);
-            }
-            catch (Exception er)
-            {
-                return BadRequest(er.Message);
-            }
-        }
-
         [HttpGet("ResetService")]
         public string ResetService()
         {
@@ -241,6 +227,26 @@ namespace DCMLocker.Server.Controllers
             {
                 Console.WriteLine(ex.Message);
                 return "Error al resetear";
+            }
+        }
+
+        [HttpPost("Update")]
+        public ActionResult Update()
+        {
+            try
+            {
+                //string s0 = cmd("rm -r /home/pi/DCMLocker.bak");
+                //string s1 = cmd("mv /home/pi/DCMLocker /home/pi/DCMLocker.bak");
+                //string s2 = cmd("rm -r /home/pi/'DCMLocker\\Base'\r\n");
+                //string s3 = cmd("git clone https://github.com/DCMSolutions/DCMLockerLast /home/pi/DCMLocker");
+                //string s4 = cmd("reboot");
+
+                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
+                return Ok(s0);
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
             }
         }
 
