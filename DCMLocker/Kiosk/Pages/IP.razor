@@ -1,0 +1,47 @@
+﻿@page "/ip"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using DCMLocker.Shared
+@using DCMLocker.Shared.Locker
+
+@inject NavigationManager Navigation
+@inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
+
+<div class="row">
+    <div class="col-12" align="left">
+        <button class="btn btn-outline-warning" @onclick="gotoindex">Volver</button>
+    </div>
+</div>
+
+<h3>Configuración de red</h3>
+@if (Ips != null)
+{
+    <div class="row">
+        @for (int x = 0; x < Ips.Length; x++)
+        {
+            <div class="col-lg-6">
+                <p><strong>IP:</strong>@Ips[x].IP</p>
+                <p><strong>MASK:</strong>@Ips[x].NetMask</p>
+                <p><strong>Tipo:</strong>@Ips[x].NetworkInterfaceType</p>
+                <p><strong>Estado:</strong>@Ips[x].NetworkOperationalStatus</p>
+            </div>
+        }
+    </div>
+}
+
+@code
+{
+    SystemNetwork[] Ips { get; set; }
+
+    protected override async void OnInitialized()
+    {
+        base.OnInitialized();
+        Ips = await Cliente.System_GetIP();
+        StateHasChanged();
+    }
+
+    void gotoindex()
+    {
+        Navigation.NavigateTo("/");
+    }
+}

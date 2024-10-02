@@ -51,6 +51,7 @@ namespace DCMLocker.Server.Background
                     serverCommunication.Version = _configuration["Version"];
                     serverCommunication.IP = GetIP();
                     serverCommunication.EstadoCerraduras = "";
+
                     List<TLockerMapDTO> newList = new();
 
                     var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
@@ -129,7 +130,7 @@ namespace DCMLocker.Server.Background
                 var ips = netinters.Last();                                                             //rng
                 UnicastIPAddressInformation ip = ips.GetIPProperties().UnicastAddresses.First();        //rng
 
-                //la otra opcion es ver de todos los netinters y todos los ips.GetIPProperties().UnicastAddresses cual arranca con 192.168.88. y mandar ese
+                //la otra opcion es ver de todos los netinters y todos los ips.GetIPProperties().UnicastAddresses cual arranca con lo que corresponda, pero eso varía, o sino hacerlo por descarte
 
                 if (ip.Address.ToString() != null) return ip.Address.ToString();
                 return "";
