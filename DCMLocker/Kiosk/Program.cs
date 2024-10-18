@@ -1,3 +1,4 @@
+using CurrieTechnologies.Razor.SweetAlert2;
 using DCMLocker.Kiosk.Authentication;
 using DCMLocker.Kiosk.Cliente;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -35,6 +36,7 @@ namespace DCMLocker.Kiosk
             builder.Services.AddScoped<DCMLocker.Kiosk.Cliente.TLockerCliente>();
             builder.Services.AddScoped<DCMLocker.Kiosk.Authentication.TAuthCliente>();
             builder.Services.AddScoped<NotificationService>();
+            builder.Services.AddSweetAlert2();
             await builder.Build().RunAsync();
         }
     }

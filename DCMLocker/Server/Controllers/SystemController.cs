@@ -28,6 +28,7 @@ namespace DCMLocker.Server.Controllers
     {
 
         private readonly TBaseLockerController _base;
+        private readonly LogController _evento;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
@@ -36,10 +37,10 @@ namespace DCMLocker.Server.Controllers
         /// <param name="context2"></param>
         /// <param name="logger"></param>
         /// <param name="Base"></param>------------------------------------------------------
-        public SystemController(TBaseLockerController Base)
+        public SystemController(TBaseLockerController Base, LogController logController)
         {
             _base = Base;
-
+            _evento = logController;
         }
 
         [HttpGet("GetIP")]
@@ -191,6 +192,8 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
+                _evento.AddEvento(new Evento($"Se reinició el sistema", "sistema"));
+
                 string s0 = cmd("reboot");
                 return Ok(s0);
             }
@@ -206,7 +209,9 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                string s0 = cmd("shutdown -h +1");
+                _evento.AddEvento(new Evento($"Se apagó el sistema", "sistema"));
+
+                string s0 = cmd("shutdown -h now");
                 return Ok(s0);
             }
             catch (Exception er)
@@ -220,6 +225,8 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
+                _evento.AddEvento(new Evento($"Se reinició el servició", "sistema"));
+
                 cmd("systemctl restart dcmlocker.service");
                 return "Reseteado con éxito";
             }
@@ -235,11 +242,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                //string s0 = cmd("rm -r /home/pi/DCMLocker.bak");
-                //string s1 = cmd("mv /home/pi/DCMLocker /home/pi/DCMLocker.bak");
-                //string s2 = cmd("rm -r /home/pi/'DCMLocker\\Base'\r\n");
-                //string s3 = cmd("git clone https://github.com/DCMSolutions/DCMLockerLast /home/pi/DCMLocker");
-                //string s4 = cmd("reboot");
+                _evento.AddEvento(new Evento($"Se actualizó el sistema", "sistema"));
 
                 string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
                 return Ok(s0);

@@ -113,6 +113,10 @@ else
             Config = await Cliente.GetBoxConfigPorId(idBox);
             Config.IdBox = idBox;
         }
+        else
+        {
+            Config.Enable = true;
+        }
         typetemp = (int)Config.LockerType;
     }
 

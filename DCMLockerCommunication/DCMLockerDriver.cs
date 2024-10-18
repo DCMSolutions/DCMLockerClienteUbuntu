@@ -182,13 +182,13 @@ namespace DCMLockerCommunication
 
                 while (true)
                 {
-                    TcpClient Cliente = new TcpClient();
-                    await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
-                    DateTime timeref = DateTime.Now;
-                    NetworkStream stream = Cliente.GetStream();
-                    this.SendOnConnection();
                     try
                     {
+                        TcpClient Cliente = new TcpClient();
+                        await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
+                        DateTime timeref = DateTime.Now;
+                        NetworkStream stream = Cliente.GetStream();
+                        this.SendOnConnection();
                         while (Cliente.Connected)
                         {
                             if (_BoxActionQueue.Count > 0)
@@ -245,7 +245,7 @@ namespace DCMLockerCommunication
                                             y++;
                                             realrx[y] = rx[x];
                                             PLockerBoard l = (PLockerBoard)PTransporte.GetPkt(realrx, y + 1);
-                                            if (l!=null)
+                                            if (l != null)
                                             {
                                                 UInt16 sd = BitConverter.ToUInt16(l.STATUS, 0);
                                                 UInt16 ss = BitConverter.ToUInt16(l.STATUS, 2);
@@ -264,7 +264,7 @@ namespace DCMLockerCommunication
 
                                                 rxstate = 0;
                                             }
-                                            
+
                                             break;
 
                                     }

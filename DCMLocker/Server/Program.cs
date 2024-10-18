@@ -4,6 +4,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using DCMLocker.Server.Background;
 using DCMLocker.Server.Hubs;
+using DCMLocker.Server.Controllers;
 
 namespace DCMLocker.Server
 {

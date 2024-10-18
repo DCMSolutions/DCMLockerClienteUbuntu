@@ -38,6 +38,7 @@ namespace DCMLocker.Server.Controllers
         private readonly IHubContext<LockerHub, ILockerHub> _hubContext;
         private readonly TBaseLockerController _base;
         private readonly HttpClient _http;
+        private readonly LogController _evento;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
@@ -46,13 +47,14 @@ namespace DCMLocker.Server.Controllers
         /// <param name="context2"></param>
         /// <param name="logger"></param>
         /// <param name="Base"></param>------------------------------------------------------
-        public LockerController(IDCMLockerController driver, IHubContext<LockerHub, ILockerHub> context2, ILogger<LockerController> logger, TBaseLockerController Base, HttpClient http)
+        public LockerController(IDCMLockerController driver, IHubContext<LockerHub, ILockerHub> context2, ILogger<LockerController> logger, TBaseLockerController Base, HttpClient http, LogController logController)
         {
             _driver = driver;
             _log = logger;
             _hubContext = context2;
             _base = Base;
             _http = http;
+            _evento = logController;
         }
         //public LockerController(ILogger<LockerController> logger)
         //{
@@ -120,94 +122,91 @@ namespace DCMLocker.Server.Controllers
         //[Authorize(Roles = "Admin, User")]
         public async Task<IActionResult> Test([FromBody] string Token)
         {
+            // preguntar al servidor si abro algo con el token que recibo
             try
             {
-                // preguntar al servidor si abro algo con el token que recibo
+                _evento.AddEvento(new Evento($"Se consulto el token {Token}", "token"));
+                int _CU;
+                int _Box;
+                Uri uri = new Uri(_base.Config.UrlServer, "api/locker");
+
+                ServerToken serverComunication = new();
 
 
-                try
+
+                serverComunication.NroSerie = _base.Config.LockerID;
+                serverComunication.Token = Token;
+                _http.Timeout = TimeSpan.FromSeconds(5);
+                var response = await _http.PostAsJsonAsync(uri, serverComunication);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    int _CU;
-                    int _Box;
-                    Uri uri = new Uri(_base.Config.UrlServer, "api/locker");
-
-                    ServerToken serverComunication = new();
-
-
-
-                    serverComunication.NroSerie = _base.Config.LockerID;
-                    serverComunication.Token = Token;
-                    _http.Timeout = TimeSpan.FromSeconds(5);
-                    var response = await _http.PostAsJsonAsync(uri, serverComunication);
-
-                    if (response.IsSuccessStatusCode)
+                    try
                     {
-                        try
+                        var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();
+                        if (serverResponse.Box != null)
                         {
-                            var serverResponse = await response.Content.ReadFromJsonAsync<ServerToken>();
-                            if (serverResponse.Box != null)
+                            //recibo el id de mentira y tengo que abrir un box
+                            var _IdBox = _base.LockerMap.LockerMaps.Where(b => b.Value.IdBox == serverResponse.Box).First().Value.IdFisico;
+                            if (_IdBox != null)
                             {
-                                //recibo el id de mentira y tengo que abrir un box
-                                var _IdBox = _base.LockerMap.LockerMaps.Where(b => b.Value.IdBox == serverResponse.Box).First().Value.IdFisico;
-                                if (_IdBox != null)
-                                {
-                                    _CU = _IdBox.GetValueOrDefault() / 16;
-                                    _Box = _IdBox.GetValueOrDefault() % 16;
-                                    _driver.SetBox(_CU, _Box );
-                                    return Ok(serverResponse.Box);
-                                }
-                                else
-                                {
-                                    return StatusCode(203);
-
-                                }
+                                _CU = _IdBox.GetValueOrDefault() / 16;
+                                _Box = _IdBox.GetValueOrDefault() % 16;
+                                _driver.SetBox(_CU, _Box);
+                                _evento.AddEvento(new Evento($"El token {Token} ingresó al box {serverResponse.Box}", "token"));
+                                return Ok(serverResponse.Box);
                             }
                             else
                             {
-
+                                _evento.AddEvento(new Evento($"El token {Token} no ingresó, el box enviado por el servidor no tiene id físico asignado", "token falla"));
                                 return StatusCode(203);
-
                             }
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            Console.WriteLine(ex.ToString());
-                            return StatusCode((int)response.StatusCode);
+                            _evento.AddEvento(new Evento($"El token {Token} no ingresó, no se recibió un box en la respuesta del servidor", "token falla"));
+                            return StatusCode(203);
+
                         }
-
-                        //await _chatHub.UpdateStatus("Connected");
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
-                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        Console.WriteLine(ex.ToString());
+                        _evento.AddEvento(new Evento($"El token {Token} no ingresó, la respuesta del servidor tiene formato erróneo", "token falla"));
                         return StatusCode((int)response.StatusCode);
-
-                        //await _chatHub.UpdateStatus("Disonnected");
-
                     }
 
+                    //await _chatHub.UpdateStatus("Connected");
                 }
-                catch (HttpRequestException ex)
+                else
                 {
-                    // Maneja errores de solicitud HTTP (por ejemplo, problemas de red, servidor inaccesible, etc.)
-                    Console.WriteLine("Error de solicitud HTTP: " + ex.Message);
-                    return StatusCode(403);
+                    _evento.AddEvento(new Evento($"El token {Token} no ingresó, respuesta negativa del servidor", "token"));
 
+                    // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
+                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                    return StatusCode((int)response.StatusCode);
+
+                    //await _chatHub.UpdateStatus("Disonnected");
                 }
-                catch (Exception ex)
-                {
-                    // Maneja otros errores no esperados
-                    Console.WriteLine("Error inesperado: " + ex.Message);
-                    return StatusCode(403);
-
-                }
-
 
             }
-            catch (Exception er)
+            catch (HttpRequestException ex)
             {
+                _evento.AddEvento(new Evento($"El token {Token} no ingresó, sin conexión a servidor", "token falla"));
+
+                // Maneja errores de solicitud HTTP (por ejemplo, problemas de red, servidor inaccesible, etc.)
+                Console.WriteLine("Error de solicitud HTTP: " + ex.Message);
                 return StatusCode(403);
+
+            }
+            catch (Exception ex)
+            {
+                _evento.AddEvento(new Evento($"El token {Token} no ingresó, error inesperado", "token falla"));
+
+                // Maneja otros errores no esperados
+                Console.WriteLine("Error inesperado: " + ex.Message);
+                return StatusCode(403);
+
             }
         }
 
@@ -435,11 +434,13 @@ namespace DCMLocker.Server.Controllers
                 }
                 else
                 {
+                    _evento.AddEvento(new Evento("Falló el OpenBox del LockerController, reportar", "cerraduras"));
                     return BadRequest("Locker no disponible para su apertura");
                 }
             }
             catch (Exception er)
             {
+                _evento.AddEvento(new Evento("Falló el OpenBox del LockerController, reportar", "cerraduras"));
                 return BadRequest(er.Message);
             }
 
@@ -694,6 +695,9 @@ namespace DCMLocker.Server.Controllers
 
             try
             {
+                if(_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambió de ID de locker: {data.LockerID} a {_base.Config.LockerID}", "sistema"));
+                if(_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambió de URL de servidor: {data.UrlServer} a {_base.Config.UrlServer}", "sistema"));
+
                 _base.Config.LockerID = data.LockerID;
                 _base.Config.LockerMode = data.LockerMode;
                 _base.Config.LockerType = data.LockerType;
@@ -775,7 +779,7 @@ namespace DCMLocker.Server.Controllers
         /// <returns></returns>------------------------------------------------------------
         [HttpPost("SetBoxConfig")]
         public ActionResult SetBoxConfig([FromBody] TLockerMap data)
-        { 
+        {
             if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
             {
                 var box = _base.LockerMap.LockerMaps.Where(x => x.Key == data.IdBox).First().Value;
@@ -803,7 +807,7 @@ namespace DCMLocker.Server.Controllers
         [HttpPost("DeleteBoxConfig")]
         public ActionResult DeleteBoxConfig([FromBody] TLockerMap data)
         {
-            
+
             if (_base.LockerMap.LockerMaps.ContainsKey(data.IdBox))
             {
                 _base.LockerMap.LockerMaps[data.IdBox].Enable = false;

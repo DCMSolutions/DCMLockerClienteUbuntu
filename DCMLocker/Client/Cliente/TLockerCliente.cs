@@ -1295,7 +1295,21 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
-
-
+        /// <summary>--------------------------------------------------------------------
+        /// El log y eso xd
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+        public async Task<List<Evento>> GetEventos()
+        {
+            try
+            {
+                var oRta = await _cliente.GetFromJsonAsync<List<Evento>>("Log");
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

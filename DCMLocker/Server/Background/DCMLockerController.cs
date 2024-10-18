@@ -9,6 +9,7 @@ using DCMLocker;
 using Microsoft.AspNetCore.SignalR;
 using DCMLocker.Server.Hubs;
 using DCMLocker.Shared;
+using DCMLocker.Server.Controllers;
 
 namespace DCMLocker.Server.Background
 {
@@ -37,6 +38,8 @@ namespace DCMLocker.Server.Background
     public class DCMLockerController : IHostedService, IDisposable
     {
         private readonly IHubContext<LockerHub, ILockerHub> _hubContext;
+        private readonly LogController _evento;
+
         static DCMLockerTCPDriver driver = new DCMLockerTCPDriver();
         //----------------------------------------------------------------------------
         /// <summary>
@@ -44,9 +47,11 @@ namespace DCMLocker.Server.Background
         /// Configura los eventos del driver
         /// </summary>
         // --------------------------------------------------------------------------
-        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2)
+        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController)
         {
             _hubContext = context2;
+            _evento = logController;
+
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;
             driver.OnError += Driver_OnError;
@@ -76,7 +81,9 @@ namespace DCMLocker.Server.Background
             driver.Port = 4001;
 
             driver.Start();
-            Console.WriteLine("despues del start.............................................................");
+            
+            _evento.AddEvento(new Evento($"Se inició el sistema", "sistema"));
+
             return Task.CompletedTask;
         }
         //-----------------------------------------------------------------------------
