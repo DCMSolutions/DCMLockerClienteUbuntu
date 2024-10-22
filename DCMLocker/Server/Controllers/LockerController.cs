@@ -695,10 +695,10 @@ namespace DCMLocker.Server.Controllers
 
             try
             {
-                if(_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambió de ID de locker: {data.LockerID} a {_base.Config.LockerID}", "sistema"));
-                if(_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambió de URL de servidor: {data.UrlServer} a {_base.Config.UrlServer}", "sistema"));
+                if(_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambió de ID de locker: de {_base.Config.LockerID} a {data.LockerID}", "sistema"));
+                if(_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambió de URL de servidor: de {_base.Config.UrlServer} a {data.UrlServer}", "sistema"));
 
-                _base.Config.LockerID = data.LockerID;
+                _base.Config.LockerID = data.LockerID; 
                 _base.Config.LockerMode = data.LockerMode;
                 _base.Config.LockerType = data.LockerType;
                 _base.Config.IsConfirmarEmail = data.IsConfirmarEmail;
