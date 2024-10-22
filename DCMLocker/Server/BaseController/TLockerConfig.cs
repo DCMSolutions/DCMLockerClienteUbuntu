@@ -33,22 +33,23 @@ namespace DCMLocker.Server.BaseController
         {
             Console.WriteLine("path " + Path);
             string sf = System.IO.Path.Combine(Path, FileName);
-            string sf2 = System.IO.Path.Combine("/home/pi/OldConfig", FileName);
+            string sf2 = System.IO.Path.Combine("/home/pi", FileName);
+            Console.WriteLine("path2 " + sf2);
             try
             {
-                if (File.Exists(sf))
+                if (File.Exists(sf2))
                 {
                     string s = "";
-                    using (StreamReader b = File.OpenText(sf))
+                    using (StreamReader b = File.OpenText(sf2))
                     {
                         s = b.ReadToEnd();
                     }
                     return JsonSerializer.Deserialize<TLockerConfig>(s);
                 }
-                else if (File.Exists(sf2))
+                else if (File.Exists(sf))
                 {
                     string s = "";
-                    using (StreamReader b = File.OpenText(sf2))
+                    using (StreamReader b = File.OpenText(sf))
                     {
                         s = b.ReadToEnd();
                     }
