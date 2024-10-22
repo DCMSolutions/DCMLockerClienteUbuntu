@@ -17,7 +17,7 @@ namespace DCMLocker.Server.BaseController
             {
                 string sf = System.IO.Path.Combine(Path, FileName);
                 string s = JsonSerializer.Serialize<LockerConfig>(this);
-             
+
                 using (StreamWriter b = File.CreateText(sf))
                 {
                     b.Write(s);
@@ -31,13 +31,24 @@ namespace DCMLocker.Server.BaseController
         }
         public static TLockerConfig Create(string Path)
         {
+            Console.WriteLine("path " + Path);
             string sf = System.IO.Path.Combine(Path, FileName);
+            string sf2 = System.IO.Path.Combine("/home/pi/OldConfig", FileName);
             try
             {
                 if (File.Exists(sf))
                 {
                     string s = "";
                     using (StreamReader b = File.OpenText(sf))
+                    {
+                        s = b.ReadToEnd();
+                    }
+                    return JsonSerializer.Deserialize<TLockerConfig>(s);
+                }
+                else if (File.Exists(sf2))
+                {
+                    string s = "";
+                    using (StreamReader b = File.OpenText(sf2))
                     {
                         s = b.ReadToEnd();
                     }

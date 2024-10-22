@@ -192,7 +192,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento($"Se reinició el sistema", "sistema"));
+                _evento.AddEvento(new Evento("Se reinició el sistema", "sistema"));
 
                 string s0 = cmd("reboot");
                 return Ok(s0);
@@ -209,7 +209,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento($"Se apagó el sistema", "sistema"));
+                _evento.AddEvento(new Evento("Se apagó el sistema", "sistema"));
 
                 string s0 = cmd("shutdown -h now");
                 return Ok(s0);
@@ -225,7 +225,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento($"Se reinició el servició", "sistema"));
+                _evento.AddEvento(new Evento("Se reinició el servició", "sistema"));
 
                 cmd("systemctl restart dcmlocker.service");
                 return "Reseteado con éxito";
@@ -242,7 +242,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento($"Se actualizó el sistema", "sistema"));
+                _evento.AddEvento(new Evento("Se actualizó el sistema", "sistema"));
 
                 string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
                 return Ok(s0);

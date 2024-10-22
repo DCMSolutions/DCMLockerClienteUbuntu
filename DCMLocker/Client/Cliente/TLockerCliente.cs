@@ -1311,5 +1311,18 @@ namespace DCMLocker.Client.Cliente
                 throw;
             }
         }
+
+        public async Task<bool> PostEvento(Evento evento)
+        {
+            try
+            {
+                var oRta = await _cliente.PostAsJsonAsync("Log", evento);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }

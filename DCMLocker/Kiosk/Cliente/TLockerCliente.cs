@@ -932,6 +932,24 @@ namespace DCMLocker.Kiosk.Cliente
         }
 
         /// <summary>--------------------------------------------------------------------
+        /// El log y eso xd
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+
+        public async Task<bool> PostEvento(Evento evento)
+        {
+            try
+            {
+                var oRta = await _cliente.PostAsJsonAsync("Log", evento);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>--------------------------------------------------------------------
         /// La version y eso
         /// </summary>
         /// <returns></returns>----------------------------------------------------------

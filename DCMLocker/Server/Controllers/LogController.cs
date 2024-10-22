@@ -62,7 +62,8 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        public bool AddEvento(Evento evento)
+        [HttpPost]
+        public bool AddEvento([FromBody] Evento evento)
         {
             try
             {

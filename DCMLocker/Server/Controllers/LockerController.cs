@@ -125,7 +125,7 @@ namespace DCMLocker.Server.Controllers
             // preguntar al servidor si abro algo con el token que recibo
             try
             {
-                _evento.AddEvento(new Evento($"Se consulto el token {Token}", "token"));
+                _evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
                 int _CU;
                 int _Box;
                 Uri uri = new Uri(_base.Config.UrlServer, "api/locker");
@@ -153,18 +153,18 @@ namespace DCMLocker.Server.Controllers
                                 _CU = _IdBox.GetValueOrDefault() / 16;
                                 _Box = _IdBox.GetValueOrDefault() % 16;
                                 _driver.SetBox(_CU, _Box);
-                                _evento.AddEvento(new Evento($"El token {Token} ingresó al box {serverResponse.Box}", "token"));
+                                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: aceptado abre box {serverResponse.Box}", "token"));
                                 return Ok(serverResponse.Box);
                             }
                             else
                             {
-                                _evento.AddEvento(new Evento($"El token {Token} no ingresó, el box enviado por el servidor no tiene id físico asignado", "token falla"));
+                                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, el box enviado por el servidor no tiene id físico asignado", "token falla"));
                                 return StatusCode(203);
                             }
                         }
                         else
                         {
-                            _evento.AddEvento(new Evento($"El token {Token} no ingresó, no se recibió un box en la respuesta del servidor", "token falla"));
+                            _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, no se recibió un box en la respuesta del servidor", "token falla"));
                             return StatusCode(203);
 
                         }
@@ -172,7 +172,7 @@ namespace DCMLocker.Server.Controllers
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
-                        _evento.AddEvento(new Evento($"El token {Token} no ingresó, la respuesta del servidor tiene formato erróneo", "token falla"));
+                        _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, la respuesta del servidor tiene formato erróneo", "token falla"));
                         return StatusCode((int)response.StatusCode);
                     }
 
@@ -180,7 +180,7 @@ namespace DCMLocker.Server.Controllers
                 }
                 else
                 {
-                    _evento.AddEvento(new Evento($"El token {Token} no ingresó, respuesta negativa del servidor", "token"));
+                    _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: rechazado", "token"));
 
                     // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                     Console.WriteLine($"Request failed with status code: {response.StatusCode}");
@@ -192,7 +192,7 @@ namespace DCMLocker.Server.Controllers
             }
             catch (HttpRequestException ex)
             {
-                _evento.AddEvento(new Evento($"El token {Token} no ingresó, sin conexión a servidor", "token falla"));
+                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no hay conexión", "token falla"));
 
                 // Maneja errores de solicitud HTTP (por ejemplo, problemas de red, servidor inaccesible, etc.)
                 Console.WriteLine("Error de solicitud HTTP: " + ex.Message);
@@ -201,7 +201,7 @@ namespace DCMLocker.Server.Controllers
             }
             catch (Exception ex)
             {
-                _evento.AddEvento(new Evento($"El token {Token} no ingresó, error inesperado", "token falla"));
+                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, error inesperado", "token falla"));
 
                 // Maneja otros errores no esperados
                 Console.WriteLine("Error inesperado: " + ex.Message);

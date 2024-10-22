@@ -222,10 +222,12 @@ else if (screen == "connectionError")
         string resultado = string.Concat(token);
         if (resultado == "3942")
         {
+            await Cliente.PostEvento(new Evento("Se ingresó 3942", "debug"));
             Nav.NavigateTo($"{Nav.Uri}red");
         }
         else if (resultado == "6641")
         {
+            await Cliente.PostEvento(new Evento("Se ingresó 6641", "debug"));
             Nav.NavigateTo($"{Nav.Uri}ip");
         }
         else
