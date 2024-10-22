@@ -174,6 +174,8 @@ namespace DCMLockerCommunication
 
             byte[] rx = new byte[1024];
             byte[] realrx = new byte[10];
+            
+            byte[] buffer = new byte[1]; //para probar ping
 
             int rxstate = 0;
             // Buscamos CU por medio de TCP
@@ -182,21 +184,20 @@ namespace DCMLockerCommunication
             {
                 try
                 {
+                    Console.WriteLine("out gil");
+                    
                     TcpClient Cliente = new TcpClient();
                     await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
                     DateTime timeref = DateTime.Now;
                     NetworkStream stream = Cliente.GetStream();
+
+                    stream.ReadTimeout = 5000;
+                    stream.WriteTimeout = 5000;
+
                     this.SendOnConnection();
                     while (Cliente.Connected)
                     {
-
-
-
-
-
-
-
-
+                        
                         if (_BoxActionQueue.Count > 0)
                         {
                             byte addr = 0;
@@ -277,6 +278,25 @@ namespace DCMLockerCommunication
                             }
                         }
                         else Thread.Sleep(100); // dormimos si no hay datos
+
+                        // esto para chequear conexion
+                        try
+                        {
+                            stream.Write(buffer, 0, buffer.Length);
+                            await stream.ReadAsync(buffer, 0, buffer.Length);
+                        }
+                        catch (IOException)
+                        {
+                            Cliente.Close();
+                            Console.WriteLine("Connection lost.");
+                        }
+                        catch (SocketException)
+                        {
+                            Cliente.Close();
+                            Console.WriteLine("Connection lost (Socket exception).");
+                        }
+
+
                     }
                 }
                 catch (ThreadInterruptedException) { throw; }
