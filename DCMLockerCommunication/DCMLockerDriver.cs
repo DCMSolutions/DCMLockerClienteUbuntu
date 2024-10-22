@@ -7,6 +7,7 @@ using System.Threading;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.NetworkInformation;
 
 namespace DCMLockerCommunication
 {
@@ -174,7 +175,7 @@ namespace DCMLockerCommunication
 
             byte[] rx = new byte[1024];
             byte[] realrx = new byte[10];
-            
+
             byte[] buffer = new byte[1]; //para probar ping
 
             int rxstate = 0;
@@ -184,20 +185,18 @@ namespace DCMLockerCommunication
             {
                 try
                 {
-                    Console.WriteLine("out gil");
-                    
                     TcpClient Cliente = new TcpClient();
                     await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
                     DateTime timeref = DateTime.Now;
                     NetworkStream stream = Cliente.GetStream();
 
-                    stream.ReadTimeout = 5000;
-                    stream.WriteTimeout = 5000;
+                    Ping pingSender = new Ping();
+                    PingReply pingReply;
 
                     this.SendOnConnection();
                     while (Cliente.Connected)
                     {
-                        
+                        Console.WriteLine("inclien");
                         if (_BoxActionQueue.Count > 0)
                         {
                             byte addr = 0;
@@ -280,22 +279,17 @@ namespace DCMLockerCommunication
                         else Thread.Sleep(100); // dormimos si no hay datos
 
                         // esto para chequear conexion
-                        try
-                        {
-                            stream.Write(buffer, 0, buffer.Length);
-                            await stream.ReadAsync(buffer, 0, buffer.Length);
-                        }
-                        catch (IOException)
-                        {
-                            Cliente.Close();
-                            Console.WriteLine("Connection lost.");
-                        }
-                        catch (SocketException)
-                        {
-                            Cliente.Close();
-                            Console.WriteLine("Connection lost (Socket exception).");
-                        }
+                        Console.WriteLine("chekiandoi");
+                        pingReply = pingSender.Send(IPAddress.Parse(IP));
+                        Console.WriteLine("chekiandoi22");
 
+                        if (pingReply.Status != IPStatus.Success)
+                        {
+                            Console.WriteLine("omg!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
+                            // If the ping fails, close the connection and break out of the loop
+                            Cliente.Close();
+                            Console.WriteLine("Ping failed. Connection closed.");
+                        }
 
                     }
                 }
@@ -304,7 +298,6 @@ namespace DCMLockerCommunication
                 {
                     this.SendOnError(er);
                 }
-                Console.WriteLine("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaAAAAAAAAAAAAAAAAAAAAAAa");
                 this.SendOnDisConnection();
                 Thread.Sleep(100);
             }
