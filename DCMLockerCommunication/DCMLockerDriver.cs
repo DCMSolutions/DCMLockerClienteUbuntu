@@ -185,18 +185,30 @@ namespace DCMLockerCommunication
             {
                 try
                 {
+                    Console.WriteLine("trying");
                     TcpClient Cliente = new TcpClient();
-                    await Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
+
+                    var connectTask = Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
+                    if (await Task.WhenAny(connectTask, Task.Delay(5000)) != connectTask) // 5 seconds timeout
+                    {
+                        Console.WriteLine("falloooooooo");
+
+                        throw new TimeoutException("Connection attempt timed out.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("no falla pa");
+
+                    }
+
                     DateTime timeref = DateTime.Now;
                     NetworkStream stream = Cliente.GetStream();
-
                     Ping pingSender = new Ping();
                     PingReply pingReply;
 
                     this.SendOnConnection();
                     while (Cliente.Connected)
                     {
-                        Console.WriteLine("inclien");
                         if (_BoxActionQueue.Count > 0)
                         {
                             byte addr = 0;
@@ -279,19 +291,19 @@ namespace DCMLockerCommunication
                         else Thread.Sleep(100); // dormimos si no hay datos
 
                         // esto para chequear conexion
-                        Console.WriteLine("chekiandoi");
                         pingReply = pingSender.Send(IPAddress.Parse(IP));
-                        Console.WriteLine("chekiandoi22");
 
                         if (pingReply.Status != IPStatus.Success)
                         {
-                            Console.WriteLine("omg!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
                             // If the ping fails, close the connection and break out of the loop
                             Cliente.Close();
-                            Console.WriteLine("Ping failed. Connection closed.");
                         }
 
                     }
+                }
+                catch (TimeoutException ex)
+                {
+                    this.SendOnError(new Exception("Connection timeout. Retrying..."));
                 }
                 catch (ThreadInterruptedException) { throw; }
                 catch (Exception er)
