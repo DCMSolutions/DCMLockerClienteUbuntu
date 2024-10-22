@@ -132,9 +132,17 @@ else if (screen == "invalidToken")
 {
     <TokenInvalid />
 }
-else if (screen == "connectionError")
+else if (screen == "serverConnectionError")
 {
-    <ConnectionError />
+    <ServerConnectionError />
+}
+else if (screen == "lockerConnectionError")
+{
+    <LockerConnectionError />
+}
+else if (screen == "cerradurasError")
+{
+    <CerradurasError />
 }
 
 @code {
@@ -143,9 +151,12 @@ else if (screen == "connectionError")
     string screen = "keyboard";
     int door;
     private HubConnection hubConnection;
+    string estadoCerraduras;
 
     protected override async Task OnInitializedAsync()
     {
+        estadoCerraduras = await Cliente.GetEstadoCerraduras();
+
         hubConnection = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
         .Build();
@@ -234,9 +245,7 @@ else if (screen == "connectionError")
         {
             try
             {
-                Console.WriteLine("esperandoo");
                 await esperarQueSeAbra(resultado);
-                Console.WriteLine("esperose");
 
                 screen = "success";
                 StateHasChanged();
@@ -250,7 +259,6 @@ else if (screen == "connectionError")
                 StateHasChanged();
                 await Task.Delay(3000);
                 screen = "keyboard";
-
             }
         }
         Console.WriteLine($"screen {screen}");

@@ -346,7 +346,7 @@ namespace DCMLocker.Server.Controllers
                 if (!System.IO.File.Exists(fileName))
                 {
                     CrearVacia();
-                    return "Conectadas";
+                    return "Desconectadas";
                 }
                 else
                 {
@@ -385,7 +385,7 @@ namespace DCMLocker.Server.Controllers
         void CrearVacia()
         {
             using StreamWriter sw = System.IO.File.CreateText(fileName);
-            sw.Write("Conectadas");
+            sw.Write("Desconectadas");
         }
         void CrearConEstado(string estado)
         {

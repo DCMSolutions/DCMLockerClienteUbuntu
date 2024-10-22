@@ -642,27 +642,19 @@ namespace DCMLocker.Kiosk.Cliente
             }
             try
             {
-                Console.WriteLine("Verificacion de token");
-
-
                 var r = await _cliente.PostAsJsonAsync<string>("Locker/Token", tokenkey);
-                Console.WriteLine($"status code is {r.StatusCode}");
-                var response = r.Content;
-                Console.WriteLine($"response code is {response}");
-                Console.WriteLine($"response code is {await response.ReadAsStringAsync()}");
-                //(er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
-                if (r.StatusCode == System.Net.HttpStatusCode.Forbidden || r.StatusCode == System.Net.HttpStatusCode.BadRequest || r.StatusCode == System.Net.HttpStatusCode.NotFound || r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout) throw new Exception("connectionError");
+                var cerr = await GetEstadoCerraduras();
+                if (r.StatusCode == System.Net.HttpStatusCode.Forbidden
+                    || r.StatusCode == System.Net.HttpStatusCode.BadRequest
+                    || r.StatusCode == System.Net.HttpStatusCode.NotFound
+                    || r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout) throw new Exception("serverConnectionError");
+                if (cerr != "Conectadas") throw new Exception("cerradurasError");
                 if (r.StatusCode == System.Net.HttpStatusCode.OK) return await r.Content.ReadFromJsonAsync<int>();
                 else throw new Exception("invalidToken");
             }
-            catch (HttpRequestException er)
+            catch (HttpRequestException)
             {
-                if (er.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    _nav.NavigateTo("/login");
-                    throw;
-                }
-                else throw;
+                throw new Exception("lockerConnectionError");
             }
             catch (Exception er)
             {
@@ -942,6 +934,24 @@ namespace DCMLocker.Kiosk.Cliente
             {
                 var oRta = await _cliente.PostAsJsonAsync("Log", evento);
                 return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>--------------------------------------------------------------------
+        /// Estado cerraduras
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+
+        public async Task<string> GetEstadoCerraduras()
+        {
+            try
+            {
+                var oRta = await _cliente.GetStringAsync("System/cerraduras");
+                return oRta;
             }
             catch (Exception ex)
             {

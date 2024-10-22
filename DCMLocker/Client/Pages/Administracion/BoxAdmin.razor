@@ -21,7 +21,7 @@
                 <p>
                     Indica el id físico del box.
                 </p>
-                <RadzenDropDown @bind-Value=@Config.IdFisico Data=@listaDeIdsDisponibles  Disabled="@(listaDeIdsDisponibles.Count == 0)" />
+                <RadzenDropDown @bind-Value=@Config.IdFisico Data=@listaDeIdsDisponibles Disabled="@(listaDeIdsDisponibles.Count == 0)" />
             </div>
 
             <div class="form-group">
@@ -107,16 +107,11 @@ else
     {
         listaDeTamaños = await Cliente.GetListaDeTamaños();
         listaDeIdsDisponibles = await Cliente.GetListaDeIdBoxDisponibles();
-        if (idBox != 0)
-        {
-            Console.WriteLine(idBox);
-            Config = await Cliente.GetBoxConfigPorId(idBox);
-            Config.IdBox = idBox;
-        }
-        else
-        {
-            Config.Enable = true;
-        }
+
+        Config = await Cliente.GetBoxConfigPorId(idBox);
+        Config.IdBox = idBox;
+        if (Config.IdFisico == null) Config.Enable = true;
+
         typetemp = (int)Config.LockerType;
     }
 
