@@ -39,6 +39,7 @@ namespace DCMLocker.Server.Background
     {
         private readonly IHubContext<LockerHub, ILockerHub> _hubContext;
         private readonly LogController _evento;
+        private readonly SystemController _system;
 
         static DCMLockerTCPDriver driver = new DCMLockerTCPDriver();
         //----------------------------------------------------------------------------
@@ -47,10 +48,11 @@ namespace DCMLocker.Server.Background
         /// Configura los eventos del driver
         /// </summary>
         // --------------------------------------------------------------------------
-        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController)
+        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system)
         {
             _hubContext = context2;
             _evento = logController;
+            _system = system;
 
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;
@@ -114,9 +116,10 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e">EvtArgError</param>
         //-----------------------------------------------------------------------------
-        private static void Driver_OnError(object sender, EventArgs e)
+        private void Driver_OnError(object sender, EventArgs e)
         {
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message);
+            _system.ChangeEstado("Error");
         }
         //------------------------------------------------------------------------------
         /// <summary>
@@ -126,9 +129,10 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private static void Driver_OnDisConnection(object sender, EventArgs e)
+        private void Driver_OnDisConnection(object sender, EventArgs e)
         {
             Console.WriteLine("DESCONEXION");
+            _system.ChangeEstado("Desconectadas");
         }
         //------------------------------------------------------------------------------
         /// <summary>
@@ -138,9 +142,10 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private static void Driver_OnConnection(object sender, EventArgs e)
+        private void Driver_OnConnection(object sender, EventArgs e)
         {
             Console.WriteLine("--------- CONEXION-----------------");
+            _system.ChangeEstado("Conectadas");
         }
         //------------------------------------------------------------------------------
         /// <summary>

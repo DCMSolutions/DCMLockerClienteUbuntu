@@ -331,5 +331,74 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// cosillas de las cerraduuuras
+        /// </summary>
+        /// <returns></returns>
+
+        private string fileName = Path.Combine(Directory.GetCurrentDirectory(), "cerraduras.ans");
+
+        [HttpGet("cerraduras")]
+        public string GetEstadoCerraduras()
+        {
+            try
+            {
+                if (!System.IO.File.Exists(fileName))
+                {
+                    CrearVacia();
+                    return "Conectadas";
+                }
+                else
+                {
+                    string content = System.IO.File.ReadAllText(fileName);
+                    return content;
+                }
+            }
+            catch
+            {
+                return "Error";
+            }
+        }
+
+        [HttpPost("estadocerraduras/{estado}")]
+        public bool ChangeEstado(string estado)
+        {
+            try
+            {
+                if (!System.IO.File.Exists(fileName))
+                {
+                    CrearConEstado(estado);
+                    return true;
+                }
+                else
+                {
+                    Guardar(estado);
+                    return true;
+                }
+            }
+            catch
+            {
+                throw new Exception("No se pudo cambiar el estado de las cerraduras");
+            }
+        }
+
+        void CrearVacia()
+        {
+            using StreamWriter sw = System.IO.File.CreateText(fileName);
+            sw.Write("Conectadas");
+        }
+        void CrearConEstado(string estado)
+        {
+            using StreamWriter sw = System.IO.File.CreateText(fileName);
+            sw.Write(estado);
+        }
+        void Guardar(string estado)
+        {
+            System.IO.File.WriteAllText(fileName, estado);
+        }
+
+
+
+
     }
 }

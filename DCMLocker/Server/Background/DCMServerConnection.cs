@@ -1,4 +1,5 @@
 ﻿using DCMLocker.Server.BaseController;
+using DCMLocker.Server.Controllers;
 using DCMLocker.Server.Hubs;
 using DCMLocker.Shared;
 using DCMLocker.Shared.Locker;
@@ -29,8 +30,9 @@ namespace DCMLocker.Server.Background
         private readonly TBaseLockerController _base;
         private readonly IDCMLockerController _driver;
         private readonly IConfiguration _configuration;
+        private readonly SystemController _system;
 
-        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration)
+        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system)
         {
             _logger = logger;
             _chatHub = chatHub;
@@ -38,6 +40,7 @@ namespace DCMLocker.Server.Background
             _base = Base;
             _driver = driver;
             _configuration = configuration;
+            _system = system;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -50,7 +53,7 @@ namespace DCMLocker.Server.Background
                     serverCommunication.NroSerie = _base.Config.LockerID;
                     serverCommunication.Version = _configuration["Version"];
                     serverCommunication.IP = GetIP();
-                    serverCommunication.EstadoCerraduras = "";
+                    serverCommunication.EstadoCerraduras = _system.GetEstadoCerraduras();
 
                     List<TLockerMapDTO> newList = new();
 
