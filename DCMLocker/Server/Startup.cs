@@ -54,6 +54,7 @@ namespace DCMLocker.Server
 
             services.AddScoped<LockerController>();
             services.AddSingleton<LogController>();
+            services.AddSingleton<SystemController>();
 
             // SignalR
             services.AddResponseCompression(opts =>
