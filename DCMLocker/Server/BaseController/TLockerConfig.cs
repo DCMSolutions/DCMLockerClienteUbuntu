@@ -31,10 +31,8 @@ namespace DCMLocker.Server.BaseController
         }
         public static TLockerConfig Create(string Path)
         {
-            Console.WriteLine("path " + Path);
             string sf = System.IO.Path.Combine(Path, FileName);
             string sf2 = System.IO.Path.Combine("/home/pi", FileName);
-            Console.WriteLine("path2 " + sf2);
             try
             {
                 if (File.Exists(sf2))

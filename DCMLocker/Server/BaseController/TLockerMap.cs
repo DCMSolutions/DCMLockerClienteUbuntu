@@ -43,10 +43,20 @@ namespace DCMLocker.Server.BaseController
         public static TLockerMapContent Create(string Path)
         {
             string sf = System.IO.Path.Combine(Path, FileName);
+            string sf2 = System.IO.Path.Combine("/home/pi", FileName);
 
             try
             {
-                if (File.Exists(sf))
+                if (File.Exists(sf2))
+                {
+                    string s = "";
+                    using (StreamReader b = File.OpenText(sf2))
+                    {
+                        s = b.ReadToEnd();
+                    }
+                    return JsonSerializer.Deserialize<TLockerMapContent>(s);
+                }
+                else if (File.Exists(sf))
                 {
                     string s = "";
                     using (StreamReader b = File.OpenText(sf))
