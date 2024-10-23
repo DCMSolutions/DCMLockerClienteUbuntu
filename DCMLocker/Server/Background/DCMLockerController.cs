@@ -119,6 +119,7 @@ namespace DCMLocker.Server.Background
         private void Driver_OnError(object sender, EventArgs e)
         {
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message);
+            _evento.AddEvento(new Evento("Hubo un error inesperado con las cerraduras", "cerraduras"));
             _system.ChangeEstado("Error");
         }
         //------------------------------------------------------------------------------
@@ -131,7 +132,7 @@ namespace DCMLocker.Server.Background
         //------------------------------------------------------------------------------
         private void Driver_OnDisConnection(object sender, EventArgs e)
         {
-            Console.WriteLine("DESCONEXION");
+            _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras"));
             _system.ChangeEstado("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -144,7 +145,7 @@ namespace DCMLocker.Server.Background
         //------------------------------------------------------------------------------
         private void Driver_OnConnection(object sender, EventArgs e)
         {
-            Console.WriteLine("--------- CONEXION-----------------");
+            _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
             _system.ChangeEstado("Conectadas");
         }
         //------------------------------------------------------------------------------

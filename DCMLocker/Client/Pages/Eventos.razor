@@ -2,18 +2,16 @@
 
 <h1><strong>Eventos</strong></h1>
 <br />
-<label>Lista de eventos recibidos</label>
-<br />
-<hr />
-<RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
-
-<br />
+<div style="display: flex; justify-content: space-between;">
+    <label>Lista de eventos recibidos</label>
+    <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
+</div>
 <br />
 
 @if (listaDeEventos != null)
 {
     <div class="tablacontent" style="position:relative;">
-        <RadzenDataGrid AllowColumnResize="true" AllowAlternatingRows="true" FilterMode="FilterMode.Advanced" AllowSorting="false" PageSize="100" Density="Density.Compact"
+        <RadzenDataGrid AllowColumnResize="true" AllowAlternatingRows="true" FilterMode="FilterMode.Simple" AllowSorting="false" PageSize="100" Density="Density.Compact"
                         AllowPaging="true" AllowFiltering="true" ShowPagingSummary="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" EmptyText="No hay consultas aún." @ref="grid"
                         Data="@listaDeEventos" TItem="Evento" LogicalFilterOperator="LogicalFilterOperator.And" PagerHorizontalAlign="HorizontalAlign.Center">
             <Columns>
