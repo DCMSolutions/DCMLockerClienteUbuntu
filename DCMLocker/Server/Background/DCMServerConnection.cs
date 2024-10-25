@@ -105,31 +105,30 @@ namespace DCMLocker.Server.Background
                         {
                             estaConectado = response.IsSuccessStatusCode;
 
-                            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden
-                                || response.StatusCode == System.Net.HttpStatusCode.BadRequest
-                                || response.StatusCode == System.Net.HttpStatusCode.NotFound
-                                || response.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
-                            {
-                                _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
-                                await _chatHub.UpdateStatus("Desconexión del servidor");
-                            }
-                            else
-                            {
-                                _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
-                                await _chatHub.UpdateStatus("Desconexión de red");
-                            }
+                            _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión de red");
+
                         }
                         // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                         Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                     }
                 }
-                catch (HttpRequestException ex)
+                catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
                 {
                     if (estaConectado != false)
                     {
                         estaConectado = false;
-                        _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
-                        await _chatHub.UpdateStatus("Desconexión de red");
+                        if (socketEx.SocketErrorCode == SocketError.NetworkDown ||
+                            socketEx.SocketErrorCode == SocketError.HostNotFound)
+                        {
+                            _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión de red");
+                        }
+                        else
+                        {
+                            _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión del servidor");
+                        }
                     }
                     // Handle exceptions that occur during the HTTP request
                     Console.WriteLine($"HTTP request failed: {ex.Message}");
