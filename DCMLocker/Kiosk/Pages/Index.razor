@@ -144,24 +144,46 @@ else if (screen == "cerradurasError")
 {
     <CerradurasError />
 }
+else if (screen == "error")
+{
+    <div class="d-flex vh-100 justify-content-center align-items-center position-relative">
+        <div class="col-12 text-center">
+            <h1 style="margin-bottom: 5px;">Temporalmente fuera de servicio</h1>
+            <h3 style="margin-top: 5px;">Temporarily out of order</h3>
+        </div>
+        <div class="position-absolute" style="bottom: 10px; left: 10px;">
+            <h3>Código @codigo</h3>
+        </div>
+        <div class="position-absolute" style="bottom: 10px; right: 10px;">
+                <button class="btn btn-outline-warning" @onclick="fastServicioTecnico">Servicio técnico</button>
+        </div>
+    </div>
+}
 
 @code {
     int[] token = { };
     bool isVisible;
     string screen = "keyboard";
     int door;
-    private HubConnection hubConnection;
+    private HubConnection QRhubConnection;
+    private HubConnection ServerHubConnection;
     string estadoCerraduras;
+    string statusRed = "Conexión al servidor";
+    string codigo;
 
     protected override async Task OnInitializedAsync()
     {
         estadoCerraduras = await Cliente.GetEstadoCerraduras();
 
-        hubConnection = new HubConnectionBuilder()
+        QRhubConnection = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
         .Build();
 
-        hubConnection.On<string>("ReceiveToken", (string text) =>
+        ServerHubConnection = new HubConnectionBuilder()
+        .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
+        .Build();
+
+        QRhubConnection.On<string>("ReceiveToken", (string text) =>
         {
             text = text.Substring(0, Math.Min(text.Length, 6));
 
@@ -201,7 +223,46 @@ else if (screen == "cerradurasError")
             StateHasChanged();
         });
 
-        await hubConnection.StartAsync();
+        ServerHubConnection.On<string>("STATUS", (message) =>
+        {
+            statusRed = message;
+            CheckEstados();
+        });
+
+        ServerHubConnection.On<string>("CERRADURAS", (message) =>
+        {
+            estadoCerraduras = message;
+            CheckEstados();
+        });
+
+        await QRhubConnection.StartAsync();
+        await ServerHubConnection.StartAsync();
+
+        CheckEstados();
+    }
+
+    async void fastServicioTecnico()
+    {
+        screen = "keyboard";
+        StateHasChanged();
+        await Task.Delay(10000);
+        CheckEstados();
+    }
+
+    void CheckEstados()
+    {
+        if (estadoCerraduras == "Conectadas" && statusRed == "Conexión al servidor") screen = "keyboard";
+        else if (estadoCerraduras == "Desconectadas") ScreenError("01: Error en las cerraduras");
+        else if (statusRed == "Desconexión del servidor") ScreenError("02: Error en el servidor");
+        else if (statusRed == "Desconexión de red") ScreenError("03: Error en la red");
+        else ScreenError("04: Error inesperado");
+        StateHasChanged();
+    }
+
+    void ScreenError(string err)
+    {
+        codigo = err;
+        screen = "error";
     }
 
     void visibility()

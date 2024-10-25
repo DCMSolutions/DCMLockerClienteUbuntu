@@ -37,10 +37,10 @@ namespace DCMLocker.Server
                     services.AddSingleton<AppInitializationService>();
 
                     services.AddSingleton<QRReaderHub>();
+                    services.AddSingleton<ServerHub>();
 
                     services.AddSingleton<IDCMLockerController, DCMLockerConector>();
                     services.AddHostedService<DCMServerConnection>();
-                    services.AddSingleton<ServerHub>();
 
                     
                 });

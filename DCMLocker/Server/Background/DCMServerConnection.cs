@@ -31,8 +31,10 @@ namespace DCMLocker.Server.Background
         private readonly IDCMLockerController _driver;
         private readonly IConfiguration _configuration;
         private readonly SystemController _system;
+        private readonly LogController _evento;
 
-        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system)
+
+        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento)
         {
             _logger = logger;
             _chatHub = chatHub;
@@ -41,10 +43,12 @@ namespace DCMLocker.Server.Background
             _driver = driver;
             _configuration = configuration;
             _system = system;
+            _evento = evento;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            bool estaConectado = true;
             while (true)
             {
                 try
@@ -88,35 +92,59 @@ namespace DCMLocker.Server.Background
 
                     if (response.IsSuccessStatusCode)
                     {
-                        // Request was successful
-                        //Console.WriteLine(response.ToString());
-                        //Console.WriteLine($"Response is {await response.Content.ReadAsStringAsync()}");
-                        //await _chatHub.UpdateStatus("Connected");
+                        if (estaConectado != response.IsSuccessStatusCode)
+                        {
+                            estaConectado = response.IsSuccessStatusCode;
+                            _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
+                            await _chatHub.UpdateStatus("Conexión al servidor");
+                        }
                     }
                     else
                     {
+                        if (estaConectado != response.IsSuccessStatusCode)
+                        {
+                            estaConectado = response.IsSuccessStatusCode;
+
+                            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden
+                                || response.StatusCode == System.Net.HttpStatusCode.BadRequest
+                                || response.StatusCode == System.Net.HttpStatusCode.NotFound
+                                || response.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+                            {
+                                _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
+                                await _chatHub.UpdateStatus("Desconexión del servidor");
+                            }
+                            else
+                            {
+                                _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
+                                await _chatHub.UpdateStatus("Desconexión de red");
+                            }
+                        }
                         // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                         Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                        //await _chatHub.UpdateStatus("Disonnected");
-
                     }
                 }
                 catch (HttpRequestException ex)
                 {
+                    if (estaConectado != false)
+                    {
+                        estaConectado = false;
+                        _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
+                        await _chatHub.UpdateStatus("Desconexión de red");
+                    }
                     // Handle exceptions that occur during the HTTP request
                     Console.WriteLine($"HTTP request failed: {ex.Message}");
-                    await _chatHub.UpdateStatus("Disonnected");
-
                 }
                 catch (Exception ex)
                 {
+                    if (estaConectado != false)
+                    {
+                        estaConectado = false;
+                        _evento.AddEvento(new Evento($"Error inesperado de conexión", "conexión falla"));
+                        await _chatHub.UpdateStatus("Error inesperado");
+                    }
                     // Handle other unexpected exceptions
                     Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-                    //await _chatHub.UpdateStatus("Disonnected");
-
                 }
-
-                //await _chatHub.SendMessage("Ejemplo", "Prueba");
 
                 await Task.Delay(1000);
             }
@@ -125,7 +153,7 @@ namespace DCMLocker.Server.Background
         string GetIP()
         {
             try
-            { 
+            {
                 var netinters = NetworkInterface.GetAllNetworkInterfaces();
                 netinters = netinters.Where(item => ((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
                         (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up).ToArray();

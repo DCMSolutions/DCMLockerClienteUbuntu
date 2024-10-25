@@ -40,6 +40,8 @@ namespace DCMLocker.Server.Background
         private readonly IHubContext<LockerHub, ILockerHub> _hubContext;
         private readonly LogController _evento;
         private readonly SystemController _system;
+        private readonly ServerHub _chatHub;
+
 
         static DCMLockerTCPDriver driver = new DCMLockerTCPDriver();
         //----------------------------------------------------------------------------
@@ -48,7 +50,7 @@ namespace DCMLocker.Server.Background
         /// Configura los eventos del driver
         /// </summary>
         // --------------------------------------------------------------------------
-        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system)
+        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub)
         {
             _hubContext = context2;
             _evento = logController;
@@ -58,6 +60,7 @@ namespace DCMLocker.Server.Background
             driver.OnDisConnection += Driver_OnDisConnection;
             driver.OnError += Driver_OnError;
             driver.OnCUChange += Driver_OnCUChange;
+            _chatHub = chatHub;
         }
 
         //---------------------------------------------------------------------------
@@ -84,7 +87,7 @@ namespace DCMLocker.Server.Background
 
             driver.Start();
             
-            _evento.AddEvento(new Evento($"Se inició el servicio", "sistema"));
+            _evento.AddEvento(new Evento($"Se inició la aplicación", "sistema"));
 
             return Task.CompletedTask;
         }
@@ -130,10 +133,11 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private void Driver_OnDisConnection(object sender, EventArgs e)
+        private async void Driver_OnDisConnection(object sender, EventArgs e)
         {
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras"));
             _system.ChangeEstado("Desconectadas");
+            await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
         /// <summary>
@@ -143,10 +147,11 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private void Driver_OnConnection(object sender, EventArgs e)
+        private async void Driver_OnConnection(object sender, EventArgs e)
         {
             _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
             _system.ChangeEstado("Conectadas");
+            await _chatHub.UpdateCerraduras("Conectadas");
         }
         //------------------------------------------------------------------------------
         /// <summary>

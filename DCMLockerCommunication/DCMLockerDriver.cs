@@ -188,7 +188,7 @@ namespace DCMLockerCommunication
                     TcpClient Cliente = new TcpClient();
 
                     var connectTask = Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
-                    if (await Task.WhenAny(connectTask, Task.Delay(5000)) != connectTask) // 5 seconds timeout
+                    if (await Task.WhenAny(connectTask, Task.Delay(1000)) != connectTask) // 1 second timeout
                     {
                         throw new TimeoutException("Connection attempt timed out.");
                     }

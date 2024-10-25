@@ -12,6 +12,5 @@ function RemoveData(key) {
 
 function SetFocusToElement(element)
 {
-   
     element.focus();
 }

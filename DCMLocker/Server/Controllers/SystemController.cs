@@ -204,7 +204,6 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("Shutdown")]
-        [Authorize(Roles = "Admin")]
         public ActionResult Shutdown()
         {
             try

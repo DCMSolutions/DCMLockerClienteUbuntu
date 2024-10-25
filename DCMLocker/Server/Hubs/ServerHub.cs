@@ -28,5 +28,13 @@ namespace DCMLocker.Server.Hubs
                 await Clients.All.SendAsync("STATUS", status);
             }
         }
+
+        public async Task UpdateCerraduras(string statusCerraduras)
+        {
+            if (Clients != null)
+            {
+                await Clients.All.SendAsync("CERRADURAS", statusCerraduras);
+            }
+        }
     }
 }

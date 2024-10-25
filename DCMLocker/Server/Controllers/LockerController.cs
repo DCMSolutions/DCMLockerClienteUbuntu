@@ -175,8 +175,6 @@ namespace DCMLocker.Server.Controllers
                         _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, la respuesta del servidor tiene formato erróneo", "token falla"));
                         return StatusCode((int)response.StatusCode);
                     }
-
-                    //await _chatHub.UpdateStatus("Connected");
                 }
                 else
                 {
@@ -185,8 +183,6 @@ namespace DCMLocker.Server.Controllers
                     // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                     Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                     return StatusCode((int)response.StatusCode);
-
-                    //await _chatHub.UpdateStatus("Disonnected");
                 }
 
             }
