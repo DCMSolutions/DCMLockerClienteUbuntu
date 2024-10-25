@@ -320,6 +320,7 @@ else if (screen == "error")
                 StateHasChanged();
                 await Task.Delay(3000);
                 screen = "keyboard";
+                CheckEstados();
             }
         }
         Console.WriteLine($"screen {screen}");
