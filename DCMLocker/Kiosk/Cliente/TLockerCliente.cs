@@ -887,6 +887,38 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
+        public async Task<string> System_TewerID()
+        {
+            var token = await _auth.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _cliente.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+            try
+            {
+                var r = await _cliente.PostAsJsonAsync($"System/TewerID", "");
+                if (r.StatusCode == System.Net.HttpStatusCode.OK) return r.Content.ToString();
+                return "";
+            }
+            catch (HttpRequestException er)
+            {
+                Console.WriteLine(er.Message);
+                if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
+                   (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
+                {
+                    _nav.NavigateTo("/login");
+                    return "";
+                }
+                else throw;
+            }
+            catch (Exception er)
+            {
+                Console.WriteLine("EEROR:" + er.Message);
+                return "";
+            }
+        }
+
         /// <summary>--------------------------------------------------------------------
         /// Actualizar locker
         /// </summary>
