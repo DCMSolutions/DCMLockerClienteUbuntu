@@ -13,7 +13,7 @@ namespace DCMLocker.Server.Controllers
     [ApiController]
     public class LogController : ControllerBase
     {
-        private string fileNameAhora = Path.Combine(Directory.GetCurrentDirectory(), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+        private string fileNameAhora = Path.Combine("/home/pi", $"eventos-{DateTime.Now:MM-yyyy}.ans");
 
         [HttpGet]
         public List<Evento> GetEventos()
@@ -41,7 +41,7 @@ namespace DCMLocker.Server.Controllers
 
         public List<Evento> GetEventosViejos(int mesesAtras)
         {
-            string fileNameVieja = Path.Combine(Directory.GetCurrentDirectory(), $"eventos-{DateTime.Now.AddMonths(-mesesAtras):MM-yyyy}.ans");
+            string fileNameVieja = Path.Combine("/home/pi", $"eventos-{DateTime.Now.AddMonths(-mesesAtras):MM-yyyy}.ans");
 
             try
             {
@@ -83,7 +83,7 @@ namespace DCMLocker.Server.Controllers
             }
             catch
             {
-                throw new Exception("No se pudo agregar el evento");
+                return false;
             }
         }
 
