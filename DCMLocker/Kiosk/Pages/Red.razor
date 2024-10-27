@@ -64,11 +64,11 @@
         StateHasChanged();
     }
 
-    protected void InfoTewer()
+    protected async void InfoTewer()
     {
-        var a = Cliente.System_TewerID();
+        var a = await Cliente.System_TewerID();
         Console.WriteLine("a " + a);
-        tewerID = a.Result;
+        tewerID = a;
         StateHasChanged();
     }
 

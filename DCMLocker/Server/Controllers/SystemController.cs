@@ -242,9 +242,13 @@ namespace DCMLocker.Server.Controllers
             try
             {
                 _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "sistema"));
-                string s0 = cmd("teamviewer info | grep -i \"TeamViewer ID\" | awk -F': ' '{print $2}' | tr -d '[:space:]'");
-                Console.WriteLine(s0);
-                return Ok(s0);
+
+                string s0 = cmd("teamviewer daemon start");
+                Console.WriteLine("ese cero" + s0);
+
+                string s1 = cmd("teamviewer info | grep -i \"TeamViewer ID\" | awk -F': ' '{print $2}' | tr -d '[:space:]'");
+                Console.WriteLine("ese uno" + s1);
+                return Ok(s1);
             }
             catch (Exception er)
             {
