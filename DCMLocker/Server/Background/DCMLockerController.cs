@@ -122,7 +122,7 @@ namespace DCMLocker.Server.Background
         private void Driver_OnError(object sender, EventArgs e)
         {
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message);
-            _evento.AddEvento(new Evento("Hubo un error inesperado con las cerraduras", "cerraduras"));
+            _evento.AddEvento(new Evento($"Hubo un error inesperado con las cerraduras: {((EvtArgError)e).Er.Message}", "cerraduras"));
             _system.ChangeEstado("Error");
         }
         //------------------------------------------------------------------------------
