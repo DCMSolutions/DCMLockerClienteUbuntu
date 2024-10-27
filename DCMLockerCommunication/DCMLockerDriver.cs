@@ -190,6 +190,7 @@ namespace DCMLockerCommunication
                     var connectTask = Cliente.ConnectAsync(IPAddress.Parse(IP), Port);
                     if (await Task.WhenAny(connectTask, Task.Delay(1000)) != connectTask) // 1 second timeout
                     {
+                        Cliente.Close();
                         throw new TimeoutException("Connection attempt timed out.");
                     }
 
@@ -294,7 +295,7 @@ namespace DCMLockerCommunication
                         }
                     }
                 }
-                catch (TimeoutException ex) { }
+                catch (TimeoutException) { }
                 catch (ThreadInterruptedException) { throw; }
                 catch (Exception er)
                 {
