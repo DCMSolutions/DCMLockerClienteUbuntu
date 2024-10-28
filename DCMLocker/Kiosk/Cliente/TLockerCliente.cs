@@ -897,9 +897,9 @@ namespace DCMLocker.Kiosk.Cliente
             }
             try
             {
-                var r = await _cliente.GetFromJsonAsync<string>("System/TewerID");
+                var r = await _cliente.GetAsync("System/TewerID");
                 Console.WriteLine("erre " + r);
-                return r;
+                return await r.Content.ReadFromJsonAsync<string>();
             }
             catch (HttpRequestException er)
             {

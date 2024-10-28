@@ -238,7 +238,7 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("TewerID")]
-        public string TewerID()
+        public IActionResult TewerID()
         {
             try
             {
@@ -259,7 +259,7 @@ namespace DCMLocker.Server.Controllers
                 {
                     Console.WriteLine("No 10 consecutive digits found.");
                 }
-                return s2;
+                return Ok(s2);
             }
             catch (Exception)
             {
