@@ -137,8 +137,7 @@ namespace DCMLocker.Server.Controllers
             }
         }
         [HttpPost("Filesave")]
-        public async Task<ActionResult> PostFile(
-        [FromForm] IEnumerable<IFormFile> files)
+        public async Task<ActionResult> PostFile([FromForm] IEnumerable<IFormFile> files)
         {
             var maxAllowedFiles = 3;
             var filesProcessed = 0;
@@ -261,9 +260,9 @@ namespace DCMLocker.Server.Controllers
                 }
                 return Ok(s2);
             }
-            catch (Exception)
+            catch (Exception er)
             {
-                return "";
+                return BadRequest(er.Message);
             }
         }
 
