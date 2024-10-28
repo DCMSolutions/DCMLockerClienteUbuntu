@@ -245,6 +245,8 @@ namespace DCMLocker.Server.Controllers
 
                 string s0 = cmd("teamviewer daemon start");
                 string s1 = cmd("teamviewer info --get-id");
+                Console.WriteLine("hola " +  s0);
+                Console.WriteLine("hola2 " +  s1);
                 return s1;
             }
             catch (Exception)
