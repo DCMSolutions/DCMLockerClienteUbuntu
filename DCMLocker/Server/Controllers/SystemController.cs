@@ -237,7 +237,7 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("TewerID")]
-        public ActionResult TewerID()
+        public IActionResult TewerID()
         {
             try
             {
@@ -246,7 +246,7 @@ namespace DCMLocker.Server.Controllers
                 string s0 = cmd("teamviewer daemon start");
                 Console.WriteLine("ese cero" + s0);
 
-                string s1 = cmd("teamviewer info | grep -i \"TeamViewer ID\" | awk -F': ' '{print $2}' | tr -d '[:space:]'");
+                string s1 = cmd("teamviewer info --get-id");
                 Console.WriteLine("ese uno" + s1);
                 return Ok(s1);
             }
