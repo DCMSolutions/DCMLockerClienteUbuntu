@@ -18,6 +18,7 @@ using System.Net.Sockets;
 using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace DCMLocker.Server.Controllers
 {
@@ -245,9 +246,20 @@ namespace DCMLocker.Server.Controllers
 
                 string s0 = cmd("teamviewer daemon start");
                 string s1 = cmd("teamviewer info --get-id");
-                Console.WriteLine("hola " +  s0);
-                Console.WriteLine("hola2 " +  s1);
-                return s1;
+                string pattern = @"\d{10}";
+
+                Match match = Regex.Match(s1, pattern);
+                string s2 = "";
+                if (match.Success)
+                {
+                    s2 = match.Value;
+                    Console.WriteLine("First occurrence of 10 digits: " + s2);
+                }
+                else
+                {
+                    Console.WriteLine("No 10 consecutive digits found.");
+                }
+                return s2;
             }
             catch (Exception)
             {
