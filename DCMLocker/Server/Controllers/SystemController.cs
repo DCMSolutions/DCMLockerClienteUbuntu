@@ -237,22 +237,19 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("TewerID")]
-        public IActionResult TewerID()
+        public string TewerID()
         {
             try
             {
                 _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "sistema"));
 
                 string s0 = cmd("teamviewer daemon start");
-                Console.WriteLine("ese cero" + s0);
-
                 string s1 = cmd("teamviewer info --get-id");
-                Console.WriteLine("ese uno" + s1);
-                return Ok(s1);
+                return s1;
             }
-            catch (Exception er)
+            catch (Exception)
             {
-                return BadRequest(er.Message);
+                return "";
             }
         }
 

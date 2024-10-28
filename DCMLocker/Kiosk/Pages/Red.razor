@@ -32,13 +32,11 @@
     </div>
 }
 <button type="button" class="btn btn-info btn-user btn-block" @onclick="InfoTewer" title="Proximamente...">Info tewer</button>
-@if (tewerID != "")
-{
-    <a>@tewerID</a>
-}
 <button type="button" class="btn btn-success btn-user btn-block" @onclick="@(e => alertaGeneral("actualizará"))">Actualizar locker</button>
 <button type="button" class="btn btn-warning btn-user btn-block" @onclick="@(e => alertaGeneral("reseteará"))">Resetear locker</button>
 <button type="button" class="btn btn-danger btn-user btn-block" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
+
+<a>@tewerID</a>
 
 <br />
 
@@ -67,7 +65,6 @@
     protected async void InfoTewer()
     {
         var a = await Cliente.System_TewerID();
-        Console.WriteLine("a " + a);
         tewerID = a;
         StateHasChanged();
     }
