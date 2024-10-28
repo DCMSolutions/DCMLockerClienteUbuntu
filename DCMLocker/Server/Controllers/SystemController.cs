@@ -236,7 +236,7 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpPost("TewerID")]
+        [HttpGet("TewerID")]
         public string TewerID()
         {
             try

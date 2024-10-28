@@ -64,8 +64,7 @@
 
     protected async void InfoTewer()
     {
-        var a = await Cliente.System_TewerID();
-        tewerID = a;
+        tewerID = await Cliente.System_TewerID();
         StateHasChanged();
     }
 

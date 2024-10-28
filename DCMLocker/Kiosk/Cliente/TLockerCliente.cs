@@ -897,13 +897,8 @@ namespace DCMLocker.Kiosk.Cliente
             }
             try
             {
-                var r = await _cliente.PostAsJsonAsync($"System/TewerID", "");
-                Console.WriteLine(r.ToString());
-                Console.WriteLine(r.Content.ToString());
-                Console.WriteLine(r.Headers.ToString());
-                Console.WriteLine(r.RequestMessage.ToString());
-                if (r.StatusCode == System.Net.HttpStatusCode.OK) return r.Content.ToString();
-                return "";
+                var r = await _cliente.GetFromJsonAsync<string>($"System/TewerID");
+                return r;
             }
             catch (HttpRequestException er)
             {
