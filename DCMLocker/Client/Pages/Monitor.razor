@@ -66,9 +66,21 @@ else
         Locker.OnChange += Change;
         Locker.LockerCUs = await Cliente.GetState();
         Console.WriteLine("holas");
-        Console.WriteLine("Locker.lockcu ocunt " + Locker.LockerCUs.Count());
-        Console.WriteLine("Locker.lockcu 1ero cu" + Locker.LockerCUs[0].CU);
-        Console.WriteLine("Locker.lockcu 1ero box" + Locker.LockerCUs[0].Box);
+        Console.WriteLine("Locker.lockcu 1ero box count " + Locker.LockerCUs[0].Box.Count());
+        Console.WriteLine("Locker.lockcu 1ero box 1ero " + Locker.LockerCUs[0].Box[0]);
+        Console.WriteLine("Locker.lockcu 1ero box 1ero " + Locker.LockerCUs[0].Box[0].Box);
+        Console.WriteLine("Locker.lockcu 1ero box 1ero " + Locker.LockerCUs[0].Box[0].Door);
+        Console.WriteLine("Locker.lockcu 1ero box 1ero " + Locker.LockerCUs[0].Box[0].Id);
+        Console.WriteLine("Locker.lockcu 1ero box 1ero " + Locker.LockerCUs[0].Box[0].Reservado);
+        Console.WriteLine("Locker.lockcu 1ero box 1ero " + Locker.LockerCUs[0].Box[0].Sensor);
+
+        
+        Console.WriteLine("asdasd");
+        Console.WriteLine("Locker.lockcu 1ero box 10ero " + Locker.LockerCUs[0].Box[10].Box);
+        Console.WriteLine("Locker.lockcu 1ero box 10ero " + Locker.LockerCUs[0].Box[10].Door);
+        Console.WriteLine("Locker.lockcu 1ero box 10ero " + Locker.LockerCUs[0].Box[10].Id);
+        Console.WriteLine("Locker.lockcu 1ero box 10ero " + Locker.LockerCUs[0].Box[10].Reservado);
+        Console.WriteLine("Locker.lockcu 1ero box 10ero " + Locker.LockerCUs[0].Box[10].Sensor);
     }
 
     private async void Change(object sender, EventArgs arg)
