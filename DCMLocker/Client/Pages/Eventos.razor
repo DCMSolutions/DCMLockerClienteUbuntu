@@ -1,9 +1,10 @@
 ﻿@page "/eventos"
+@using System.Globalization
 
 <h1><strong>Eventos</strong></h1>
 <br />
 <div style="display: flex; justify-content: space-between;">
-    <label>Lista de eventos recibidos</label>
+    <label>Lista de eventos de @DateTime.Now.ToString("MMMM", new CultureInfo("es-ES"))</label>
     <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
 </div>
 <br />

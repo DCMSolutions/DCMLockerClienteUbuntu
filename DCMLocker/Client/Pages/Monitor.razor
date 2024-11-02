@@ -12,11 +12,6 @@
 }
 else
 {
-
-
-
-
-
     <table class="table text-center">
         <thead>
             <tr>
@@ -65,11 +60,15 @@ else
 @code {
 
     private WeatherForecast[] forecasts;
+
     protected override async Task OnInitializedAsync()
     {
         Locker.OnChange += Change;
         Locker.LockerCUs = await Cliente.GetState();
-        Console.WriteLine("coun" + Locker.LockerCUs.Count());
+        Console.WriteLine("holas");
+        Console.WriteLine("Locker.lockcu ocunt " + Locker.LockerCUs.Count());
+        Console.WriteLine("Locker.lockcu 1ero cu" + Locker.LockerCUs[0].CU);
+        Console.WriteLine("Locker.lockcu 1ero box" + Locker.LockerCUs[0].Box);
     }
 
     private async void Change(object sender, EventArgs arg)
