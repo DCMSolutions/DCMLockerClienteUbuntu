@@ -4,8 +4,12 @@
 <h1><strong>Eventos</strong></h1>
 <br />
 <div style="display: flex; justify-content: space-between;">
-    <label>Lista de eventos de @DateTime.Now.ToString("MMMM", new CultureInfo("es-ES"))</label>
-    <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
+    <label>Lista de eventos de @mes</label>
+    <div>
+        <RadzenDropDown @bind-Value="mes" Data="@meses" Style="width: 150px;" />
+
+        <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
+    </div>
 </div>
 <br />
 
@@ -29,10 +33,27 @@
 @code {
     List<Evento>? listaDeEventos;
     RadzenDataGrid<Evento> grid;
+    string mes;
+    List<string> meses;
 
     protected override async Task OnInitializedAsync()
     {
         listaDeEventos = await Cliente.GetEventos();
+        mes = DateTime.Now.ToString("MMMM", new CultureInfo("es-ES"));
+        meses = GenerateMonthYearOptions();
+    }
+
+    List<string> GenerateMonthYearOptions()
+    {
+        var options = new List<string>();
+        var currentYear = DateTime.Now.Year;
+
+        for (int month = DateTime.Now.Month; month <= 10; month++)
+        {
+            options.Add($"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)}-{currentYear}");
+        }
+
+        return options;
     }
 
     async void refreshEventos()
