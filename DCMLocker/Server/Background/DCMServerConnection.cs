@@ -105,8 +105,8 @@ namespace DCMLocker.Server.Background
                         {
                             estaConectado = response.IsSuccessStatusCode;
 
-                            _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla 1"));
-                            await _chatHub.UpdateStatus("Desconexión de red 1");
+                            _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión de red");
 
                         }
                         // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
@@ -121,13 +121,13 @@ namespace DCMLocker.Server.Background
                         if (socketEx.SocketErrorCode == SocketError.NetworkDown ||
                             socketEx.SocketErrorCode == SocketError.HostNotFound)
                         {
-                            _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla 2"));
-                            await _chatHub.UpdateStatus("Desconexión de red 2");
+                            _evento.AddEvento(new Evento($"Desconexión del servidor 1", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión del servidor 1");
                         }
                         else
                         {
-                            _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión del servidor");
+                            _evento.AddEvento(new Evento($"Desconexión del servidor 2", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión del servidor 2");
                         }
                     }
                     // Handle exceptions that occur during the HTTP request
