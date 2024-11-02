@@ -53,93 +53,84 @@ namespace DCMLocker.Server.Background
             {
                 try
                 {
-                    ServerStatus serverCommunication = new();
-                    serverCommunication.NroSerie = _base.Config.LockerID;
-                    serverCommunication.Version = _configuration["Version"];
-                    serverCommunication.IP = GetIP();
-                    serverCommunication.EstadoCerraduras = _system.GetEstadoCerraduras();
-
-                    List<TLockerMapDTO> newList = new();
-
-                    var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
-                    foreach (var locker in lockers)
+                    if (!NetworkInterface.GetIsNetworkAvailable())
                     {
-                        bool _puerta = false;
-                        bool _ocupacion = false;
-                        if (locker.IdFisico != null)
+                        if (estaConectado != false)
                         {
-                            var _CU = locker.IdFisico.GetValueOrDefault() / 16;
-                            var _Box = locker.IdFisico.GetValueOrDefault() % 16;
-
-                            CU status = _driver.GetCUState(_CU);
-                            _puerta = status.DoorStatus[_Box];
-                            _ocupacion = status.SensorStatus[_Box];
-                        }
-                        TLockerMapDTO lockerDTO = new();
-                        lockerDTO.Id = locker.IdBox;
-                        lockerDTO.Enable = locker.Enable;
-                        lockerDTO.AlamrNro = locker.AlamrNro;
-                        lockerDTO.Size = locker.Size;
-                        lockerDTO.TempMax = locker.TempMax;
-                        lockerDTO.TempMin = locker.TempMin;
-                        lockerDTO.Puerta = _puerta;
-                        lockerDTO.Ocupacion = _ocupacion;
-                        newList.Add(lockerDTO);
-
-                    }
-                    serverCommunication.Locker = newList;
-                    var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        if (estaConectado != response.IsSuccessStatusCode)
-                        {
-                            estaConectado = response.IsSuccessStatusCode;
-                            _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
-                            await _chatHub.UpdateStatus("Conexión al servidor");
+                            estaConectado = false;
+                            _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión de red");
                         }
                     }
                     else
                     {
-                        if (estaConectado != response.IsSuccessStatusCode)
-                        {
-                            estaConectado = response.IsSuccessStatusCode;
+                        ServerStatus serverCommunication = new();
+                        serverCommunication.NroSerie = _base.Config.LockerID;
+                        serverCommunication.Version = _configuration["Version"];
+                        serverCommunication.IP = GetIP();
+                        serverCommunication.EstadoCerraduras = _system.GetEstadoCerraduras();
 
-                            _evento.AddEvento(new Evento($"Desconexión de red del locker", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión de red");
+                        List<TLockerMapDTO> newList = new();
+
+                        var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
+                        foreach (var locker in lockers)
+                        {
+                            bool _puerta = false;
+                            bool _ocupacion = false;
+                            if (locker.IdFisico != null)
+                            {
+                                var _CU = locker.IdFisico.GetValueOrDefault() / 16;
+                                var _Box = locker.IdFisico.GetValueOrDefault() % 16;
+
+                                CU status = _driver.GetCUState(_CU);
+                                _puerta = status.DoorStatus[_Box];
+                                _ocupacion = status.SensorStatus[_Box];
+                            }
+                            TLockerMapDTO lockerDTO = new();
+                            lockerDTO.Id = locker.IdBox;
+                            lockerDTO.Enable = locker.Enable;
+                            lockerDTO.AlamrNro = locker.AlamrNro;
+                            lockerDTO.Size = locker.Size;
+                            lockerDTO.TempMax = locker.TempMax;
+                            lockerDTO.TempMin = locker.TempMin;
+                            lockerDTO.Puerta = _puerta;
+                            lockerDTO.Ocupacion = _ocupacion;
+                            newList.Add(lockerDTO);
 
                         }
-                        // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
-                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                    }
-                }
-                catch (HttpRequestException ex) when (ex.InnerException is SocketException socketEx)
-                {
-                    if (estaConectado != false)
-                    {
-                        estaConectado = false;
-                        if (socketEx.SocketErrorCode == SocketError.NetworkDown ||
-                            socketEx.SocketErrorCode == SocketError.HostNotFound)
+                        serverCommunication.Locker = newList;
+                        var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
+
+                        if (response.IsSuccessStatusCode)
                         {
-                            _evento.AddEvento(new Evento($"Desconexión del servidor 1", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión del servidor 1");
+                            if (estaConectado != response.IsSuccessStatusCode)
+                            {
+                                estaConectado = response.IsSuccessStatusCode;
+                                _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
+                                await _chatHub.UpdateStatus("Conexión al servidor");
+                            }
                         }
                         else
                         {
-                            _evento.AddEvento(new Evento($"Desconexión del servidor 2", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión del servidor 2");
+                            if (estaConectado != response.IsSuccessStatusCode)
+                            {
+                                estaConectado = response.IsSuccessStatusCode;
+                                _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
+                                await _chatHub.UpdateStatus("Desconexión del servidor");
+
+                            }
+                            // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
+                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                         }
                     }
-                    // Handle exceptions that occur during the HTTP request
-                    Console.WriteLine($"HTTP request failed: {ex.Message}");
                 }
                 catch (Exception ex)
                 {
                     if (estaConectado != false)
                     {
                         estaConectado = false;
-                        _evento.AddEvento(new Evento($"Error inesperado de conexión", "conexión falla"));
-                        await _chatHub.UpdateStatus("Error inesperado");
+                        _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
+                        await _chatHub.UpdateStatus("Desconexión del servidor");
                     }
                     // Handle other unexpected exceptions
                     Console.WriteLine($"An unexpected error occurred: {ex.Message}");
