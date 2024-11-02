@@ -255,8 +255,7 @@ else if (screen == "error")
         StateHasChanged();
         if (estadoCerraduras == "Conectadas" && statusRed == "Conexión al servidor") screen = "keyboard";
         else if (estadoCerraduras == "Desconectadas") ScreenError("01: Error en las cerraduras");
-        else if (statusRed == "Desconexión del servidor 1") ScreenError("02: Error en el servidor 1");
-        else if (statusRed == "Desconexión del servidor 2") ScreenError("02: Error en el servidor 2");
+        else if (statusRed == "Desconexión del servidor") ScreenError("02: Error en el servidor");
         else if (statusRed == "Desconexión de red") ScreenError("03: Error en la red");
         else ScreenError("04: Error inesperado");
         StateHasChanged();
