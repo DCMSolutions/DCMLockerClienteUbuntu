@@ -122,7 +122,10 @@ namespace DCMLocker.Server.Controllers
         void Guardar(List<Evento> eventos)
         {
             string json = JsonSerializer.Serialize(eventos, new JsonSerializerOptions { WriteIndented = true });
-            System.IO.File.WriteAllText(fileNameAhora, json);
+            using (StreamWriter sw = new StreamWriter(fileNameAhora))
+            {
+                sw.Write(json);
+            }
         }
     }
 }

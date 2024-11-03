@@ -39,7 +39,7 @@
     protected override async Task OnInitializedAsync()
     {
         listaDeEventos = await Cliente.GetEventos();
-        mes = DateTime.Now.ToString("MMMM", new CultureInfo("es-ES"));
+        mes = DateTime.Now.ToString("MMMM-yyyy", new CultureInfo("es-ES"));
         meses = GenerateMonthYearOptions();
     }
 
@@ -58,7 +58,7 @@
 
             for (int month = (year == startYear) ? startMonth : 1; month <= monthLimit; month++)
             {
-                options.Add($"{CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month)}-{year}");
+                options.Add($"{new CultureInfo("es-ES").DateTimeFormat.GetMonthName(month)}-{year}");
             }
         }
 
