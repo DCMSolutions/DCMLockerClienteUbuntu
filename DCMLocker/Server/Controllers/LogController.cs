@@ -31,7 +31,7 @@ namespace DCMLocker.Server.Controllers
                 {
                     Console.WriteLine("hola existis");
                     string content = System.IO.File.ReadAllText(fileNameAhora);
-                    Console.WriteLine("contento " + content);
+                    Console.WriteLine("contento " + content + "fin");
                     List<Evento>? consultas = JsonSerializer.Deserialize<List<Evento>>(content);
                     consultas.Reverse();
                     return consultas;
