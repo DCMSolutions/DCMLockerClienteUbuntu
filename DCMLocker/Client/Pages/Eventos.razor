@@ -8,7 +8,7 @@
     <div style="display: flex; justify-content: space-between;">
         <label><strong>Lista de eventos de @mes.Nombre</strong></label>
         <div style="align-items: center">
-            <RadzenDropDown TValue="Mes" @bind-Value=mes Data="@meses" TextProperty="Nombre" ValueProperty="Nombre" Style="width: 250px;" Change="@(async () => await OnMonthChanged())" />
+            <RadzenDropDown TValue="Mes" @bind-Value=mes Data="@meses" TextProperty="Nombre" ValueProperty="Nombre" Style="width: 250px;" />
             <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
         </div>
     </div>
@@ -50,18 +50,6 @@
         meses = GenerateMonthYearOptions();
     }
 
-    private async Task OnMonthChanged()
-    {
-        if (mes != null)
-        {
-            int mesesAtras = (DateTime.Now.Month - mes.Numero) + 12 * (DateTime.Now.Year - mes.Año);
-            Console.WriteLine("meses atras " + mesesAtras);
-            listaDeEventos = await Cliente.GetEventosViejos(mesesAtras);
-            await grid.Reload();
-            StateHasChanged();
-        }
-    }
-
     List<Mes> GenerateMonthYearOptions()
     {
         var options = new List<Mes>();
@@ -89,9 +77,20 @@
 
     async void refreshEventos()
     {
-        listaDeEventos = await Cliente.GetEventos();
-        await grid.Reload();
-        StateHasChanged();
+        if (mes != null)
+        {
+            int mesesAtras = (DateTime.Now.Month - mes.Numero) + 12 * (DateTime.Now.Year - mes.Año);
+            Console.WriteLine("meses atras " + mesesAtras);
+            listaDeEventos = await Cliente.GetEventosViejos(mesesAtras);
+            await grid.Reload();
+            StateHasChanged();
+        }
+        else
+        {
+            listaDeEventos = await Cliente.GetEventos();
+            await grid.Reload();
+            StateHasChanged();
+        }
     }
 
     public class Mes
