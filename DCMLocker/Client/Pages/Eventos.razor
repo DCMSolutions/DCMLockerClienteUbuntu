@@ -8,7 +8,7 @@
     <div style="display: flex; justify-content: space-between;">
         <label><strong>Lista de eventos de @mes.Nombre</strong></label>
         <div style="align-items: center">
-            <RadzenDropDown TValue="Mes" @bind-Value=mes Data="@meses" TextProperty="Nombre" ValueProperty="Nombre" Style="width: 250px;" />
+            <RadzenDropDown TValue="Mes" @bind-Value=mes Data="@meses" TextProperty="Nombre" Style="width: 250px;" />
             <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
         </div>
     </div>
