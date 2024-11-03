@@ -54,6 +54,7 @@ namespace DCMLocker.Server.Controllers
                 {
                     string content = System.IO.File.ReadAllText(fileNameVieja);
                     List<Evento>? consultas = JsonSerializer.Deserialize<List<Evento>>(content);
+                    consultas.Reverse();
                     return consultas;
                 }
             }

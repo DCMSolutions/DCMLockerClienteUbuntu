@@ -5,9 +5,9 @@
 
 @if (mes != null)
 {
-    <div style="display: flex; justify-content: space-between;">
+    <div style="display: flex; justify-content: space-between;align-items: center;">
         <label><strong>Lista de eventos de @mes.Nombre</strong></label>
-        <div style="align-items: center">
+        <div style="align-items: center; display: flex;">
             <RadzenDropDown TValue="Mes" @bind-Value=mes Data="@meses" TextProperty="Nombre" Style="width: 250px;" />
             <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
         </div>
@@ -71,7 +71,7 @@
                     });
             }
         }
-
+        options.Reverse();
         return options;
     }
 
