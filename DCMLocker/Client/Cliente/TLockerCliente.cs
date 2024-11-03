@@ -1312,6 +1312,19 @@ namespace DCMLocker.Client.Cliente
             }
         }
 
+        public async Task<List<Evento>> GetEventosViejos(int mesesAtras)
+        {
+            try
+            {
+                var oRta = await _cliente.GetFromJsonAsync<List<Evento>>($"Log/viejo?mesesAtras={mesesAtras}");
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
         public async Task<bool> PostEvento(Evento evento)
         {
             try

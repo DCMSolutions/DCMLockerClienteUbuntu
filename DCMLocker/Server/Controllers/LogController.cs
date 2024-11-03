@@ -43,6 +43,7 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpGet("viejo")]
         public List<Evento> GetEventosViejos(int mesesAtras)
         {
             string fileNameVieja = Path.Combine("/home/pi", $"eventos-{DateTime.Now.AddMonths(-mesesAtras):MM-yyyy}.ans");

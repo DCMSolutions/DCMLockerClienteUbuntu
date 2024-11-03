@@ -1,13 +1,11 @@
 ﻿@page "/eventos"
 @using System.Globalization
 
-<h1><strong>Eventos</strong></h1>
-<br />
+<h1>Eventos</h1>
 <div style="display: flex; justify-content: space-between;">
-    <label>Lista de eventos de @mes</label>
-    <div>
-        <RadzenDropDown @bind-Value="mes" Data="@meses" Style="width: 150px;" />
-
+    <label><strong>Lista de eventos de @mes</strong></label>
+    <div style="align-items: center">
+        <RadzenDropDown Data="@meses" TextProperty="Nombre" ValueProperty="Nombre" Style="width: 150px;" @bind-Value="@mes" />
         <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
     </div>
 </div>
@@ -33,43 +31,74 @@
 @code {
     List<Evento>? listaDeEventos;
     RadzenDataGrid<Evento> grid;
-    string mes;
-    List<string> meses;
+    Mes mes;
+    List<Mes> meses;
 
     protected override async Task OnInitializedAsync()
     {
         listaDeEventos = await Cliente.GetEventos();
-        mes = DateTime.Now.ToString("MMMM-yyyy", new CultureInfo("es-ES"));
+        mes = new Mes
+            {
+                Nombre = $"{new CultureInfo("es-ES").DateTimeFormat.GetMonthName(DateTime.Now.Month)} de {DateTime.Now.Year}",
+                Numero = DateTime.Now.Month,
+                Año = DateTime.Now.Year
+            };
         meses = GenerateMonthYearOptions();
     }
 
-    List<string> GenerateMonthYearOptions()
+    protected override async Task OnParametersSetAsync()
     {
-        var options = new List<string>();
+        await OnMonthChanged();
+    }
+
+    private async Task OnMonthChanged()
+    {
+        if (mes != null)
+        {
+            int mesesAtras = (DateTime.Now.Month - mes.Numero) + 12 * (DateTime.Now.Year - mes.Año);
+            Console.WriteLine("meses atras " + mesesAtras);
+            listaDeEventos = await Cliente.GetEventosViejos(mesesAtras);
+            await grid.Reload();
+            StateHasChanged();
+        }
+    }
+
+    List<Mes> GenerateMonthYearOptions()
+    {
+        var options = new List<Mes>();
         int currentYear = DateTime.Now.Year;
         int currentMonth = DateTime.Now.Month;
 
-        int startMonth = 10; 
-        int startYear = 2024;
-
-        for (int year = startYear; year <= currentYear; year++)
+        //arranca de octubre del 2024
+        for (int year = 2024; year <= currentYear; year++)
         {
             int monthLimit = (year == currentYear) ? currentMonth : 12;
 
-            for (int month = (year == startYear) ? startMonth : 1; month <= monthLimit; month++)
+            for (int month = (year == 2024) ? 10 : 1; month <= monthLimit; month++)
             {
-                options.Add($"{new CultureInfo("es-ES").DateTimeFormat.GetMonthName(month)}-{year}");
+                options.Add(new Mes
+                    {
+                        Nombre = $"{new CultureInfo("es-ES").DateTimeFormat.GetMonthName(month)} del {year}",
+                        Numero = month,
+                        Año = year
+                    });
             }
         }
 
         return options;
     }
 
-
     async void refreshEventos()
     {
         listaDeEventos = await Cliente.GetEventos();
         await grid.Reload();
         StateHasChanged();
+    }
+
+    public class Mes
+    {
+        public string Nombre { get; set; }
+        public int Numero { get; set; }
+        public int Año { get; set; }
     }
 }
