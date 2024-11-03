@@ -20,18 +20,14 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                Console.WriteLine("hola");
                 if (!System.IO.File.Exists(fileNameAhora))
                 {
-                    Console.WriteLine("hola no existis");
                     CrearVacia();
                     return new List<Evento>();
                 }
                 else
                 {
-                    Console.WriteLine("hola existis");
                     string content = System.IO.File.ReadAllText(fileNameAhora);
-                    Console.WriteLine("contento " + content + "fin");
                     List<Evento>? consultas = JsonSerializer.Deserialize<List<Evento>>(content);
                     consultas.Reverse();
                     return consultas;
@@ -123,7 +119,7 @@ namespace DCMLocker.Server.Controllers
         void Guardar(List<Evento> eventos)
         {
             string json = JsonSerializer.Serialize(eventos, new JsonSerializerOptions { WriteIndented = true });
-            using (StreamWriter sw = new StreamWriter(fileNameAhora))
+            using (StreamWriter sw = new StreamWriter(fileNameAhora, false)) // false to overwrite
             {
                 sw.Write(json);
             }
