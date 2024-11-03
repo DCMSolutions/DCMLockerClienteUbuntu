@@ -20,14 +20,18 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
+                Console.WriteLine("hola");
                 if (!System.IO.File.Exists(fileNameAhora))
                 {
+                    Console.WriteLine("hola no existis");
                     CrearVacia();
                     return new List<Evento>();
                 }
                 else
                 {
+                    Console.WriteLine("hola existis");
                     string content = System.IO.File.ReadAllText(fileNameAhora);
+                    Console.WriteLine("contento " + content);
                     List<Evento>? consultas = JsonSerializer.Deserialize<List<Evento>>(content);
                     consultas.Reverse();
                     return consultas;
