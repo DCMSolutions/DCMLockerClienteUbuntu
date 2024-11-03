@@ -46,15 +46,25 @@
     List<string> GenerateMonthYearOptions()
     {
         var options = new List<string>();
-        var currentYear = DateTime.Now.Year;
+        int currentYear = DateTime.Now.Year;
+        int currentMonth = DateTime.Now.Month;
 
-        for (int month = DateTime.Now.Month; month <= 10; month++)
+        int startMonth = 10; 
+        int startYear = 2024;
+
+        for (int year = startYear; year <= currentYear; year++)
         {
-            options.Add($"{CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)}-{currentYear}");
+            int monthLimit = (year == currentYear) ? currentMonth : 12;
+
+            for (int month = (year == startYear) ? startMonth : 1; month <= monthLimit; month++)
+            {
+                options.Add($"{CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month)}-{year}");
+            }
         }
 
         return options;
     }
+
 
     async void refreshEventos()
     {
