@@ -32,7 +32,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="5.0.1" />
     <PackageReference Include="SerialPortStream" Version="2.4.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.12.1" />
-    <PackageReference Include="System.Text.Json" Version="5.0.2" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>
