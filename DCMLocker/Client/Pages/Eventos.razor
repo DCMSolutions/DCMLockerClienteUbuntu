@@ -10,6 +10,7 @@
         <div style="align-items: center; display: flex;">
             <RadzenDropDown TValue="Mes" @bind-Value=mes Data="@meses" TextProperty="Nombre" Style="width: 250px;" />
             <RadzenButton ButtonStyle="ButtonStyle.Success" Click=@(() => refreshEventos())><FeatherRefreshCw Color="black" /></RadzenButton>
+            <button style="outline:none;height:100%;" class="btn btn-outline" @onclick="() => DownloadTxtEventos()"><FeatherDownload Color="Black"></FeatherDownload></button>
         </div>
     </div>
     <br />
@@ -33,6 +34,9 @@
 
 
 @code {
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
     List<Evento>? listaDeEventos;
     RadzenDataGrid<Evento> grid;
     Mes mes;
@@ -99,4 +103,40 @@
         public int Numero { get; set; }
         public int Año { get; set; }
     }
+
+    private async Task DownloadTxtEventos()
+    {
+        if (listaDeEventos.Count > 0)
+        {
+            string fileName = $"eventos-{mes.Numero}-{mes.Año}.ans";
+            string fileContent = JsonSerializer.Serialize<List<Evento>>(listaDeEventos);
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileContent, fileName);
+
+
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Exito",
+                    Detail = "Se descargo el archivo de eventos.",
+                    Duration = 10000
+                });
+        }
+        else
+        {
+            ShowNotification(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Error",
+                    Detail = "La lista esta vacia.",
+                    Duration = 4000
+                });
+        }
+    }
+
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+
 }

@@ -31,13 +31,21 @@
         }
     </div>
 }
-<button type="button" class="btn btn-info btn-user btn-block" @onclick="InfoTewer" title="Proximamente...">Info tewer</button>
+<div class="row">
+    <div class="col-6">
+        <button type="button" class="btn btn-info btn-user btn-block" @onclick="InfoTewer" title="Obtener ID del teamviewer">Info tewer</button>
+    </div>
+    <div class="col-6">
+        <button type="button" class="btn btn-info btn-user btn-block" @onclick="PassTewer" title="Establecer la contraseña de TeamViewer">Contraseña tewer</button>
+    </div>
+</div>
 <button type="button" class="btn btn-success btn-user btn-block" @onclick="@(e => alertaGeneral("actualizará"))">Actualizar locker</button>
 <button type="button" class="btn btn-warning btn-user btn-block" @onclick="@(e => alertaGeneral("reseteará"))">Resetear locker</button>
 <button type="button" class="btn btn-danger btn-user btn-block" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
 
+<br />
 <a>@tewerID</a>
-
+<a>@tewerPASS</a>
 <br />
 
 <a>Versión @version del día @fecha</a>
@@ -51,6 +59,7 @@
     string version;
     string fecha;
     string tewerID;
+    string tewerPASS;
 
     protected override async void OnInitialized()
     {
@@ -65,6 +74,12 @@
     protected async void InfoTewer()
     {
         tewerID = await Cliente.System_TewerID();
+        StateHasChanged();
+    }
+
+    protected async void PassTewer()
+    {
+        tewerPASS = await Cliente.System_TewerPASS();
         StateHasChanged();
     }
 

@@ -266,6 +266,23 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpGet("TewerPASS")]
+        public IActionResult TewerPASS()
+        {
+            try
+            {
+                _evento.AddEvento(new Evento("Se seteó la contraseña de TeamViewer", "sistema"));
+
+                string s0 = cmd("teamviewer daemon start");
+                string s1 = cmd("teamviewer passwd lockerinteligente");
+                return Ok(s1);
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
+            }
+        }
+
 
         [HttpPost("Update")]
         public ActionResult Update()

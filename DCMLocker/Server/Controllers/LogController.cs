@@ -28,7 +28,7 @@ namespace DCMLocker.Server.Controllers
                 else
                 {
                     string content = System.IO.File.ReadAllText(fileNameAhora);
-                    List<Evento>? consultas = JsonSerializer.Deserialize<List<Evento>>(content);
+                    List<Evento> consultas = DeserializarConReintento(content);
                     consultas.Reverse();
                     return consultas;
                 }
@@ -53,7 +53,7 @@ namespace DCMLocker.Server.Controllers
                 else
                 {
                     string content = System.IO.File.ReadAllText(fileNameVieja);
-                    List<Evento>? consultas = JsonSerializer.Deserialize<List<Evento>>(content);
+                    List<Evento> consultas = DeserializarConReintento(content);
                     consultas.Reverse();
                     return consultas;
                 }
@@ -77,7 +77,7 @@ namespace DCMLocker.Server.Controllers
                 else
                 {
                     string content = System.IO.File.ReadAllText(fileNameAhora);
-                    List<Evento>? eventos = JsonSerializer.Deserialize<List<Evento>>(content);
+                    List<Evento> eventos = DeserializarConReintento(content);
                     eventos.Add(evento);
                     Guardar(eventos);
                     return true;
@@ -124,6 +124,26 @@ namespace DCMLocker.Server.Controllers
             {
                 sw.Write(json);
             }
+        }
+
+        public List<Evento> DeserializarConReintento(string content)
+        {
+            while (!string.IsNullOrEmpty(content))
+            {
+                try
+                {
+                    // Intentamos deserializar el contenido
+                    return JsonSerializer.Deserialize<List<Evento>>(content);
+                }
+                catch (JsonException)
+                {
+                    // Si falla, eliminamos el último carácter y reintentamos
+                    content = content.Substring(0, content.Length - 1);
+                }
+            }
+
+            // Si el string queda vacío y no se pudo deserializar, retornamos null o una lista vacía, según prefieras
+            return new();
         }
     }
 }

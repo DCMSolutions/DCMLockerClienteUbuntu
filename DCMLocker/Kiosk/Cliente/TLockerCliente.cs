@@ -918,6 +918,37 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
+        public async Task<string> System_TewerPASS()
+        {
+            var token = await _auth.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _cliente.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+            try
+            {
+                var r = await _cliente.GetStringAsync("System/TewerPASS");
+                return r;
+            }
+            catch (HttpRequestException er)
+            {
+                Console.WriteLine(er.Message);
+                if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
+                   (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
+                {
+                    _nav.NavigateTo("/login");
+                    return "";
+                }
+                else throw;
+            }
+            catch (Exception er)
+            {
+                Console.WriteLine("EEROR:" + er.Message);
+                return "";
+            }
+        }
+
         /// <summary>--------------------------------------------------------------------
         /// Actualizar locker
         /// </summary>
