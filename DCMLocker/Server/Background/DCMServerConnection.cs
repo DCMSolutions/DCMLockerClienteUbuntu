@@ -55,6 +55,7 @@ namespace DCMLocker.Server.Background
                 {
                     if (!NetworkInterface.GetIsNetworkAvailable())
                     {
+                        Console.WriteLine("no hay net pa");
                         if (estaConectado != false)
                         {
                             estaConectado = false;
@@ -129,8 +130,16 @@ namespace DCMLocker.Server.Background
                     if (estaConectado != false)
                     {
                         estaConectado = false;
-                        _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
-                        await _chatHub.UpdateStatus("Desconexión del servidor");
+                        if (!NetworkInterface.GetIsNetworkAvailable())
+                        {
+                            _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión de red");
+                        }
+                        else
+                        {
+                            _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexión del servidor");
+                        }
                     }
                     // Handle other unexpected exceptions
                     Console.WriteLine($"An unexpected error occurred: {ex.Message}");

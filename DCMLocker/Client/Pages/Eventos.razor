@@ -108,8 +108,14 @@
     {
         if (listaDeEventos.Count > 0)
         {
-            string fileName = $"eventos-{mes.Numero}-{mes.Año}.ans";
-            string fileContent = JsonSerializer.Serialize<List<Evento>>(listaDeEventos);
+            LockerConfig Config = await Cliente.GetConfig();
+
+            string fileName = $"{Config.LockerID}-{mes.Numero}-{mes.Año}.ans";
+            string fileContent = JsonSerializer.Serialize(listaDeEventos, new JsonSerializerOptions
+                {
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                    WriteIndented = true
+                });
 
             await JSRuntime.InvokeVoidAsync("downloadFile", fileContent, fileName);
 
