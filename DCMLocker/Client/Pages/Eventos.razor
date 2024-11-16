@@ -111,14 +111,19 @@
             LockerConfig Config = await Cliente.GetConfig();
 
             string fileName = $"{Config.LockerID}-{mes.Numero}-{mes.Año}.ans";
-            string fileContent = JsonSerializer.Serialize(listaDeEventos, new JsonSerializerOptions
-                {
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                    WriteIndented = true
-                });
+            // Convert the list of events to the desired format
+            var stringBuilder = new StringBuilder();
+            foreach (var evento in listaDeEventos)
+            {
+                string fecha = evento.Fecha.ToString("dd/MM/yyyy HH:mm:ss");
+                stringBuilder.AppendLine($"{fecha}\t{evento.Identificador}\t{evento.Descripcion}");
+            }
 
+            // Get the file content as a string
+            string fileContent = stringBuilder.ToString();
+
+            // Download the file using JSRuntime
             await JSRuntime.InvokeVoidAsync("downloadFile", fileContent, fileName);
-
 
             ShowNotification(new NotificationMessage
                 {
