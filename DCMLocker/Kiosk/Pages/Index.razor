@@ -242,6 +242,12 @@ else if (screen == "error")
         CheckEstados();
     }
 
+    public virtual async Task OnConnectionDownAsync()
+    {
+        ScreenError("03");
+        StateHasChanged();
+    }
+
     async void fastServicioTecnico()
     {
         screen = "keyboard";
@@ -260,6 +266,8 @@ else if (screen == "error")
         else ScreenError("04");
         StateHasChanged();
     }
+
+
 
     void ScreenError(string err)
     {

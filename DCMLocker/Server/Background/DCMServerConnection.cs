@@ -53,7 +53,6 @@ namespace DCMLocker.Server.Background
             {
                 try
                 {
-                    Console.WriteLine("net: " + NetworkInterface.GetIsNetworkAvailable());
                     if (!NetworkInterface.GetIsNetworkAvailable())
                     {
                         if (estaConectado != false)

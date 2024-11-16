@@ -116,7 +116,8 @@
             foreach (var evento in listaDeEventos)
             {
                 string fecha = evento.Fecha.ToString("dd/MM/yyyy HH:mm:ss");
-                stringBuilder.AppendLine($"{fecha}\t{evento.Identificador}\t{evento.Descripcion}");
+                string identificador = evento.Identificador.PadRight(20);
+                stringBuilder.AppendLine($"{fecha}\t{identificador}{evento.Descripcion}");
             }
 
             // Get the file content as a string
