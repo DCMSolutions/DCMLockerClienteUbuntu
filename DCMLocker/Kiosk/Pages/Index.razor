@@ -23,8 +23,6 @@
                     <Circle text=@(token.Length >i ? token[i].ToString():"") />
                 }
 
-
-
                 <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
                     <Eye />
                 </div>
@@ -240,12 +238,6 @@ else if (screen == "error")
         await ServerHubConnection.StartAsync();
 
         CheckEstados();
-    }
-
-    public virtual async Task OnConnectionDownAsync()
-    {
-        ScreenError("03");
-        StateHasChanged();
     }
 
     async void fastServicioTecnico()

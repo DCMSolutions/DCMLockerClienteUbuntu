@@ -26,12 +26,23 @@ namespace DCMLocker.Server.BaseController
                 if (!Directory.Exists(dirbck)) Directory.CreateDirectory(dirbck);
 
                 string sf = System.IO.Path.Combine(Path, FileName);
+                string sf2 = System.IO.Path.Combine("/home/pi", FileName);
                 //string sfb = System.IO.Path.Combine(dirbck, FileNamebkc + DateTime.Now.ToString("yyyyMMddHHmmss") + ".bck");
                 string s = JsonSerializer.Serialize<TLockerMapContent>(this);
                 //if (File.Exists(sf)) File.Move(sf, sfb);
-                using (StreamWriter b = File.CreateText(sf))
+                if (File.Exists(sf2))
                 {
-                    b.Write(s);
+                    using (StreamWriter b = File.CreateText(sf2))
+                    {
+                        b.Write(s);
+                    }
+                }
+                else
+                {
+                    using (StreamWriter b = File.CreateText(sf))
+                    {
+                        b.Write(s);
+                    }
                 }
             }
             catch

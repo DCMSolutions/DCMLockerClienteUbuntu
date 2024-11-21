@@ -16,8 +16,8 @@
 
 <div style="float:left; position: absolute" class="pt-2">
     <img style="width: 20vh;" src="img/Logo.png" />
-</div>  
-<div class="page" style="background-color: @BackgroundColor;">
+</div>
+<div class="page">
     <div class="main pt-2">
         <div class="container ">
             @Body
@@ -35,46 +35,4 @@
     private string Mensaje;
     private bool ISMensaje;
     private List<string> ErrorMsn = new();
-    private HubConnection QRhubConnection;
-    private HubConnection ServerHubConnection;
-    private string estadoCerraduras = "Conectadas";
-    private string statusRed = "Conexión al servidor";
-    private string BackgroundColor { get; set; } = "white";
-
-    protected override async Task OnInitializedAsync()
-    {
-        QRhubConnection = new HubConnectionBuilder()
-        .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
-        .Build();
-
-        ServerHubConnection = new HubConnectionBuilder()
-        .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
-        .Build();
-
-        ServerHubConnection.On<string>("STATUS", (message) =>
-        {
-            statusRed = message;
-            CheckEstados();
-        });
-
-        ServerHubConnection.On<string>("CERRADURAS", (message) =>
-        {
-            estadoCerraduras = message;
-            CheckEstados();
-        });
-
-        await QRhubConnection.StartAsync();
-        await ServerHubConnection.StartAsync();
-
-        CheckEstados();
-    }
-
-    void CheckEstados()
-    {
-        if (estadoCerraduras == "Conectadas" && statusRed == "Conexión al servidor") BackgroundColor = "white";
-        else BackgroundColor = "yellow";
-        StateHasChanged();
-    }
-
-
 }
