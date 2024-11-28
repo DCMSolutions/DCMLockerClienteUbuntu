@@ -42,7 +42,7 @@
 <button type="button" class="btn btn-success btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará"))">Actualizar locker</button>
 <button type="button" class="btn btn-warning btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("reseteará"))">Resetear locker</button>
 <button type="button" class="btn btn-danger btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
-<button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => sendTest())">Test xd</button>
+<button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => sendOpenChromium())">OpenChromium</button>
 
 <br />
 <a>@tewerID</a>
@@ -72,9 +72,9 @@
         StateHasChanged();
     }
 
-    protected async void sendTest()
+    protected async void sendOpenChromium()
     {
-        await Cliente.System_Test();
+        await Cliente.System_OpenChromium();
         StateHasChanged();
     }
     

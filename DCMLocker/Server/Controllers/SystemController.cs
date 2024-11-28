@@ -300,15 +300,13 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpPost("test")]
-        public ActionResult Test()
+        [HttpPost("OpenChromium")]
+        public ActionResult OpenChromium()
         {
             try
             {
-                _evento.AddEvento(new Evento("Se tiro test xd", "sistema"));
-
                 string s0 = cmdSinSudo("chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
-                _evento.AddEvento(new Evento($"Se tiro y dio: {s0}", "sistema"));
+                _evento.AddEvento(new Evento($"Se tiro sin sudo y dio: {s0}", "sistema"));
 
                 return Ok(s0);
             }

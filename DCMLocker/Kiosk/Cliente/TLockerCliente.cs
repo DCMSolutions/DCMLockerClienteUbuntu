@@ -985,7 +985,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
-        public async Task<bool> System_Test()
+        public async Task<bool> System_OpenChromium()
         {
             var token = await _auth.GetTokenAsync();
             if (!string.IsNullOrEmpty(token))
@@ -995,7 +995,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
             try
             {
-                var r = await _cliente.PostAsJsonAsync($"System/test", "");
+                var r = await _cliente.PostAsJsonAsync($"System/OpenChromium", "");
                 if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
                 return false;
             }

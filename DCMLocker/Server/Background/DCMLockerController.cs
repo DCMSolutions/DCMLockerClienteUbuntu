@@ -88,7 +88,9 @@ namespace DCMLocker.Server.Background
             driver.Start();
             
             _evento.AddEvento(new Evento($"Se inició la aplicación", "sistema"));
-            _system.Test();
+
+            _system.OpenChromium();
+            _evento.AddEvento(new Evento($"Se abrió chromium", "sistema"));
 
             return Task.CompletedTask;
         }
