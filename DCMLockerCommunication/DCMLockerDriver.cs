@@ -8,6 +8,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
 
 namespace DCMLockerCommunication
 {
@@ -180,6 +181,7 @@ namespace DCMLockerCommunication
 
             int rxstate = 0;
             // Buscamos CU por medio de TCP
+            bool cerradurasRotas = false;
 
             while (true)
             {
@@ -199,6 +201,7 @@ namespace DCMLockerCommunication
                     Ping pingSender = new Ping();
                     PingReply pingReply;
 
+                    cerradurasRotas = false;
                     this.SendOnConnection();
 
                     while (Cliente.Connected)
@@ -299,7 +302,11 @@ namespace DCMLockerCommunication
                 catch (ThreadInterruptedException) { throw; }
                 catch (Exception er)
                 {
-                    this.SendOnError(er);
+                    if (cerradurasRotas == false)
+                    {
+                        cerradurasRotas = true;
+                        this.SendOnError(er);
+                    }
                 }
                 Thread.Sleep(100);
             }

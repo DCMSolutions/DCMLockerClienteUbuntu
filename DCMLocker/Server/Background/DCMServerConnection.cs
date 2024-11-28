@@ -49,78 +49,77 @@ namespace DCMLocker.Server.Background
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             bool estaConectado = true;
+
+            async Task checkFail()
+            {
+                if (!NetworkInterface.GetIsNetworkAvailable())
+                {
+                    _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
+                    await _chatHub.UpdateStatus("Desconexion de red");
+                }
+                else
+                {
+                    _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
+                    await _chatHub.UpdateStatus("Desconexion del servidor");
+                }
+                estaConectado = false;
+            }
+
             while (true)
             {
                 try
                 {
-                    if (!NetworkInterface.GetIsNetworkAvailable())
+                    ServerStatus serverCommunication = new();
+                    serverCommunication.NroSerie = _base.Config.LockerID;
+                    serverCommunication.Version = _configuration["Version"];
+                    serverCommunication.IP = GetIP();
+                    serverCommunication.EstadoCerraduras = _system.GetEstadoCerraduras();
+
+                    List<TLockerMapDTO> newList = new();
+
+                    var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
+                    foreach (var locker in lockers)
                     {
-                        if (estaConectado != false)
+                        bool _puerta = false;
+                        bool _ocupacion = false;
+                        if (locker.IdFisico != null)
                         {
-                            estaConectado = false;
-                            _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión de red");
+                            var _CU = locker.IdFisico.GetValueOrDefault() / 16;
+                            var _Box = locker.IdFisico.GetValueOrDefault() % 16;
+
+                            CU status = _driver.GetCUState(_CU);
+                            _puerta = status.DoorStatus[_Box];
+                            _ocupacion = status.SensorStatus[_Box];
+                        }
+                        TLockerMapDTO lockerDTO = new();
+                        lockerDTO.Id = locker.IdBox;
+                        lockerDTO.Enable = locker.Enable;
+                        lockerDTO.AlamrNro = locker.AlamrNro;
+                        lockerDTO.Size = locker.Size;
+                        lockerDTO.TempMax = locker.TempMax;
+                        lockerDTO.TempMin = locker.TempMin;
+                        lockerDTO.Puerta = _puerta;
+                        lockerDTO.Ocupacion = _ocupacion;
+                        newList.Add(lockerDTO);
+
+                    }
+                    serverCommunication.Locker = newList;
+                    var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        if (estaConectado != true)
+                        {
+                            estaConectado = true;
+                            _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
+                            await _chatHub.UpdateStatus("Conexion al servidor");
                         }
                     }
                     else
                     {
-                        ServerStatus serverCommunication = new();
-                        serverCommunication.NroSerie = _base.Config.LockerID;
-                        serverCommunication.Version = _configuration["Version"];
-                        serverCommunication.IP = GetIP();
-                        serverCommunication.EstadoCerraduras = _system.GetEstadoCerraduras();
-
-                        List<TLockerMapDTO> newList = new();
-
-                        var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
-                        foreach (var locker in lockers)
+                        if (estaConectado != false)
                         {
-                            bool _puerta = false;
-                            bool _ocupacion = false;
-                            if (locker.IdFisico != null)
-                            {
-                                var _CU = locker.IdFisico.GetValueOrDefault() / 16;
-                                var _Box = locker.IdFisico.GetValueOrDefault() % 16;
-
-                                CU status = _driver.GetCUState(_CU);
-                                _puerta = status.DoorStatus[_Box];
-                                _ocupacion = status.SensorStatus[_Box];
-                            }
-                            TLockerMapDTO lockerDTO = new();
-                            lockerDTO.Id = locker.IdBox;
-                            lockerDTO.Enable = locker.Enable;
-                            lockerDTO.AlamrNro = locker.AlamrNro;
-                            lockerDTO.Size = locker.Size;
-                            lockerDTO.TempMax = locker.TempMax;
-                            lockerDTO.TempMin = locker.TempMin;
-                            lockerDTO.Puerta = _puerta;
-                            lockerDTO.Ocupacion = _ocupacion;
-                            newList.Add(lockerDTO);
-
-                        }
-                        serverCommunication.Locker = newList;
-                        var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            if (estaConectado != response.IsSuccessStatusCode)
-                            {
-                                estaConectado = response.IsSuccessStatusCode;
-                                _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
-                                await _chatHub.UpdateStatus("Conexión al servidor");
-                            }
-                        }
-                        else
-                        {
-                            if (estaConectado != response.IsSuccessStatusCode)
-                            {
-                                estaConectado = response.IsSuccessStatusCode;
-                                _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
-                                await _chatHub.UpdateStatus("Desconexión del servidor");
-
-                            }
-                            // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
-                            Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                            await checkFail();
                         }
                     }
                 }
@@ -128,17 +127,7 @@ namespace DCMLocker.Server.Background
                 {
                     if (estaConectado != false)
                     {
-                        estaConectado = false;
-                        if (!NetworkInterface.GetIsNetworkAvailable())
-                        {
-                            _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión de red");
-                        }
-                        else
-                        {
-                            _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
-                            await _chatHub.UpdateStatus("Desconexión del servidor");
-                        }
+                        await checkFail();
                     }
                     // Handle other unexpected exceptions
                     Console.WriteLine($"An unexpected error occurred: {ex.Message}");
@@ -146,7 +135,7 @@ namespace DCMLocker.Server.Background
 
                 await Task.Delay(1000);
             }
-        }
+        }        
 
         string GetIP()
         {

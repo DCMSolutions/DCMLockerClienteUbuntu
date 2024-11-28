@@ -300,6 +300,24 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpPost("test")]
+        public ActionResult Test()
+        {
+            try
+            {
+                _evento.AddEvento(new Evento("Se tiro test xd", "sistema"));
+
+                string s0 = cmd("chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
+                _evento.AddEvento(new Evento($"Se tiro y dio: {s0}", "sistema"));
+
+                return Ok(s0);
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
+            }
+        }
+
         private string cmd(string comando)
         {
             string s = "NO";

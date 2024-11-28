@@ -122,8 +122,8 @@ namespace DCMLocker.Server.Background
         private void Driver_OnError(object sender, EventArgs e)
         {
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message);
-            _evento.AddEvento(new Evento($"Hubo un error inesperado con las cerraduras: {((EvtArgError)e).Er.Message}", "cerraduras"));
             _system.ChangeEstado("Error");
+            _evento.AddEvento(new Evento($"Hubo un error inesperado con las cerraduras: {((EvtArgError)e).Er.Message}", "cerraduras"));
         }
         //------------------------------------------------------------------------------
         /// <summary>
@@ -135,8 +135,8 @@ namespace DCMLocker.Server.Background
         //------------------------------------------------------------------------------
         private async void Driver_OnDisConnection(object sender, EventArgs e)
         {
-            _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras"));
             _system.ChangeEstado("Desconectadas");
+            _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras"));
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -149,8 +149,8 @@ namespace DCMLocker.Server.Background
         //------------------------------------------------------------------------------
         private async void Driver_OnConnection(object sender, EventArgs e)
         {
-            _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
             _system.ChangeEstado("Conectadas");
+            _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
             await _chatHub.UpdateCerraduras("Conectadas");
         }
         //------------------------------------------------------------------------------

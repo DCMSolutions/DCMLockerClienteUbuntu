@@ -14,7 +14,7 @@
 
 @inherits LayoutComponentBase
 
-<div style="float:left; position: absolute" class="pt-2">
+<div style="float:left;" class="pt-2">
     <img style="width: 20vh;" src="img/Logo.png" />
 </div>
 <div class="page">
@@ -35,4 +35,10 @@
     private string Mensaje;
     private bool ISMensaje;
     private List<string> ErrorMsn = new();
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+
 }

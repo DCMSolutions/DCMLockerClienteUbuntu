@@ -167,7 +167,7 @@ else if (screen == "error")
     private HubConnection QRhubConnection;
     private HubConnection ServerHubConnection;
     string estadoCerraduras;
-    string statusRed = "Conexión al servidor";
+    string statusRed = "Conexion al servidor";
     string codigo;
 
     protected override async Task OnInitializedAsync()
@@ -251,11 +251,12 @@ else if (screen == "error")
     void CheckEstados()
     {
         StateHasChanged();
-        if (estadoCerraduras == "Conectadas" && statusRed == "Conexión al servidor") screen = "keyboard";
+        if (estadoCerraduras == "Conectadas" && statusRed == "Conexion al servidor") screen = "keyboard";
+        else if (estadoCerraduras == "Desconectadas" && (statusRed == "Desconexion del servidor" || statusRed == "Desconexion de red")) ScreenError("04");
         else if (estadoCerraduras == "Desconectadas") ScreenError("01");
-        else if (statusRed == "Desconexión del servidor") ScreenError("02");
-        else if (statusRed == "Desconexión de red") ScreenError("03");
-        else ScreenError("04");
+        else if (statusRed == "Desconexion del servidor") ScreenError("02");
+        else if (statusRed == "Desconexion de red") ScreenError("03");
+        else ScreenError("99: informar a pedrop@dcm.com.ar por favor, gracias");
         StateHasChanged();
     }
 
