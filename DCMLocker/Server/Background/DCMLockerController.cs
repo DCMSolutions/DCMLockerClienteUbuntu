@@ -88,6 +88,7 @@ namespace DCMLocker.Server.Background
             driver.Start();
             
             _evento.AddEvento(new Evento($"Se inició la aplicación", "sistema"));
+            _system.Test();
 
             return Task.CompletedTask;
         }
