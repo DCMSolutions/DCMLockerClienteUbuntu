@@ -30,10 +30,6 @@ namespace DCMLocker.Client
             builder.Services.AddScoped<MOFAuthenticationStateProvider>();
             builder.Services.AddScoped<AuthenticationStateProvider>(op => op.GetRequiredService<MOFAuthenticationStateProvider>());
             //---------------------------------------------
-            // Set culture to Spanish (Spain)
-            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("es-ES");
-            CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("es-ES");
-
             builder.RootComponents.Add<App>("#app");
             builder.Services.AddBlazoredModal();
             builder.Services.AddSingleton(s => new TLocker());
