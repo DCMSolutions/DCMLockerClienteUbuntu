@@ -305,7 +305,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                string s0 = cmdSinSudo("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
+                string s0 = cmdSinSudoNiRta("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
                 _evento.AddEvento(new Evento($"Se tiro sin sudo y dio: {s0}", "sistema"));
 
                 return Ok(s0);
@@ -332,20 +332,17 @@ namespace DCMLocker.Server.Controllers
             return s;
         }
 
-        private string cmdSinSudo(string comando)
+        private void cmdSinSudoNiRta(string comando)
         {
-            string s = "NO";
             using (Process cmd = new Process())
             {
                 cmd.StartInfo.FileName = "/bin/bash";
                 cmd.StartInfo.Arguments = $"-c \"{comando}\"";
                 cmd.StartInfo.UseShellExecute = false;
-                cmd.StartInfo.RedirectStandardOutput = true;
+                cmd.StartInfo.RedirectStandardOutput = false; // No need to capture output
+                cmd.StartInfo.RedirectStandardError = false;  // Avoid blocking on errors
                 cmd.Start();
-                s = cmd.StandardOutput.ReadToEnd();
-                cmd.WaitForExit();
             }
-            return s;
         }
 
 
