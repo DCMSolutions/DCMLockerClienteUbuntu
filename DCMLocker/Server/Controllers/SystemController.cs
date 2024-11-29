@@ -305,7 +305,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                string s0 = cmdSinSudo("chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
+                string s0 = cmdSinSudo("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
                 _evento.AddEvento(new Evento($"Se tiro sin sudo y dio: {s0}", "sistema"));
 
                 return Ok(s0);
@@ -347,6 +347,7 @@ namespace DCMLocker.Server.Controllers
             }
             return s;
         }
+
 
         [HttpGet("GetEthernetConfig")]
         public SystemNetwork GetEthernetConfig()

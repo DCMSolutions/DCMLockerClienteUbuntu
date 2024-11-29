@@ -90,7 +90,6 @@ namespace DCMLocker.Server.Background
             _evento.AddEvento(new Evento($"Se inició la aplicación", "sistema"));
 
             _system.OpenChromium();
-            _evento.AddEvento(new Evento($"Se abrió chromium", "sistema"));
 
             return Task.CompletedTask;
         }
