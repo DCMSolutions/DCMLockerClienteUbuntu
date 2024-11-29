@@ -1,0 +1,26 @@
+{
+  "DataGrid": {
+    "Contains": "Contiene",
+    "Equals": "Igual a",
+    "NotEquals": "Distinto de",
+    "StartsWith": "Empieza con",
+    "EndsWith": "Termina con",
+    "Filter": "Filtrar",
+    "ClearFilter": "Limpiar filtro",
+    "Apply": "Aplicar",
+    "And": "Y",
+    "Or": "O"
+  },
+  "FilterCaseSensitivity": {
+    "CaseSensitive": "Distinguir mayúsculas",
+    "CaseInsensitive": "No distinguir mayúsculas"
+  },
+  "Pager": {
+    "FirstPage": "Primera página",
+    "LastPage": "Última página",
+    "NextPage": "Página siguiente",
+    "PreviousPage": "Página anterior",
+    "ItemsPerPage": "Elementos por página",
+    "Total": "Total"
+  }
+}
