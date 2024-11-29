@@ -305,10 +305,10 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                string s0 = cmdSinSudoNiRta("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
-                _evento.AddEvento(new Evento($"Se tiro sin sudo y dio: {s0}", "sistema"));
+                cmdSinSudoNiRta("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch");
+                _evento.AddEvento(new Evento($"Se tiro sin sudo y dio: qcyo", "sistema"));
 
-                return Ok(s0);
+                return Ok();
             }
             catch (Exception er)
             {
