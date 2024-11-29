@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Radzen;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,7 +30,9 @@ namespace DCMLocker.Client
             builder.Services.AddScoped<MOFAuthenticationStateProvider>();
             builder.Services.AddScoped<AuthenticationStateProvider>(op => op.GetRequiredService<MOFAuthenticationStateProvider>());
             //---------------------------------------------
-
+            // Set culture to Spanish (Spain)
+            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("es-ES");
+            CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("es-ES");
 
             builder.RootComponents.Add<App>("#app");
             builder.Services.AddBlazoredModal();
