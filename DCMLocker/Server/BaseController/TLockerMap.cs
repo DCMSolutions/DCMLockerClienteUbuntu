@@ -9,14 +9,14 @@ using DCMLocker.Shared.Locker;
 
 namespace DCMLocker.Server.BaseController
 {
-    
+
 
     public class TLockerMapContent : ILockerStore
     {
         public const string FileName = "LoackerMap.map";
         public const string FileNamebkc = "BckLoackerMap";
 
-        public Dictionary<int,TLockerMap> LockerMaps { get; set; }
+        public Dictionary<int, TLockerMap> LockerMaps { get; set; }
         public void Save(string Path)
         {
             try
@@ -30,19 +30,9 @@ namespace DCMLocker.Server.BaseController
                 //string sfb = System.IO.Path.Combine(dirbck, FileNamebkc + DateTime.Now.ToString("yyyyMMddHHmmss") + ".bck");
                 string s = JsonSerializer.Serialize<TLockerMapContent>(this);
                 //if (File.Exists(sf)) File.Move(sf, sfb);
-                if (File.Exists(sf2))
+                using (StreamWriter b = File.CreateText(sf2))
                 {
-                    using (StreamWriter b = File.CreateText(sf2))
-                    {
-                        b.Write(s);
-                    }
-                }
-                else
-                {
-                    using (StreamWriter b = File.CreateText(sf))
-                    {
-                        b.Write(s);
-                    }
+                    b.Write(s);
                 }
             }
             catch
@@ -72,13 +62,13 @@ namespace DCMLocker.Server.BaseController
                     r.LockerMaps = new Dictionary<int, TLockerMap>();
                     for (int x = 0; x < 256; x++)
                     {
-                        r.LockerMaps.Add(x, new TLockerMap() { IdBox = x, Enable = false, IsUserFixed = false, IsSensorPresent = false, AlamrNro = 0, LockerType = TLockerMap.EnumLockerType.NORMAL, TempMin = 0, TempMax = 0, State="Libre",Size=0,IdFisico=null}); ;
+                        r.LockerMaps.Add(x, new TLockerMap() { IdBox = x, Enable = false, IsUserFixed = false, IsSensorPresent = false, AlamrNro = 0, LockerType = TLockerMap.EnumLockerType.NORMAL, TempMin = 0, TempMax = 0, State = "Libre", Size = 0, IdFisico = null }); ;
                     }
                     r.Save(Path);
                     return r;
                 }
             }
-            catch(Exception er)
+            catch (Exception er)
             {
                 Console.WriteLine(er.Message);
                 throw;

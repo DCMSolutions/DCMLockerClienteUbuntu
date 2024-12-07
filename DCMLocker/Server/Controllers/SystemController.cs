@@ -305,7 +305,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                cmdSinSudoNiRta("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch --incognito");
+                cmdSinSudoNiRta("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch --incognito --no-sandbox");
 
                 return Ok();
             }

@@ -17,22 +17,12 @@ namespace DCMLocker.Server.BaseController
             {
                 string sf2 = System.IO.Path.Combine("/home/pi", FileName);
 
-                string sf = System.IO.Path.Combine(Path, FileName);
+                //string sf = System.IO.Path.Combine(Path, FileName);
                 string s = JsonSerializer.Serialize<LockerConfig>(this);
 
-                if (File.Exists(sf2))
+                using (StreamWriter b = File.CreateText(sf2))
                 {
-                    using (StreamWriter b = File.CreateText(sf2))
-                    {
-                        b.Write(s);
-                    }
-                }
-                else
-                {
-                    using (StreamWriter b = File.CreateText(sf))
-                    {
-                        b.Write(s);
-                    }
+                    b.Write(s);
                 }
             }
             catch
@@ -41,6 +31,7 @@ namespace DCMLocker.Server.BaseController
             }
 
         }
+
         public static TLockerConfig Create(string Path)
         {
             string sf2 = System.IO.Path.Combine("/home/pi", FileName);
