@@ -52,10 +52,6 @@ namespace DCMLocker.Server.Background
 
             async Task checkFail()
             {
-                Console.WriteLine("ip es:" + GetIP());
-                Console.WriteLine("ip es null: " + GetIP() == null);
-                Console.WriteLine("ip es comillas: " + GetIP() == "");
-
                 if (GetIP() == "")
                 {
                     _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
