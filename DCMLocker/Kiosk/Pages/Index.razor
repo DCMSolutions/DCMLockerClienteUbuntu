@@ -256,11 +256,9 @@ else if (screen == "error")
         else if (estadoCerraduras == "Desconectadas") ScreenError("01");
         else if (statusRed == "Desconexion del servidor") ScreenError("02");
         else if (statusRed == "Desconexion de red") ScreenError("03");
-        else ScreenError("99: informar a pedrop@dcm.com.ar por favor, gracias");
+        else ScreenError("99: error inesperado, informar a pedrop@dcm.com.ar por favor, gracias");
         StateHasChanged();
     }
-
-
 
     void ScreenError(string err)
     {

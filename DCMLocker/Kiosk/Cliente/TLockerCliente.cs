@@ -985,37 +985,37 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
-        public async Task<bool> System_OpenChromium()
-        {
-            var token = await _auth.GetTokenAsync();
-            if (!string.IsNullOrEmpty(token))
-            {
-                _cliente.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            }
-            try
-            {
-                var r = await _cliente.PostAsJsonAsync($"System/OpenChromium", "");
-                if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
-                return false;
-            }
-            catch (HttpRequestException er)
-            {
-                Console.WriteLine(er.Message);
-                if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
-                   (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
-                {
-                    _nav.NavigateTo("/login");
-                    return false;
-                }
-                else throw;
-            }
-            catch (Exception er)
-            {
-                Console.WriteLine("ERROR:" + er.Message);
-                return false;
-            }
-        }
+        //public async Task<bool> System_OpenChromium()
+        //{
+        //    var token = await _auth.GetTokenAsync();
+        //    if (!string.IsNullOrEmpty(token))
+        //    {
+        //        _cliente.DefaultRequestHeaders.Authorization =
+        //            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        //    }
+        //    try
+        //    {
+        //        var r = await _cliente.PostAsJsonAsync($"System/OpenChromium", "");
+        //        if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
+        //        return false;
+        //    }
+        //    catch (HttpRequestException er)
+        //    {
+        //        Console.WriteLine(er.Message);
+        //        if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
+        //           (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
+        //        {
+        //            _nav.NavigateTo("/login");
+        //            return false;
+        //        }
+        //        else throw;
+        //    }
+        //    catch (Exception er)
+        //    {
+        //        Console.WriteLine("ERROR:" + er.Message);
+        //        return false;
+        //    }
+        //}
 
         /// <summary>--------------------------------------------------------------------
         /// El log y eso xd

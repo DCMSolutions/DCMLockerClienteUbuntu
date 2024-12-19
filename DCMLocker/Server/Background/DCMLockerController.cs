@@ -89,7 +89,7 @@ namespace DCMLocker.Server.Background
             
             _evento.AddEvento(new Evento($"Se inició la aplicación", "sistema"));
 
-            _system.OpenChromium();
+            //_system.OpenChromium();
 
             return Task.CompletedTask;
         }
@@ -121,11 +121,12 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e">EvtArgError</param>
         //-----------------------------------------------------------------------------
-        private void Driver_OnError(object sender, EventArgs e)
+        private async void Driver_OnError(object sender, EventArgs e)
         {
-            Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message);
-            _system.ChangeEstado("Error");
-            _evento.AddEvento(new Evento($"Hubo un error inesperado con las cerraduras: {((EvtArgError)e).Er.Message}", "cerraduras"));
+            Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message); 
+            _system.ChangeEstado("Desconectadas");
+            _evento.AddEvento(new Evento("Se desconectaron las cerraduras con error", "cerraduras"));
+            await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
         /// <summary>

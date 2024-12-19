@@ -42,7 +42,7 @@
 <button type="button" class="btn btn-success btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará"))">Actualizar locker</button>
 <button type="button" class="btn btn-warning btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("reseteará"))">Resetear locker</button>
 <button type="button" class="btn btn-danger btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
-<button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => sendOpenChromium())">Abrir navegador</button>
+@* <button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => sendOpenChromium())">Abrir navegador</button> *@
 
 <br />
 <a>@tewerID</a>
@@ -72,11 +72,13 @@
         StateHasChanged();
     }
 
-    protected async void sendOpenChromium()
-    {
-        await Cliente.System_OpenChromium();
-        StateHasChanged();
-    }
+
+    //esto antes abria el navegador desde la app, pero trajo problemas
+    // protected async void sendOpenChromium()
+    // {
+    //     await Cliente.System_OpenChromium();
+    //     StateHasChanged();
+    // }
     
     protected async void InfoTewer()
     {
