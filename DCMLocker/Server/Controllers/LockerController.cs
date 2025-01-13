@@ -206,7 +206,6 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-
         //Cosas de tamaños
         [HttpGet("tamaño")]
         public async Task<IActionResult> GetTamaños()
@@ -691,10 +690,10 @@ namespace DCMLocker.Server.Controllers
 
             try
             {
-                if(_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambió de ID de locker: de {_base.Config.LockerID} a {data.LockerID}", "sistema"));
-                if(_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambió de URL de servidor: de {_base.Config.UrlServer} a {data.UrlServer}", "sistema"));
+                if (_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambió de ID de locker: de {_base.Config.LockerID} a {data.LockerID}", "sistema"));
+                if (_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambió de URL de servidor: de {_base.Config.UrlServer} a {data.UrlServer}", "sistema"));
 
-                _base.Config.LockerID = data.LockerID; 
+                _base.Config.LockerID = data.LockerID;
                 _base.Config.LockerMode = data.LockerMode;
                 _base.Config.LockerType = data.LockerType;
                 _base.Config.IsConfirmarEmail = data.IsConfirmarEmail;
@@ -1054,6 +1053,24 @@ namespace DCMLocker.Server.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// ping al sv para ver si está
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("PingServer")]
+        public async Task<bool> pingSv()
+        {
+            try
+            {
+                var response = await _http.GetAsync($"{_base.Config.UrlServer}api/size");
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

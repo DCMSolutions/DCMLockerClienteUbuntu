@@ -266,6 +266,10 @@ else if (screen == "alerta")
         estadoCerraduras = await Cliente.GetEstadoCerraduras();
         Ips = await Cliente.System_GetIP();
         IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
+        bool pingServer = await Cliente.PingServer();
+        if (!pingServer) statusRed = "Desconexion del servidor";
+        if (IpsFiltered.Count() == 0) statusRed = "Desconexion de red";
+        
 
         version = await Cliente.GetVersion();
         fecha = await Cliente.GetFecha();
@@ -298,9 +302,14 @@ else if (screen == "alerta")
                         break;
                     }
                 }
-                if (validText)
+                if (validText && statusRed == "Conexion al servidor")
                 {
                     send();
+                }
+                else if (validText)
+                {
+                    Console.WriteLine("No hay señal y se leyo un QR.");
+                    ShowNotificationError("No hay conexión.");
                 }
                 else
                 {
@@ -391,12 +400,18 @@ else if (screen == "alerta")
         if (resultado == "3942")
         {
             await Cliente.PostEvento(new Evento("Se ingresó 3942", "debug"));
+            estadoCerraduras = await Cliente.GetEstadoCerraduras();
+            Ips = await Cliente.System_GetIP();
+            IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "red";
             StateHasChanged();
         }
         else if (resultado == "6641")
         {
             await Cliente.PostEvento(new Evento("Se ingresó 6641", "debug"));
+            estadoCerraduras = await Cliente.GetEstadoCerraduras();
+            Ips = await Cliente.System_GetIP();
+            IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "ip";
             StateHasChanged();
         }
@@ -440,10 +455,10 @@ else if (screen == "alerta")
 
     async Task esperarQueSeAbra(string resultado)
     {
-        int iter = 0;
-        bool abierta = false;
+        // int iter = 0;
+        // bool abierta = false;
 
-        var inicialState = await Cliente.GetState();
+        // var inicialState = await Cliente.GetState();
 
         door = await Cliente.TokenKey(resultado);
 

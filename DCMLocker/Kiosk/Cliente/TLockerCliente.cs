@@ -1086,5 +1086,18 @@ namespace DCMLocker.Kiosk.Cliente
                 throw;
             }
         }
+
+        public async Task<bool> PingServer()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("Locker/PingServer");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
     }
 }
