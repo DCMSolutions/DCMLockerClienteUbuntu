@@ -1066,6 +1066,8 @@ namespace DCMLocker.Server.Controllers
             try
             {
                 var response = await _http.GetAsync($"{_base.Config.UrlServer}api/size");
+                Console.WriteLine("tiro ping: " + response);
+                Console.WriteLine("tiro status: " + response.IsSuccessStatusCode);
                 return response.IsSuccessStatusCode;
             }
             catch
