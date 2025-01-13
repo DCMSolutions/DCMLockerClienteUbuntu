@@ -65,7 +65,7 @@ namespace DCMLocker.Server.Background
                 estaConectado = false;
             }
 
-            while (true)
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
