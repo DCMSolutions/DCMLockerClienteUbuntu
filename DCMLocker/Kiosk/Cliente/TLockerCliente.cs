@@ -1092,14 +1092,19 @@ namespace DCMLocker.Kiosk.Cliente
             try
             {
                 var response = await _cliente.GetAsync("Locker/PingServer");
-                Console.WriteLine("la rta es del ping: " + response);
-                Console.WriteLine("la statuscode: " + response.IsSuccessStatusCode);
-                return response.IsSuccessStatusCode;
+                if (response.IsSuccessStatusCode)
+                {
+                    // Read the response as a boolean
+                    var result = await response.Content.ReadAsStringAsync();
+                    return bool.TryParse(result, out var isSuccess) && isSuccess;
+                }
+                return false;
             }
             catch
             {
                 return false;
             }
         }
+
     }
 }
