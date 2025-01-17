@@ -65,7 +65,7 @@ namespace DCMLocker.Server.Background
                 estaConectado = false;
             }
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (true)    //!stoppingToken.IsCancellationRequested dio problemas
             {
                 try
                 {
@@ -110,9 +110,9 @@ namespace DCMLocker.Server.Background
                     {
                         if (estaConectado != true)
                         {
-                            estaConectado = true;
                             _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
                             await _chatHub.UpdateStatus("Conexion al servidor");
+                            estaConectado = true;
                         }
                     }
                     else

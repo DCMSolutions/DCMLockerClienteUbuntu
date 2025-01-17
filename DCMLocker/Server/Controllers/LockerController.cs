@@ -39,6 +39,7 @@ namespace DCMLocker.Server.Controllers
         private readonly TBaseLockerController _base;
         private readonly HttpClient _http;
         private readonly LogController _evento;
+        private readonly SystemController _system;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
@@ -47,7 +48,7 @@ namespace DCMLocker.Server.Controllers
         /// <param name="context2"></param>
         /// <param name="logger"></param>
         /// <param name="Base"></param>------------------------------------------------------
-        public LockerController(IDCMLockerController driver, IHubContext<LockerHub, ILockerHub> context2, ILogger<LockerController> logger, TBaseLockerController Base, HttpClient http, LogController logController)
+        public LockerController(IDCMLockerController driver, IHubContext<LockerHub, ILockerHub> context2, ILogger<LockerController> logger, TBaseLockerController Base, HttpClient http, LogController logController, SystemController system)
         {
             _driver = driver;
             _log = logger;
@@ -55,6 +56,7 @@ namespace DCMLocker.Server.Controllers
             _base = Base;
             _http = http;
             _evento = logController;
+            _system = system;
         }
         //public LockerController(ILogger<LockerController> logger)
         //{
@@ -132,14 +134,14 @@ namespace DCMLocker.Server.Controllers
 
                 ServerToken serverComunication = new();
 
-
-
                 serverComunication.NroSerie = _base.Config.LockerID;
                 serverComunication.Token = Token;
                 _http.Timeout = TimeSpan.FromSeconds(5);
                 var response = await _http.PostAsJsonAsync(uri, serverComunication);
 
-                if (response.IsSuccessStatusCode)
+                bool hayCerraduras = _system.GetEstadoCerraduras() == "Conectadas";
+
+                if (response.IsSuccessStatusCode && hayCerraduras)
                 {
                     try
                     {
@@ -178,13 +180,19 @@ namespace DCMLocker.Server.Controllers
                 }
                 else
                 {
-                    _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: rechazado", "token"));
+                    if (hayCerraduras)
+                    {
+                        _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: rechazado", "token"));
+                    }
+                    else
+                    {
+                        _evento.AddEvento(new Evento($"Pedido de validación token {Token} ignorado por falta de conexión de cerraduras", "token"));
+                    }
 
                     // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
                     Console.WriteLine($"Request failed with status code: {response.StatusCode}");
                     return StatusCode((int)response.StatusCode);
                 }
-
             }
             catch (HttpRequestException ex)
             {

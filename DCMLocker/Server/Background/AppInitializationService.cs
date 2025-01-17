@@ -94,7 +94,14 @@ namespace DCMLocker.Server.Background
                                 if (bytesRead > 0)
                                 {
                                     string data = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                                    if (data != null) await _qrReaderHub.SendToken(data);
+                                    try
+                                    {
+                                        if (data != null) await _qrReaderHub.SendToken(data);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex);
+                                    }
                                 }
                             }
                         }

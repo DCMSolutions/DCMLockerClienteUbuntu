@@ -276,10 +276,12 @@ else if (screen == "alerta")
 
         QRhubConnection = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
+        .WithAutomaticReconnect()
         .Build();
 
         ServerHubConnection = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
+        .WithAutomaticReconnect()
         .Build();
 
         QRhubConnection.On<string>("ReceiveToken", (string text) =>
@@ -362,6 +364,7 @@ else if (screen == "alerta")
         else if (statusRed == "Desconexion del servidor") ScreenError("02");
         else if (statusRed == "Desconexion de red") ScreenError("03");
         else ScreenError("99: error inesperado, informar a pedrop@dcm.com.ar por favor, gracias");
+        token = new int[0];
         StateHasChanged();
     }
 
