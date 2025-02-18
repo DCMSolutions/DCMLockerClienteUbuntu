@@ -37,9 +37,9 @@
                         @for (int x = 0; x < CU.Box.Length; x++)
                         {
                             var f = x;
-                            <td style="background-color:@(!CU.Box[x].Sensor?"red":"green")">
-                                <a @onclick="args => Abrir(CU.CU, f)" style="text-decoration:none; color:white; display: flex; justify-content: center;align-items: center; @(CU.Box[x].Id < 6 ? "border: 2px solid black;" : "")" >
-                                    <span class="oi @(CU.Box[x].Door?"oi-lock-locked":"oi-lock-unlocked")"></span>
+                            <td style="background-color:@(!CU.Box[x].Sensor ? "red" : "green"); border:@(listaDeBoxesAsignados.Contains(16*CU.CU + x) ? "2px solid black" : "none")">
+                                <a @onclick="args => Abrir(CU.CU, f)" style="text-decoration:none; color:white;">
+                                    <span class="oi @(CU.Box[x].Door?"oi-lock-locked":"oi-lock-unlocked" )"></span>
                                 </a>
                             </td>
                         }
