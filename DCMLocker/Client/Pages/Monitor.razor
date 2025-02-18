@@ -4,7 +4,7 @@
 
 @if (Locker.LockerCUs != null)
 {
-    <table class="table text-center">
+    <table class="table text-center" style="border-collapse: collapse;">
         <thead>
             <tr>
                 <th>Locker</th>
@@ -32,12 +32,12 @@
                 if (CU != null)
                 {
                     <tr>
-                        <td>@CU.CU.ToString()</td>
+                        <td style="border: 1px solid black;">@CU.CU.ToString()</td>
 
                         @for (int x = 0; x < CU.Box.Length; x++)
                         {
                             var f = x;
-                            <td style="background-color:@(!CU.Box[x].Sensor ? "red" : "green"); border:@(listaDeBoxesAsignados.Contains(16*CU.CU + x) ? "2px solid black" : "none")">
+                            <td style="background-color:@(!CU.Box[x].Sensor ? "red" : "green"); border:@(listaDeBoxesAsignados.Contains(16*CU.CU + x) ? "2px solid black" : "1px solid transparent")">
                                 <a @onclick="args => Abrir(CU.CU, f)" style="text-decoration:none; color:white;">
                                     <span class="oi @(CU.Box[x].Door?"oi-lock-locked":"oi-lock-unlocked" )"></span>
                                 </a>
