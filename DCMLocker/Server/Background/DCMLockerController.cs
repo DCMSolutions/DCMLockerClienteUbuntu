@@ -58,6 +58,7 @@ namespace DCMLocker.Server.Background
 
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;
+            driver.Change += Driver_Change;
             driver.OnError += Driver_OnError;
             driver.OnCUChange += Driver_OnCUChange;
             _chatHub = chatHub;
@@ -158,6 +159,22 @@ namespace DCMLocker.Server.Background
         }
         //------------------------------------------------------------------------------
         /// <summary>
+        /// EVENTO: CHANGE
+        /// FUENTE: Driver de locker
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        //------------------------------------------------------------------------------
+        private async void Driver_Change(object sender, EventArgs e)
+        {
+            //hubo un change
+            EvtArgInfo v = (EvtArgInfo)e;
+
+            _evento.AddEvento(new Evento($"Change, object: {sender}, tosrting: {sender.ToString()} pero lo bueno es {v} y su info: {v.Info} y to str {v.ToString()}", "test"));
+            //await _chatHub.UpdateCerraduras("Conectadas");     aca irá otro hub para cosillas
+        }
+        //------------------------------------------------------------------------------
+        /// <summary>
         /// EVENTO: CUCHANGE
         /// FUENTE: Driver de locker
         /// </summary>
@@ -168,7 +185,6 @@ namespace DCMLocker.Server.Background
         {
             EvtArgCUChange v = (EvtArgCUChange)e;
             _hubContext.Clients.All.LockerUpdated(v.CU.ADDR, "Cambio");
-            _evento.AddEvento(new Evento($"CU change: sender: {sender}, y to string: {sender.ToString()}", "test"));
 
 
             //Console.WriteLine("CAMBIO:");
