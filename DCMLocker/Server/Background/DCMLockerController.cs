@@ -58,7 +58,7 @@ namespace DCMLocker.Server.Background
 
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;
-            driver.Change += Driver_Change;
+            //driver.Change += Driver_Change;
             driver.OnError += Driver_OnError;
             driver.OnCUChange += Driver_OnCUChange;
             _chatHub = chatHub;
@@ -165,17 +165,14 @@ namespace DCMLocker.Server.Background
         /// <param name="sender"></param>
         /// <param name="e"></param>
         //------------------------------------------------------------------------------
-        private async void Driver_Change(object sender, EventArgs e)
-        {
-            //hubo un change
-            EvtArgInfo v = (EvtArgInfo)e;
-            Console.WriteLine("todo ok 1");
-            string info = v.Info;
-            Console.WriteLine("todo ok 2");
-            _evento.AddEvento(new Evento($"Change, {info}", "test"));
-            _evento.AddEvento(new Evento("Change, sin na", "test"));
-            //await _chatHub.UpdateCerraduras("Conectadas");     aca irá otro hub para cosillas
-        }
+        //private async void Driver_Change(object sender, EventArgs e)
+        //{
+        //    //hubo un change
+        //    //EvtArgInfo v = (EvtArgInfo)e;
+
+        //    //_evento.AddEvento(new Evento($"Change, {v.Info}", "test"));
+        //    //await _chatHub.UpdateCerraduras("Conectadas");     aca irá otro hub para cosillas
+        //}
         //------------------------------------------------------------------------------
         /// <summary>
         /// EVENTO: CUCHANGE

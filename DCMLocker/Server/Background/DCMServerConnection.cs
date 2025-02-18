@@ -84,45 +84,22 @@ namespace DCMLocker.Server.Background
                 estaConectado = false;
             }
 
+            Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates = new();
+
             while (true)    //!stoppingToken.IsCancellationRequested dio problemas
             {
                 try
                 {
-                    ServerStatus serverCommunication = new();
-                    serverCommunication.NroSerie = _base.Config.LockerID;
-                    serverCommunication.Version = _configuration["Version"];
-                    serverCommunication.IP = GetIP();
-                    serverCommunication.EstadoCerraduras = _system.GetEstadoCerraduras();
 
-                    List<TLockerMapDTO> newList = new();
-
-                    var lockers = _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null).ToList();
-                    foreach (var locker in lockers)
+                    var serverCommunication = new ServerStatus
                     {
-                        bool _puerta = false;
-                        bool _ocupacion = false;
-                        if (locker.IdFisico != null)
-                        {
-                            var _CU = locker.IdFisico.GetValueOrDefault() / 16;
-                            var _Box = locker.IdFisico.GetValueOrDefault() % 16;
+                        NroSerie = _base.Config.LockerID,
+                        Version = _configuration["Version"],
+                        IP = GetIP(),
+                        EstadoCerraduras = _system.GetEstadoCerraduras(),
+                        Locker = GetLockerStatus(previousStates) // Function to optimize locker status retrieval
+                    };
 
-                            CU status = _driver.GetCUState(_CU);
-                            _puerta = status.DoorStatus[_Box];
-                            _ocupacion = status.SensorStatus[_Box];
-                        }
-                        TLockerMapDTO lockerDTO = new();
-                        lockerDTO.Id = locker.IdBox;
-                        lockerDTO.Enable = locker.Enable;
-                        lockerDTO.AlamrNro = locker.AlamrNro;
-                        lockerDTO.Size = locker.Size;
-                        lockerDTO.TempMax = locker.TempMax;
-                        lockerDTO.TempMin = locker.TempMin;
-                        lockerDTO.Puerta = _puerta;
-                        lockerDTO.Ocupacion = _ocupacion;
-                        newList.Add(lockerDTO);
-
-                    }
-                    serverCommunication.Locker = newList;
                     var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
 
                     if (response.IsSuccessStatusCode)
@@ -154,6 +131,51 @@ namespace DCMLocker.Server.Background
 
                 await Task.Delay(1000);
             }
+
+            List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates)
+            {
+                var newList = new List<TLockerMapDTO>();
+
+                foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
+                {
+                    var idFisico = locker.IdFisico.GetValueOrDefault();
+                    var _CU = idFisico / 16;
+                    var _Box = idFisico % 16;
+
+                    var status = _driver.GetCUState(_CU);
+                    bool _puerta = status.DoorStatus[_Box];
+                    bool _ocupacion = status.SensorStatus[_Box];
+
+                    // Check if state changed
+                    if (previousStates.TryGetValue(locker.IdBox, out var previousState))
+                    {
+                        if (previousState.Puerta != _puerta)
+                        {
+                            _evento.AddEvento(new Evento($"Se {(_puerta ? "abrió" : "cerró")} la puerta del box {locker.IdBox}", "cerraduras"));
+                        }
+                        if (previousState.Ocupacion != _ocupacion)
+                        {
+                            _evento.AddEvento(new Evento($"Se {(_ocupacion ? "detectó" : "liberó")} presencia en el box {locker.IdBox}", "sensores"));
+                        }
+                    }
+
+                    // Update state tracking
+                    previousStates[locker.IdBox] = (_puerta, _ocupacion);
+
+                    newList.Add(new TLockerMapDTO
+                    {
+                        Id = locker.IdBox,
+                        Enable = locker.Enable,
+                        AlamrNro = locker.AlamrNro,
+                        Size = locker.Size,
+                        TempMax = locker.TempMax,
+                        TempMin = locker.TempMin,
+                        Puerta = _puerta,
+                        Ocupacion = _ocupacion
+                    });
+                }
+                return newList;
+            }
         }
 
         string GetIP()
@@ -179,7 +201,7 @@ namespace DCMLocker.Server.Background
 
                 }
                 string ip = retorno.Where(ip => !ip.EndsWith(".2.3")).FirstOrDefault();
-                
+
                 if (ip != null) return ip;
                 return "";
             }
@@ -188,6 +210,6 @@ namespace DCMLocker.Server.Background
                 return "";
             }
         }
-       
+
     }
 }

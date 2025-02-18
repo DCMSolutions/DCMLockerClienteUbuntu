@@ -55,7 +55,7 @@ namespace DCMLockerCommunication
     {
         public event EventHandler OnConnection;
         public event EventHandler OnDisConnection;
-        public event EventHandler Change;
+        //public event EventHandler Change;
         public event EventHandler OnCUChange;
         public event EventHandler OnError;
 
@@ -79,14 +79,14 @@ namespace DCMLockerCommunication
             }
             catch { }
         }
-        protected void SendChange(string info)
-        {
-            try
-            {
-                Change?.Invoke(this, new EvtArgInfo() { Info = info });
-            }
-            catch { }
-        }
+        //protected void SendChange(string info)
+        //{
+        //    try
+        //    {
+        //        Change?.Invoke(this, new EvtArgInfo() { Info = info });
+        //    }
+        //    catch { }
+        //}
         protected void SendOnCUChange(CU cu)
         {
             try
@@ -231,7 +231,7 @@ namespace DCMLockerCommunication
                             };
                             byte[] b = trama.ToArray();
                             stream.Write(b, 0, b.Length);
-                            this.SendChange("hola jojooo");
+                            //this.SendChange("study");
                         }
 
 
@@ -350,8 +350,8 @@ namespace DCMLockerCommunication
         public Exception Er { get; set; }
     }
     //-------------------------------------------------------------------------------
-    public class EvtArgInfo : EventArgs
-    {
-        public string Info { get; set; }
-    }
+    //public class EvtArgInfo : EventArgs
+    //{
+    //    public string Info { get; set; }
+    //}
 }
