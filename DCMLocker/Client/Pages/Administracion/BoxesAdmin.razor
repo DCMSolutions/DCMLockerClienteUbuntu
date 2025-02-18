@@ -14,7 +14,7 @@
             <Columns>
                 <RadzenDataGridColumn TItem="TLockerMap" Property="IdBox" Title="Box" />
                 <RadzenDataGridColumn TItem="TLockerMap" Property="IdFisico" Title="Id físico" />
-                <RadzenDataGridColumn TItem="TLockerMap" Property="Size" Title="Tamaño" >
+                <RadzenDataGridColumn TItem="TLockerMap" Property="Size" Title="Tamaño">
                     <Template Context="data">
                         @(listaDeTamaños.FirstOrDefault(x => x.Id == data.Size)?.Nombre ?? "No encontrado")
                     </Template>
@@ -79,6 +79,15 @@
     }*@
     </form>
 }
+else
+{
+    <div class="abs-center">
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+    </div>
+}
+
 
 @code {
     [Inject]
@@ -110,7 +119,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        
+
         listaDeTamaños = await Cliente.GetListaDeTamaños();
         listaDeBoxes = await Cliente.GetAllBoxConfig();
         listaDeIdsSinAsignar = await Cliente.GetIdSinAsignar();

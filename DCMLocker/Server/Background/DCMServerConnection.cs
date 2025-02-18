@@ -66,18 +66,18 @@ namespace DCMLocker.Server.Background
                         using var response = await _httpClient.GetAsync("https://www.google.com");
                         if (response.IsSuccessStatusCode)
                         {
-                            _evento.AddEvento(new Evento($"Se desconectó del servidor", "conexión falla"));
+                            _evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
                             await _chatHub.UpdateStatus("Desconexion del servidor");
                         }
                         else
                         {
-                            _evento.AddEvento(new Evento($"Se desconectó de internet", "conexión falla"));
+                            _evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
                             await _chatHub.UpdateStatus("Desconexion de internet");
                         }
                     }
                     catch
                     {
-                        _evento.AddEvento(new Evento($"Se desconectó de internet", "conexión falla"));
+                        _evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
                         await _chatHub.UpdateStatus("Desconexion de internet");
                     }
                 }
@@ -106,7 +106,7 @@ namespace DCMLocker.Server.Background
                     {
                         if (estaConectado != true)
                         {
-                            _evento.AddEvento(new Evento($"Se conectó al servidor", "conexión"));
+                            _evento.AddEvento(new Evento("Se conectó al servidor", "conexión"));
                             await _chatHub.UpdateStatus("Conexion al servidor");
                             estaConectado = true;
                         }

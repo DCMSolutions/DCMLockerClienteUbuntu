@@ -2,15 +2,7 @@
 
 <h1>Monitor</h1>
 
-@if (Locker.LockerCUs == null)
-{
-<div class="abs-center">
-    <div class="spinner-grow text-secondary"></div>
-    <div class="spinner-grow text-secondary"></div>
-    <div class="spinner-grow text-secondary"></div>
-</div>
-}
-else
+@if (Locker.LockerCUs != null)
 {
     <table class="table text-center">
         <thead>
@@ -55,6 +47,14 @@ else
             }
         </tbody>
     </table>
+}
+else
+{
+    <div class="abs-center">
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+    </div>
 }
 
 @code {
