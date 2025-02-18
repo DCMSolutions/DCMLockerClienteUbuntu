@@ -19,6 +19,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace DCMLocker.Server.Background
 {
@@ -54,13 +55,30 @@ namespace DCMLocker.Server.Background
             {
                 if (GetIP() == "")
                 {
-                    _evento.AddEvento(new Evento("Desconexión de red del locker", "conexión falla"));
+                    _evento.AddEvento(new Evento("Se desconectó de red", "conexión falla"));
                     await _chatHub.UpdateStatus("Desconexion de red");
                 }
                 else
                 {
-                    _evento.AddEvento(new Evento($"Desconexión del servidor", "conexión falla"));
-                    await _chatHub.UpdateStatus("Desconexion del servidor");
+                    try
+                    {
+                        using var response = await _httpClient.GetAsync("https://www.google.com");
+                        if (response.IsSuccessStatusCode)
+                        {
+                            _evento.AddEvento(new Evento($"Se desconectó del servidor", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexion del servidor");
+                        }
+                        else
+                        {
+                            _evento.AddEvento(new Evento($"Se desconectó de internet", "conexión falla"));
+                            await _chatHub.UpdateStatus("Desconexion de internet");
+                        }
+                    }
+                    catch
+                    {
+                        _evento.AddEvento(new Evento($"Se desconectó de internet", "conexión falla"));
+                        await _chatHub.UpdateStatus("Desconexion de internet");
+                    }
                 }
                 estaConectado = false;
             }
@@ -110,7 +128,7 @@ namespace DCMLocker.Server.Background
                     {
                         if (estaConectado != true)
                         {
-                            _evento.AddEvento(new Evento($"Conexión al servidor", "conexión"));
+                            _evento.AddEvento(new Evento($"Se conectó al servidor", "conexión"));
                             await _chatHub.UpdateStatus("Conexion al servidor");
                             estaConectado = true;
                         }
@@ -158,5 +176,44 @@ namespace DCMLocker.Server.Background
                 return "";
             }
         }
+
+        /*
+         * public SystemNetwork[] GetIP()
+        {
+            List<SystemNetwork> retorno = new List<SystemNetwork>() { };
+            foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
+            {
+
+
+                if (((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
+                    (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            SystemNetwork r = new SystemNetwork();
+                            r.NetworkInterfaceType = item.NetworkInterfaceType.ToString();
+                            r.NetworkOperationalStatus = item.OperationalStatus.ToString();
+                            r.IP = ip.Address.ToString();
+                            r.NetMask = ip.IPv4Mask.ToString();
+                            retorno.Add(r);
+                        }
+                    }
+                }
+
+            }
+
+
+            return retorno.ToArray();
+        }
+
+
+        SystemNetwork[] IpsFiltered { get; set; }
+        IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
+
+
+        y dsp suele ser una y mandas esa. funciona.
+         */
     }
 }

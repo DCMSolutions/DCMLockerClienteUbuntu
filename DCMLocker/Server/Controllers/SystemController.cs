@@ -194,7 +194,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento("Se reinició el sistema", "sistema"));
+                _evento.AddEvento(new Evento("Reinicio manual del sistema", "sistema"));
 
                 string s0 = cmd("reboot");
                 return Ok(s0);
@@ -210,7 +210,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento("Se apagó el sistema", "sistema"));
+                _evento.AddEvento(new Evento("Apagado manual del sistema", "sistema"));
 
                 string s0 = cmd("shutdown -h now");
                 return Ok(s0);
@@ -226,7 +226,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento("Se reinició el servició", "sistema"));
+                _evento.AddEvento(new Evento("Reinicio manual del servicio", "sistema"));
 
                 cmd("systemctl restart dcmlocker.service");
                 return "Reseteado con éxito";
@@ -243,7 +243,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "sistema"));
+                _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "debug"));
 
                 string s0 = cmd("teamviewer daemon start");
                 string s1 = cmd("teamviewer info --get-id");
@@ -273,7 +273,8 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento("Se seteó la contraseña de TeamViewer", "sistema"));
+
+                _evento.AddEvento(new Evento("Se estableció la contraseña preestablecida de TeamViewer", "debug"));
 
                 string s0 = cmd("teamviewer daemon start");
                 string s1 = cmd("teamviewer passwd lockerinteligente");
@@ -291,7 +292,8 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                _evento.AddEvento(new Evento("Se actualizó el sistema", "sistema"));
+                string version = GetVersion();
+                _evento.AddEvento(new Evento($"Se actualizó el sistema de la versión {version} a la siguiente", "sistema"));
 
                 string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
                 return Ok(s0);
@@ -302,6 +304,32 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        private string GetVersion()
+        {
+            try
+            {
+                var configPath = "appsettings.json";
+                if (!System.IO.File.Exists(configPath))
+                {
+                    return "";
+                }
+
+                var json = System.IO.File.ReadAllText(configPath);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("Version", out JsonElement versionElement))
+                {
+                    return versionElement.GetString() ?? "";
+                }
+
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
+        }
 
         private string cmd(string comando)
         {
@@ -477,6 +505,6 @@ namespace DCMLocker.Server.Controllers
 
 
 
-        
+
     }
 }

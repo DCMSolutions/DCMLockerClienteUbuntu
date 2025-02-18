@@ -87,7 +87,7 @@ namespace DCMLocker.Server.Background
 
             driver.Start();
             
-            _evento.AddEvento(new Evento($"Se inició la aplicación", "sistema"));
+            _evento.AddEvento(new Evento($"El sistema se ha iniciado", "sistema"));
 
             //_system.OpenChromium();
 
@@ -125,7 +125,7 @@ namespace DCMLocker.Server.Background
         {
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message); 
             _system.ChangeEstado("Desconectadas");
-            _evento.AddEvento(new Evento("Se desconectaron las cerraduras con error", "cerraduras"));
+            _evento.AddEvento(new Evento("Se desconectaron las cerraduras con error", "cerraduras falla"));
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ namespace DCMLocker.Server.Background
         private async void Driver_OnDisConnection(object sender, EventArgs e)
         {
             _system.ChangeEstado("Desconectadas");
-            _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras"));
+            _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras falla"));
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------

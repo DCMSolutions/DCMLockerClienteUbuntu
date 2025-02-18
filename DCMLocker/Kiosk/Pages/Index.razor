@@ -359,10 +359,11 @@ else if (screen == "alerta")
     {
         StateHasChanged();
         if (estadoCerraduras == "Conectadas" && statusRed == "Conexion al servidor") screen = "keyboard";
-        else if (estadoCerraduras == "Desconectadas" && (statusRed == "Desconexion del servidor" || statusRed == "Desconexion de red")) ScreenError("04");
+        else if (estadoCerraduras == "Desconectadas" && (statusRed == "Desconexion del servidor" || statusRed == "Desconexion de red" || statusRed == "Desconexion de internet")) ScreenError("05");
         else if (estadoCerraduras == "Desconectadas") ScreenError("01");
         else if (statusRed == "Desconexion del servidor") ScreenError("02");
         else if (statusRed == "Desconexion de red") ScreenError("03");
+        else if (statusRed == "Desconexion de internet") ScreenError("04");
         else ScreenError("99: error inesperado, informar a pedrop@dcm.com.ar por favor, gracias");
         token = new int[0];
         StateHasChanged();
@@ -402,7 +403,7 @@ else if (screen == "alerta")
         string resultado = string.Concat(token);
         if (resultado == "3942")
         {
-            await Cliente.PostEvento(new Evento("Se ingresó 3942", "debug"));
+            await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
@@ -411,7 +412,7 @@ else if (screen == "alerta")
         }
         else if (resultado == "6641")
         {
-            await Cliente.PostEvento(new Evento("Se ingresó 6641", "debug"));
+            await Cliente.PostEvento(new Evento("Se ingresó código 6641", "debug"));
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();

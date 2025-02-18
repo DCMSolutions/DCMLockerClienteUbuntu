@@ -155,18 +155,18 @@ namespace DCMLocker.Server.Controllers
                                 _CU = _IdBox.GetValueOrDefault() / 16;
                                 _Box = _IdBox.GetValueOrDefault() % 16;
                                 _driver.SetBox(_CU, _Box);
-                                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: aceptado abre box {serverResponse.Box}", "token"));
+                                _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Aceptado box {serverResponse.Box}", "token"));
                                 return Ok(serverResponse.Box);
                             }
                             else
                             {
-                                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, el box enviado por el servidor no tiene id físico asignado", "token falla"));
+                                _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, el box enviado por el servidor no tiene id físico asignado", "token falla"));
                                 return StatusCode(203);
                             }
                         }
                         else
                         {
-                            _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, no se recibió un box en la respuesta del servidor", "token falla"));
+                            _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, no se recibió un box en la respuesta del servidor", "token falla"));
                             return StatusCode(203);
 
                         }
@@ -174,7 +174,7 @@ namespace DCMLocker.Server.Controllers
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
-                        _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, la respuesta del servidor tiene formato erróneo", "token falla"));
+                        _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, la respuesta del servidor tiene formato erróneo", "token falla"));
                         return StatusCode((int)response.StatusCode);
                     }
                 }
@@ -182,7 +182,7 @@ namespace DCMLocker.Server.Controllers
                 {
                     if (hayCerraduras)
                     {
-                        _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: rechazado", "token"));
+                        _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado", "token"));
                     }
                     else
                     {
@@ -196,7 +196,7 @@ namespace DCMLocker.Server.Controllers
             }
             catch (HttpRequestException ex)
             {
-                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no hay conexión", "token falla"));
+                _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, no hay conexión", "token falla"));
 
                 // Maneja errores de solicitud HTTP (por ejemplo, problemas de red, servidor inaccesible, etc.)
                 Console.WriteLine("Error de solicitud HTTP: " + ex.Message);
@@ -205,7 +205,7 @@ namespace DCMLocker.Server.Controllers
             }
             catch (Exception ex)
             {
-                _evento.AddEvento(new Evento($"Respuesta al Pedido de validación token {Token}: no ingresó, error inesperado", "token falla"));
+                _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, error inesperado", "token falla"));
 
                 // Maneja otros errores no esperados
                 Console.WriteLine("Error inesperado: " + ex.Message);
@@ -437,13 +437,13 @@ namespace DCMLocker.Server.Controllers
                 }
                 else
                 {
-                    _evento.AddEvento(new Evento("Falló el OpenBox del LockerController, reportar", "cerraduras"));
+                    _evento.AddEvento(new Evento("Falló el OpenBox del LockerController", "cerraduras falla"));
                     return BadRequest("Locker no disponible para su apertura");
                 }
             }
             catch (Exception er)
             {
-                _evento.AddEvento(new Evento("Falló el OpenBox del LockerController, reportar", "cerraduras"));
+                _evento.AddEvento(new Evento("Falló el OpenBox del LockerController", "cerraduras falla"));
                 return BadRequest(er.Message);
             }
 
@@ -698,8 +698,8 @@ namespace DCMLocker.Server.Controllers
 
             try
             {
-                if (_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambió de ID de locker: de {_base.Config.LockerID} a {data.LockerID}", "sistema"));
-                if (_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambió de URL de servidor: de {_base.Config.UrlServer} a {data.UrlServer}", "sistema"));
+                if (_base.Config.LockerID != data.LockerID) _evento.AddEvento(new Evento($"Cambio de configuración: ID de locker, de {_base.Config.LockerID} a {data.LockerID}", "sistema"));
+                if (_base.Config.UrlServer != data.UrlServer) _evento.AddEvento(new Evento($"Cambio de configuración: URL de servidor, de {_base.Config.UrlServer} a {data.UrlServer}", "sistema"));
 
                 _base.Config.LockerID = data.LockerID;
                 _base.Config.LockerMode = data.LockerMode;

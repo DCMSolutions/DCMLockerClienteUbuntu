@@ -12,7 +12,7 @@ namespace DCMLocker.Shared
         public DateTime Fecha { get; set; }
         public string Descripcion { get; set; }
         public string Identificador { get; set; }
-        //posibles: sistema, cerraduras, token, fallas
+        //Posibles: sistema, cerraduras, token, conexión, sensores, debug. Opcional: falla
 
         public Evento(string descripcion, string identificador)
         {
