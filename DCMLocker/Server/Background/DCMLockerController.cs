@@ -167,13 +167,10 @@ namespace DCMLocker.Server.Background
         //------------------------------------------------------------------------------
         private async void Driver_Change(object sender, EventArgs e)
         {
-            Console.WriteLine("asd primero");
-
             //hubo un change
             EvtArgInfo v = (EvtArgInfo)e;
-
-            var a = _evento.AddEvento(new Evento($"Change, {v.Info}", "test"));
-            Console.WriteLine("asd " + a);
+            string info = v.Info;
+            _evento.AddEvento(new Evento($"Change, {info}", "test"));
             //await _chatHub.UpdateCerraduras("Conectadas");     aca irá otro hub para cosillas
         }
         //------------------------------------------------------------------------------
