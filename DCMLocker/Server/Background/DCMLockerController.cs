@@ -167,6 +167,8 @@ namespace DCMLocker.Server.Background
         //------------------------------------------------------------------------------
         private async void Driver_Change(object sender, EventArgs e)
         {
+            Console.WriteLine("asd primero");
+
             //hubo un change
             EvtArgInfo v = (EvtArgInfo)e;
 
