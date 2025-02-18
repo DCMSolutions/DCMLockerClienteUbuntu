@@ -37,8 +37,10 @@
                         @for (int x = 0; x < CU.Box.Length; x++)
                         {
                             var f = x;
-                            <td style="background-color:@(!CU.Box[x].Sensor?"red":"green")">
-                                <a @onclick="args => Abrir(CU.CU, f)" style="text-decoration:none; color:white;"><span class="oi @(CU.Box[x].Door?"oi-lock-locked":"oi-lock-unlocked" )"></span></a>
+                            <td style="background-color:@(!CU.Box[x].Sensor?"red":"green"); border: 3px solid black; padding: 5px;">
+                                <a @onclick="args => Abrir(CU.CU, f)" style="text-decoration:none; color:white;">
+                                    <span class="oi @(CU.Box[x].Door?"oi-lock-locked":"oi-lock-unlocked" )"></span>
+                                </a>
                             </td>
                         }
 
@@ -60,9 +62,13 @@ else
 @code {
 
     private WeatherForecast[] forecasts;
+    List<int?> listaDeBoxesAsignados;
 
     protected override async Task OnInitializedAsync()
     {
+        var listaDeBoxes = await Cliente.GetAllBoxConfig();
+        listaDeBoxesAsignados = listaDeBoxes.Select(box => box.IdFisico).ToList();
+
         Locker.OnChange += Change;
         Locker.LockerCUs = await Cliente.GetState();
     }
