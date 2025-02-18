@@ -169,8 +169,11 @@ namespace DCMLocker.Server.Background
         {
             //hubo un change
             EvtArgInfo v = (EvtArgInfo)e;
+            Console.WriteLine("todo ok 1");
             string info = v.Info;
+            Console.WriteLine("todo ok 2");
             _evento.AddEvento(new Evento($"Change, {info}", "test"));
+            _evento.AddEvento(new Evento("Change, sin na", "test"));
             //await _chatHub.UpdateCerraduras("Conectadas");     aca irá otro hub para cosillas
         }
         //------------------------------------------------------------------------------
