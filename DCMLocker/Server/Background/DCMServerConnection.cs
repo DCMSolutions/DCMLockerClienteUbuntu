@@ -1,4 +1,5 @@
-﻿using DCMLocker.Server.BaseController;
+﻿using DCMLocker.Kiosk.Pages;
+using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Controllers;
 using DCMLocker.Server.Hubs;
 using DCMLocker.Shared;
@@ -159,16 +160,27 @@ namespace DCMLocker.Server.Background
         {
             try
             {
+                List<string> retorno = new List<string>() { };
                 var netinters = NetworkInterface.GetAllNetworkInterfaces();
-                netinters = netinters.Where(item => ((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
-                        (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up).ToArray();
 
-                var ips = netinters.Last();                                                             //rng
-                UnicastIPAddressInformation ip = ips.GetIPProperties().UnicastAddresses.First();        //rng
+                foreach (NetworkInterface item in netinters)
+                {
+                    if (((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
+                        (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up)
+                    {
+                        foreach (UnicastIPAddressInformation ipe in item.GetIPProperties().UnicastAddresses)
+                        {
+                            if (ipe.Address.AddressFamily == AddressFamily.InterNetwork)
+                            {
+                                retorno.Add(ipe.Address.ToString());
+                            }
+                        }
+                    }
 
-                //la otra opcion es ver de todos los netinters y todos los ips.GetIPProperties().UnicastAddresses cual arranca con lo que corresponda, pero eso varía, o sino hacerlo por descarte
-
-                if (ip.Address.ToString() != null) return ip.Address.ToString();
+                }
+                string ip = retorno.Where(ip => !ip.EndsWith(".2.3")).FirstOrDefault();
+                
+                if (ip != null) return ip;
                 return "";
             }
             catch
@@ -176,44 +188,6 @@ namespace DCMLocker.Server.Background
                 return "";
             }
         }
-
-        /*
-         * public SystemNetwork[] GetIP()
-        {
-            List<SystemNetwork> retorno = new List<SystemNetwork>() { };
-            foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
-            {
-
-
-                if (((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
-                    (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up)
-                {
-                    foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
-                    {
-                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
-                        {
-                            SystemNetwork r = new SystemNetwork();
-                            r.NetworkInterfaceType = item.NetworkInterfaceType.ToString();
-                            r.NetworkOperationalStatus = item.OperationalStatus.ToString();
-                            r.IP = ip.Address.ToString();
-                            r.NetMask = ip.IPv4Mask.ToString();
-                            retorno.Add(r);
-                        }
-                    }
-                }
-
-            }
-
-
-            return retorno.ToArray();
-        }
-
-
-        SystemNetwork[] IpsFiltered { get; set; }
-        IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
-
-
-        y dsp suele ser una y mandas esa. funciona.
-         */
+       
     }
 }

@@ -168,6 +168,7 @@ namespace DCMLocker.Server.Background
         {
             EvtArgCUChange v = (EvtArgCUChange)e;
             _hubContext.Clients.All.LockerUpdated(v.CU.ADDR, "Cambio");
+            _evento.AddEvento(new Evento($"CU change: sender: {sender}, y to string: {sender.ToString()}", "test"));
 
 
             //Console.WriteLine("CAMBIO:");
