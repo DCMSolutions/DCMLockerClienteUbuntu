@@ -11,14 +11,12 @@ namespace DCMLocker.Server.Webhooks
     public class WebhookService
     {
         private readonly HttpClient _httpClient;
-        private readonly LockerController _lockerController;
         private readonly TBaseLockerController _base;
 
 
-        public WebhookService(HttpClient httpClient, LockerController lockerController , TBaseLockerController Base)
+        public WebhookService(HttpClient httpClient , TBaseLockerController Base)
         {
             _httpClient = httpClient;
-            _lockerController = lockerController;
             _base = Base;
         }
 
