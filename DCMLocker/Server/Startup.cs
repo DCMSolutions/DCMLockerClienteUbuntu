@@ -16,6 +16,7 @@ using DCMLocker.Server.BaseController;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
 using DCMLocker.Server.Controllers;
+using DCMLocker.Server.Webhooks;
 
 namespace DCMLocker.Server
 {
@@ -55,6 +56,8 @@ namespace DCMLocker.Server
             services.AddScoped<LockerController>();
             services.AddSingleton<LogController>();
             services.AddSingleton<SystemController>();
+
+            services.AddSingleton<WebhookService>();
 
             // SignalR
             services.AddResponseCompression(opts =>

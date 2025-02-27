@@ -1,6 +1,7 @@
 ﻿using DCMLocker.Server.Background;
 using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Hubs;
+using DCMLocker.Server.Webhooks;
 using DCMLocker.Shared;
 using DCMLocker.Shared.Locker;
 using DCMLockerCommunication;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -40,6 +42,7 @@ namespace DCMLocker.Server.Controllers
         private readonly HttpClient _http;
         private readonly LogController _evento;
         private readonly SystemController _system;
+        private readonly WebhookService _webhookService;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
@@ -48,7 +51,7 @@ namespace DCMLocker.Server.Controllers
         /// <param name="context2"></param>
         /// <param name="logger"></param>
         /// <param name="Base"></param>------------------------------------------------------
-        public LockerController(IDCMLockerController driver, IHubContext<LockerHub, ILockerHub> context2, ILogger<LockerController> logger, TBaseLockerController Base, HttpClient http, LogController logController, SystemController system)
+        public LockerController(IDCMLockerController driver, IHubContext<LockerHub, ILockerHub> context2, ILogger<LockerController> logger, TBaseLockerController Base, HttpClient http, LogController logController, SystemController system, WebhookService webhookService)
         {
             _driver = driver;
             _log = logger;
@@ -57,6 +60,7 @@ namespace DCMLocker.Server.Controllers
             _http = http;
             _evento = logController;
             _system = system;
+            _webhookService = webhookService;
         }
         //public LockerController(ILogger<LockerController> logger)
         //{
@@ -128,6 +132,9 @@ namespace DCMLocker.Server.Controllers
             try
             {
                 _evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
+
+                await _webhookService.SendWebhookAsync("PeticionToken", new { Token });
+
                 int _CU;
                 int _Box;
                 Uri uri = new Uri(_base.Config.UrlServer, "api/locker");
@@ -156,6 +163,7 @@ namespace DCMLocker.Server.Controllers
                                 _Box = _IdBox.GetValueOrDefault() % 16;
                                 _driver.SetBox(_CU, _Box);
                                 _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Aceptado box {serverResponse.Box}", "token"));
+                                //await _webhookService.SendWebhookAsync("RespuestaToken", new { serverResponse.Box, "Aceptado" });
                                 return Ok(serverResponse.Box);
                             }
                             else
