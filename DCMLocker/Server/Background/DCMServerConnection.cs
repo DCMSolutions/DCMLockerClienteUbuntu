@@ -18,6 +18,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.ConstrainedExecution;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
@@ -149,9 +150,9 @@ namespace DCMLocker.Server.Background
                     // Check if state changed
                     if (previousStates.TryGetValue(locker.IdBox, out var previousState))
                     {
-                        if (previousState.Puerta != _puerta)
+                        if (previousState.Puerta != _puerta) 
                         {
-                            _evento.AddEvento(new Evento($"Se {(_puerta ? "abrió" : "cerró")} la puerta del box {locker.IdBox}", "cerraduras"));
+                            _evento.AddEvento(new Evento($"Se {(_puerta ? "cerró" : "abrió")} la puerta del box {locker.IdBox}", "cerraduras"));
                         }
                         if (previousState.Ocupacion != _ocupacion)
                         {

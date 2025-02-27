@@ -33,7 +33,7 @@ namespace DCMLocker.Server.Webhooks
                 }
 
                 // Append endpoint path for webhooks
-                Uri webhookUrl = new Uri(config.UrlServer, "WebhookLocker");
+                Uri webhookUrl = new Uri(config.UrlServer, "api/WebhookLocker");
 
                 // Create webhook payload (serialization happens in the constructor)
                 var payload = new Webhook(evento, config.LockerID, data);
