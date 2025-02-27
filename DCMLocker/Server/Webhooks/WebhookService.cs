@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Controllers;
 using DCMLocker.Shared;
 
@@ -11,11 +12,14 @@ namespace DCMLocker.Server.Webhooks
     {
         private readonly HttpClient _httpClient;
         private readonly LockerController _lockerController;
+        private readonly TBaseLockerController _base;
 
-        public WebhookService(HttpClient httpClient, LockerController lockerController)
+
+        public WebhookService(HttpClient httpClient, LockerController lockerController , TBaseLockerController Base)
         {
             _httpClient = httpClient;
             _lockerController = lockerController;
+            _base = Base;
         }
 
         public async Task<bool> SendWebhookAsync(string evento, object data)
@@ -23,7 +27,7 @@ namespace DCMLocker.Server.Webhooks
             try
             {
                 // Get webhook URL from locker config
-                var config = _lockerController.GetLockerConfig();
+                var config = _base.Config;
                 if (config?.UrlServer == null)
                 {
                     Console.WriteLine("Fallo en la URL server.");
