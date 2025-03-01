@@ -131,7 +131,7 @@ namespace DCMLocker.Server.Background
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message); 
             _system.ChangeEstado("Desconectadas");
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras con error", "cerraduras falla"));
-            await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion con error" });
+            //await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion con error" });
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ namespace DCMLocker.Server.Background
         {
             _system.ChangeEstado("Desconectadas");
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras falla"));
-            await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion" });
+            //await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion" });
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ namespace DCMLocker.Server.Background
         {
             _system.ChangeEstado("Conectadas");
             _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
-            await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Conexion" });
+            //await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Conexion" });
             await _chatHub.UpdateCerraduras("Conectadas");
         }
         //------------------------------------------------------------------------------
