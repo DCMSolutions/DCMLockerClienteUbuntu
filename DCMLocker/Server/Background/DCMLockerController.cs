@@ -84,7 +84,7 @@ namespace DCMLocker.Server.Background
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         //---------------------------------------------------------------------------
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
             driver.IP = "192.168.2.178";
             driver.Port = 4001;
@@ -92,11 +92,11 @@ namespace DCMLocker.Server.Background
             driver.Start();
             
             _evento.AddEvento(new Evento($"El sistema se ha iniciado", "sistema"));
-            await _webhookService.SendWebhookAsync("Sistema", new { Accion = "Inicio" });
+            //await _webhookService.SendWebhookAsync("Sistema", new { Accion = "Inicio" });
 
             //_system.OpenChromium();
 
-            //return Task.CompletedTask;
+            return Task.CompletedTask;
         }
         //-----------------------------------------------------------------------------
         /// <summary>
