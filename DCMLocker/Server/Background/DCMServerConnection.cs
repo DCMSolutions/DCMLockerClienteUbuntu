@@ -102,7 +102,7 @@ namespace DCMLocker.Server.Background
                         Version = _configuration["Version"],
                         IP = GetIP(),
                         EstadoCerraduras = _system.GetEstadoCerraduras(),
-                        Locker = await GetLockerStatus(previousStates) // Await the async method
+                        Locker = GetLockerStatus(previousStates)
                     };
 
                     var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
@@ -138,7 +138,7 @@ namespace DCMLocker.Server.Background
             }
         }
 
-        private async Task<List<TLockerMapDTO>> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates)
+        private List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates)
         {
             var newList = new List<TLockerMapDTO>();
 
