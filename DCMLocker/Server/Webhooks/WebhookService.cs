@@ -12,12 +12,14 @@ namespace DCMLocker.Server.Webhooks
     {
         private readonly HttpClient _httpClient;
         private readonly TBaseLockerController _base;
+        private readonly LogController _evento;
 
 
-        public WebhookService(HttpClient httpClient , TBaseLockerController Base)
+        public WebhookService(HttpClient httpClient , TBaseLockerController Base, LogController evento)
         {
             _httpClient = httpClient;
             _base = Base;
+            _evento = evento;
         }
 
         public async Task<bool> SendWebhookAsync(string evento, object data)
@@ -45,6 +47,7 @@ namespace DCMLocker.Server.Webhooks
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending webhook: {ex.Message}");
+                _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
                 return false;
             }
         }

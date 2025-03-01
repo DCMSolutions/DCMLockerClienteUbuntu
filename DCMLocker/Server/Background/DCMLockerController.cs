@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 using DCMLocker.Server.Hubs;
 using DCMLocker.Shared;
 using DCMLocker.Server.Controllers;
+using DCMLocker.Server.Webhooks;
 
 namespace DCMLocker.Server.Background
 {
@@ -41,6 +42,7 @@ namespace DCMLocker.Server.Background
         private readonly LogController _evento;
         private readonly SystemController _system;
         private readonly ServerHub _chatHub;
+        private readonly WebhookService _webhookService;
 
 
         static DCMLockerTCPDriver driver = new DCMLockerTCPDriver();
@@ -50,11 +52,12 @@ namespace DCMLocker.Server.Background
         /// Configura los eventos del driver
         /// </summary>
         // --------------------------------------------------------------------------
-        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub)
+        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub, WebhookService webhookService)
         {
             _hubContext = context2;
             _evento = logController;
             _system = system;
+            _webhookService = webhookService;
 
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;
@@ -81,7 +84,7 @@ namespace DCMLocker.Server.Background
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         //---------------------------------------------------------------------------
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             driver.IP = "192.168.2.178";
             driver.Port = 4001;
@@ -89,10 +92,11 @@ namespace DCMLocker.Server.Background
             driver.Start();
             
             _evento.AddEvento(new Evento($"El sistema se ha iniciado", "sistema"));
+            await _webhookService.SendWebhookAsync("Sistema", new { Accion = "Inicio" });
 
             //_system.OpenChromium();
 
-            return Task.CompletedTask;
+            //return Task.CompletedTask;
         }
         //-----------------------------------------------------------------------------
         /// <summary>
@@ -127,6 +131,7 @@ namespace DCMLocker.Server.Background
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message); 
             _system.ChangeEstado("Desconectadas");
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras con error", "cerraduras falla"));
+            await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion con error" });
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -141,6 +146,7 @@ namespace DCMLocker.Server.Background
         {
             _system.ChangeEstado("Desconectadas");
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras falla"));
+            await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion" });
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -155,6 +161,7 @@ namespace DCMLocker.Server.Background
         {
             _system.ChangeEstado("Conectadas");
             _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
+            await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Conexion" });
             await _chatHub.UpdateCerraduras("Conectadas");
         }
         //------------------------------------------------------------------------------
