@@ -715,12 +715,12 @@ namespace DCMLocker.Server.Controllers
                 if (_base.Config.LockerID != data.LockerID)
                 {
                     _evento.AddEvento(new Evento($"Cambio de configuración: ID de locker, de {_base.Config.LockerID} a {data.LockerID}", "sistema"));
-                    await _webhookService.SendWebhookAsync("ConfiguracionID", new { Viejo = _base.Config.LockerID, Nuevo = data.LockerID });
+                    //await _webhookService.SendWebhookAsync("ConfiguracionID", new { Viejo = _base.Config.LockerID, Nuevo = data.LockerID });
                 }
                 if (_base.Config.UrlServer != data.UrlServer)
                 {
                     _evento.AddEvento(new Evento($"Cambio de configuración: URL de servidor, de {_base.Config.UrlServer} a {data.UrlServer}", "sistema"));
-                    await _webhookService.SendWebhookAsync("ConfiguracionURL", new { Viejo = _base.Config.UrlServer, Nuevo = data.UrlServer });
+                    //await _webhookService.SendWebhookAsync("ConfiguracionURL", new { Viejo = _base.Config.UrlServer, Nuevo = data.UrlServer });
                 }
 
                 _base.Config.LockerID = data.LockerID;

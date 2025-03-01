@@ -42,7 +42,7 @@ namespace DCMLocker.Server.Background
         private readonly LogController _evento;
         private readonly SystemController _system;
         private readonly ServerHub _chatHub;
-        private readonly WebhookService _webhookService;
+        //private readonly WebhookService _webhookService;
 
 
         static DCMLockerTCPDriver driver = new DCMLockerTCPDriver();
@@ -52,12 +52,12 @@ namespace DCMLocker.Server.Background
         /// Configura los eventos del driver
         /// </summary>
         // --------------------------------------------------------------------------
-        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub, WebhookService webhookService)
+        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub/*, WebhookService webhookService*/)
         {
             _hubContext = context2;
             _evento = logController;
             _system = system;
-            _webhookService = webhookService;
+            //_webhookService = webhookService;
 
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;

@@ -36,9 +36,9 @@ namespace DCMLocker.Server.Background
         private readonly IConfiguration _configuration;
         private readonly SystemController _system;
         private readonly LogController _evento;
-        private readonly WebhookService _webhookService;
+        //private readonly WebhookService _webhookService;
 
-        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento, WebhookService webhookService)
+        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento/*, WebhookService webhookService*/)
         {
             _logger = logger;
             _chatHub = chatHub;
@@ -48,7 +48,7 @@ namespace DCMLocker.Server.Background
             _configuration = configuration;
             _system = system;
             _evento = evento;
-            _webhookService = webhookService;
+            //_webhookService = webhookService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
