@@ -22,7 +22,7 @@ namespace DCMLocker.Server.Webhooks
             _evento = evento;
         }
 
-        public bool SendWebhookAsync(string evento, object data)
+        public bool SendWebhookAsync(string evento, string descripcion, object data)
         {
             try
             {
@@ -38,7 +38,7 @@ namespace DCMLocker.Server.Webhooks
                 Uri webhookUrl = new Uri(config.UrlServer, "api/WebhookLocker");
 
                 // Create webhook payload (serialization happens in the constructor)
-                var payload = new Webhook(evento, config.LockerID, data);
+                var payload = new Webhook(evento, config.LockerID, descripcion, data);
 
                 // mando el post en otro lado para que no tenga que ser awaited
                 Task.Run(async () =>

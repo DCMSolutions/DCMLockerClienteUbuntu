@@ -13,13 +13,15 @@ namespace DCMLocker.Shared
         public DateTime FechaCreacion { get; set; }
         public string Evento { get; set; }
         public string NroSerieLocker { get; set; }
+        public string Descrpicion { get; set; }
         public string Data { get; set; }
 
-        public Webhook(string evento, string nroSerieLocker, object data)
+        public Webhook(string evento, string nroSerieLocker, string descrpicion, object data)
         {
             FechaCreacion = DateTime.Now;
             Evento = evento;
             NroSerieLocker = nroSerieLocker;
+            Descrpicion = descrpicion;
             Data = data != null ? JsonSerializer.Serialize(data) : null;
         }
     }

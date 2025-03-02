@@ -163,12 +163,12 @@ namespace DCMLocker.Server.Background
                             if (_puerta)
                             {
                                 _evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
-                                _webhookService.SendWebhookAsync("LockerCerrado", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("LockerCerrado", $"Se cerró la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
-                                _webhookService.SendWebhookAsync("LockerAbierto", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("LockerAbierto", $"Se abrió la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                         }
                         if (previousState.Ocupacion != _ocupacion)
@@ -176,12 +176,12 @@ namespace DCMLocker.Server.Background
                             if (_ocupacion)
                             {
                                 _evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
-                                _webhookService.SendWebhookAsync("SensorOcupado", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("SensorOcupado", $"Se detectó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
-                                _webhookService.SendWebhookAsync("SensorLiberado", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("SensorLiberado", $"Se liberó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                         }
                     }
