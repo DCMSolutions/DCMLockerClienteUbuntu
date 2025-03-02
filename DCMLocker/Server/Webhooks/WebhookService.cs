@@ -40,12 +40,15 @@ namespace DCMLocker.Server.Webhooks
                 // Create webhook payload (serialization happens in the constructor)
                 var payload = new Webhook(evento, config.LockerID, descripcion, data);
 
+                Console.WriteLine("sending uebjuc.");
+
                 // mando el post en otro lado para que no tenga que ser awaited
                 Task.Run(async () =>
                 {
                     try
                     {
                         await _httpClient.PostAsJsonAsync(webhookUrl, payload).ConfigureAwait(false);
+                        Console.WriteLine("win.");
                     }
                     catch (Exception ex)
                     {

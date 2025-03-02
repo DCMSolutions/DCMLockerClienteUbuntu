@@ -153,8 +153,6 @@ namespace DCMLocker.Server.Background
                     bool _puerta = status.DoorStatus[_Box];
                     bool _ocupacion = status.SensorStatus[_Box];
 
-                    Console.WriteLine("forever puerta: " + _puerta + " del boxi " + locker.IdBox);
-
                     // Check if state changed
                     if (previousStates.TryGetValue(locker.IdBox, out var previousState))
                     {
