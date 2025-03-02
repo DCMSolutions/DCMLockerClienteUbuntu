@@ -36,9 +36,9 @@ namespace DCMLocker.Server.Background
         private readonly IConfiguration _configuration;
         private readonly SystemController _system;
         private readonly LogController _evento;
-        //private readonly WebhookService _webhookService;
+        private readonly WebhookService _webhookService;
 
-        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento/*, WebhookService webhookService*/)
+        public DCMServerConnection(ILogger<DCMServerConnection> logger, IHubContext<ServerHub> hubContext, ServerHub chatHub, HttpClient httpClient, TBaseLockerController Base, IDCMLockerController driver, IConfiguration configuration, SystemController system, LogController evento, WebhookService webhookService)
         {
             _logger = logger;
             _chatHub = chatHub;
@@ -48,7 +48,7 @@ namespace DCMLocker.Server.Background
             _configuration = configuration;
             _system = system;
             _evento = evento;
-            //_webhookService = webhookService;
+            _webhookService = webhookService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -162,12 +162,12 @@ namespace DCMLocker.Server.Background
                             if (_puerta)
                             {
                                 _evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
-                                //await _webhookService.SendWebhookAsync("LockerCerrado", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("LockerCerrado", new { Box = locker.IdBox });
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
-                                //await _webhookService.SendWebhookAsync("LockerAbierto", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("LockerAbierto", new { Box = locker.IdBox });
                             }
                         }
                         if (previousState.Ocupacion != _ocupacion)
@@ -175,12 +175,12 @@ namespace DCMLocker.Server.Background
                             if (_ocupacion)
                             {
                                 _evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
-                                //await _webhookService.SendWebhookAsync("SensorOcupado", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("SensorOcupado", new { Box = locker.IdBox });
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
-                                //await _webhookService.SendWebhookAsync("SensorLiberado", new { Box = locker.IdBox });
+                                _webhookService.SendWebhookAsync("SensorLiberado", new { Box = locker.IdBox });
                             }
                         }
                     }

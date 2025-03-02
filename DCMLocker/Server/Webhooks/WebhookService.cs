@@ -22,7 +22,7 @@ namespace DCMLocker.Server.Webhooks
             _evento = evento;
         }
 
-        public async Task<bool> SendWebhookAsync(string evento, object data)
+        public bool SendWebhookAsync(string evento, object data)
         {
             try
             {
@@ -40,9 +40,21 @@ namespace DCMLocker.Server.Webhooks
                 // Create webhook payload (serialization happens in the constructor)
                 var payload = new Webhook(evento, config.LockerID, data);
 
-                // Send POST request
-                var response = await _httpClient.PostAsJsonAsync(webhookUrl, payload);
-                return response.IsSuccessStatusCode;
+                // mando el post en otro lado para que no tenga que ser awaited
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _httpClient.PostAsJsonAsync(webhookUrl, payload).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending webhook: {ex.Message}");
+                        _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
+                    }
+                });
+
+                return true;
             }
             catch (Exception ex)
             {
