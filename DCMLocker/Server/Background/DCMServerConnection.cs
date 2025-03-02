@@ -1,5 +1,4 @@
-﻿using DCMLocker.Kiosk.Pages;
-using DCMLocker.Server.BaseController;
+﻿using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Controllers;
 using DCMLocker.Server.Hubs;
 using DCMLocker.Server.Webhooks;
@@ -95,6 +94,8 @@ namespace DCMLocker.Server.Background
 
             while (true)    //!stoppingToken.IsCancellationRequested dio problemas
             {
+                await Task.Delay(1000);     //parece troll que este arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
+
                 try
                 {
 
@@ -136,8 +137,6 @@ namespace DCMLocker.Server.Background
                     // Handle other unexpected exceptions
                     Console.WriteLine($"An unexpected error occurred: {ex.Message}");
                 }
-
-                await Task.Delay(1000);
             }
 
             List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates)
