@@ -133,7 +133,7 @@ namespace DCMLocker.Server.Controllers
             {
                 _evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
 
-                await _webhookService.SendWebhookAsync("PeticionToken", new { Token = Token });
+                _webhookService.SendWebhookAsync("PeticionToken", new { Token = Token });
 
                 int _CU;
                 int _Box;
@@ -163,20 +163,20 @@ namespace DCMLocker.Server.Controllers
                                 _Box = _IdBox.GetValueOrDefault() % 16;
                                 _driver.SetBox(_CU, _Box);
                                 _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Aceptado box {serverResponse.Box}", "token"));
-                                await _webhookService.SendWebhookAsync("RespuestaToken", new {Token = Token, Box = serverResponse.Box, Respuesta = "Aceptado" });
+                                _webhookService.SendWebhookAsync("RespuestaToken", new {Token = Token, Box = serverResponse.Box, Respuesta = "Aceptado" });
                                 return Ok(serverResponse.Box);
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, el box enviado por el servidor no tiene id físico asignado", "token falla"));
-                                await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = serverResponse.Box, Respuesta = "Error: el box enviado por el servidor no tiene id físico asignado" });
+                                _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = serverResponse.Box, Respuesta = "Error: el box enviado por el servidor no tiene id físico asignado" });
                                 return StatusCode(203);
                             }
                         }
                         else
                         {
                             _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, no se recibió un box en la respuesta del servidor", "token falla"));
-                            await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: el box enviado por el servidor no tiene id físico asignado" });
+                            _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: el box enviado por el servidor no tiene id físico asignado" });
                             return StatusCode(203);
 
                         }
@@ -185,7 +185,7 @@ namespace DCMLocker.Server.Controllers
                     {
                         Console.WriteLine(ex.ToString());
                         _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, la respuesta del servidor tiene formato erróneo", "token falla"));
-                        await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: la respuesta del servidor tiene formato erróneo" });
+                        _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: la respuesta del servidor tiene formato erróneo" });
                         return StatusCode((int)response.StatusCode);
                     }
                 }
@@ -194,12 +194,12 @@ namespace DCMLocker.Server.Controllers
                     if (hayCerraduras)
                     {
                         _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado", "token"));
-                        await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Rechazado" });
+                        _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Rechazado" });
                     }
                     else
                     {
                         _evento.AddEvento(new Evento($"Pedido de validación token {Token} ignorado por falta de conexión de cerraduras", "token"));
-                        await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Ignorado: falta de conexión a las cerraduras" });
+                        _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Ignorado: falta de conexión a las cerraduras" });
                     }
 
                     // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
@@ -210,7 +210,7 @@ namespace DCMLocker.Server.Controllers
             catch (HttpRequestException ex)
             {
                 _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, no hay conexión", "token falla"));
-                await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: no hay conexión" });
+                _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: no hay conexión" });
 
                 // Maneja errores de solicitud HTTP (por ejemplo, problemas de red, servidor inaccesible, etc.)
                 Console.WriteLine("Error de solicitud HTTP: " + ex.Message);
@@ -220,7 +220,7 @@ namespace DCMLocker.Server.Controllers
             catch (Exception ex)
             {
                 _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, error inesperado", "token falla"));
-                await _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: inesperado" });
+                _webhookService.SendWebhookAsync("RespuestaToken", new { Token = Token, Box = 0, Respuesta = "Error: inesperado" });
 
                 // Maneja otros errores no esperados
                 Console.WriteLine("Error inesperado: " + ex.Message);
