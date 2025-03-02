@@ -69,22 +69,31 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
+                Console.WriteLine("in try");
                 if (!System.IO.File.Exists(fileNameAhora))
                 {
+                    Console.WriteLine("no existe");
                     CrearConEvento(evento);
+                    Console.WriteLine("1");
                     return true;
                 }
                 else
                 {
+                    Console.WriteLine("existe");
                     string content = System.IO.File.ReadAllText(fileNameAhora);
+                    Console.WriteLine("1");
                     List<Evento> eventos = DeserializarConReintento(content);
+                    Console.WriteLine("2");
                     eventos.Add(evento);
+                    Console.WriteLine("3");
                     Guardar(eventos);
+                    Console.WriteLine("4");
                     return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine("puto: " + ex.ToString());
                 return false;
             }
         }

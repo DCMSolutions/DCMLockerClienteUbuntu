@@ -14,7 +14,6 @@ namespace DCMLocker.Server.Webhooks
         private readonly TBaseLockerController _base;
         private readonly LogController _evento;
 
-
         public WebhookService(HttpClient httpClient , TBaseLockerController Base, LogController evento)
         {
             _httpClient = httpClient;
@@ -40,26 +39,15 @@ namespace DCMLocker.Server.Webhooks
                 // mando el post en otro lado para que no tenga que ser awaited
                 Task.Run(async () =>
                 {
-                    Console.WriteLine("sending");
                     try
                     {
-                        var response = await _httpClient.PostAsJsonAsync(webhookUrl, payload).ConfigureAwait(false);
-                        Console.WriteLine($"Response Status Code: {response.StatusCode}");
-                        if (response.IsSuccessStatusCode)
-                        {
-                            Console.WriteLine("Webhook successfully received.");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Webhook failed with status code: {response.StatusCode}");
-                        }
+                        await _httpClient.PostAsJsonAsync(webhookUrl, payload).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error sending webhook: {ex.Message}");
                         _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
                     }
-                    Console.WriteLine("sent");
                 });
 
                 return true;
