@@ -131,9 +131,12 @@ namespace DCMLocker.Server.Controllers
             // preguntar al servidor si abro algo con el token que recibo
             try
             {
-                _evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
+                Console.WriteLine("antes");
+                var asd = _evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
+                Console.WriteLine($"what: {asd}");
 
                 _webhookService.SendWebhookAsync("PeticionToken", $"Se envió al servidor el token {Token}", new { Token = Token });
+                Console.WriteLine("fue");
 
                 int _CU;
                 int _Box;
