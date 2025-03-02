@@ -9,15 +9,18 @@
 <br />
 
 <div style="display: flex; gap: 10px;">
-    <button type="button" style="flex: 1;" class="btn btn-primary btn-user" @onclick="@(e => confirmar())">Confirmar</button>
+    <button type="button" style="flex: 1;" class="btn btn-primary btn-user" disabled="@disabled" @onclick="@(e => confirmar())">Confirmar</button>
     <button type="button" style="flex: 1;" class="btn btn-secondary btn-user" @onclick="@(e => volver())">Cancelar</button>
 </div>
 
 @code {
     [Parameter] public string pregunta { get; set; }
+    bool disabled = false;
 
     public async void confirmar()
     {
+        disabled = true;
+        StateHasChanged();
         if (pregunta == "apagará") await Cliente.System_Shutdown();
         else if (pregunta == "reseteará") await Cliente.System_Reset();
         else if (pregunta == "actualizará") await Cliente.System_Update();
