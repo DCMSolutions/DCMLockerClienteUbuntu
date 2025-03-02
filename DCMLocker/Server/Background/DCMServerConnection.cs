@@ -154,6 +154,8 @@ namespace DCMLocker.Server.Background
                     bool _puerta = status.DoorStatus[_Box];
                     bool _ocupacion = status.SensorStatus[_Box];
 
+                    Console.WriteLine("forever puerta: " + _puerta + " del boxi " + locker.IdBox);
+
                     // Check if state changed
                     if (previousStates.TryGetValue(locker.IdBox, out var previousState))
                     {
@@ -161,9 +163,6 @@ namespace DCMLocker.Server.Background
                         {
                             if (_puerta)
                             {
-                                Console.WriteLine("tamos en cerrar puertas");
-                                Console.WriteLine("_puerta: " + _puerta);
-                                Console.WriteLine("previous puerta: " + previousState.Puerta);
                                 _evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
                                 _webhookService.SendWebhookAsync("LockerCerrado", new { Box = locker.IdBox });
                             }
