@@ -404,6 +404,8 @@ else if (screen == "alerta")
         if (resultado == "3942")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
+            await Cliente.SendWebhookAsync("Debug", "Se ingresó el código de superadmin", new { Accion = "Superadmin" });
+
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
@@ -413,6 +415,8 @@ else if (screen == "alerta")
         else if (resultado == "6641")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 6641", "debug"));
+            await Cliente.SendWebhookAsync("Debug", "Se ingresó el código de admin", new { Accion = "Admin" });
+
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();

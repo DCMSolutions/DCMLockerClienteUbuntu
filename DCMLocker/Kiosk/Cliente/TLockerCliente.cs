@@ -1018,7 +1018,7 @@ namespace DCMLocker.Kiosk.Cliente
         //}
 
         /// <summary>--------------------------------------------------------------------
-        /// El log y eso xd
+        /// El log y el webhook
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
 
@@ -1033,6 +1033,32 @@ namespace DCMLocker.Kiosk.Cliente
             {
                 throw;
             }
+        }
+
+        public async Task<bool> SendWebhookAsync(string evento, string descripcion, object data)
+        {
+            try
+            {
+                var payload = new WebhookRequest
+                {
+                    Evento = evento,
+                    Descripcion = descripcion,
+                    Data = data
+                };
+                var oRta = await _cliente.PostAsJsonAsync("system/Webhook", payload);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public class WebhookRequest
+        {
+            public string Evento { get; set; }
+            public string Descripcion { get; set; }
+            public object Data { get; set; }
         }
 
         /// <summary>--------------------------------------------------------------------

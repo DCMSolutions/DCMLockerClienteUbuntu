@@ -59,7 +59,7 @@ namespace DCMLocker.Server.Background
                 if (GetIP() == "")
                 {
                     _evento.AddEvento(new Evento("Se desconectó de red", "conexión falla"));
-                    //await _webhookService.SendWebhookAsync("Conexion", new { Accion = "Desconexion de red" });
+                    _webhookService.SendWebhook("Conexion", "El locker se desconectó de la red",  new { Accion = "Desconexion de red" });
                     await _chatHub.UpdateStatus("Desconexion de red");
                 }
                 else
@@ -70,20 +70,20 @@ namespace DCMLocker.Server.Background
                         if (response.IsSuccessStatusCode)
                         {
                             _evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
-                            //await _webhookService.SendWebhookAsync("Conexion", new { Accion = "Desconexion del servidor" });
+                            _webhookService.SendWebhook("Conexion", "El locker se desconectó del servidor", new { Accion = "Desconexion del servidor" });
                             await _chatHub.UpdateStatus("Desconexion del servidor");
                         }
                         else
                         {
                             _evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
-                            //await _webhookService.SendWebhookAsync("Conexion", new { Accion = "Desconexion de internet" });
+                            _webhookService.SendWebhook("Conexion", "El locker se desconectó de internet", new { Accion = "Desconexion de internet" });
                             await _chatHub.UpdateStatus("Desconexion de internet");
                         }
                     }
                     catch
                     {
                         _evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
-                        //await _webhookService.SendWebhookAsync("Conexion", new { Accion = "Desconexion de internet" });
+                        _webhookService.SendWebhook("Conexion", "El locker se desconectó de internet", new { Accion = "Desconexion de internet" });
                         await _chatHub.UpdateStatus("Desconexion de internet");
                     }
                 }
@@ -115,7 +115,7 @@ namespace DCMLocker.Server.Background
                         if (estaConectado != true)
                         {
                             _evento.AddEvento(new Evento("Se conectó al servidor", "conexión"));
-                            //await _webhookService.SendWebhookAsync("Conexion", new { Accion = "Conexión" });
+                            _webhookService.SendWebhook("Conexion", "El locker se reconectó", new { Accion = "Conexión" });
                             await _chatHub.UpdateStatus("Conexion al servidor");
                             estaConectado = true;
                         }
@@ -161,12 +161,12 @@ namespace DCMLocker.Server.Background
                             if (_puerta)
                             {
                                 _evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
-                                _webhookService.SendWebhookAsync("LockerCerrado", $"Se cerró la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                _webhookService.SendWebhook("LockerCerrado", $"Se cerró la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
-                                _webhookService.SendWebhookAsync("LockerAbierto", $"Se abrió la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                _webhookService.SendWebhook("LockerAbierto", $"Se abrió la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                         }
                         if (previousState.Ocupacion != _ocupacion)
@@ -174,12 +174,12 @@ namespace DCMLocker.Server.Background
                             if (_ocupacion)
                             {
                                 _evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
-                                _webhookService.SendWebhookAsync("SensorOcupado", $"Se detectó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
+                                _webhookService.SendWebhook("SensorOcupado", $"Se detectó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                             else
                             {
                                 _evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
-                                _webhookService.SendWebhookAsync("SensorLiberado", $"Se liberó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
+                                _webhookService.SendWebhook("SensorLiberado", $"Se liberó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
                             }
                         }
                     }

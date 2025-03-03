@@ -21,7 +21,7 @@ namespace DCMLocker.Server.Webhooks
             _evento = evento;
         }
 
-        public bool SendWebhookAsync(string evento, string descripcion, object data)
+        public bool SendWebhook(string evento, string descripcion, object data)
         {
             try
             {
@@ -51,6 +51,34 @@ namespace DCMLocker.Server.Webhooks
                 });
 
                 return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending webhook: {ex.Message}");
+                _evento.AddEvento(new Evento($"Error inesperado en el webhook: {ex.Message}", "webhook"));
+                return false;
+            }
+        }
+
+        public async Task<bool> SendWebhookAsync(string evento, string descripcion, object data)
+        {
+            try
+            {
+                var config = _base.Config;
+                if (config?.UrlServer == null)
+                {
+                    Console.WriteLine("Fallo en la URL server.");
+                    return false;
+                }
+
+                Uri webhookUrl = new Uri(config.UrlServer, "api/WebhookLocker");
+
+                var payload = new Webhook(evento, config.LockerID, descripcion, data);
+
+                // post es awaited
+                var response = await _httpClient.PostAsJsonAsync(webhookUrl, payload);
+
+                return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {

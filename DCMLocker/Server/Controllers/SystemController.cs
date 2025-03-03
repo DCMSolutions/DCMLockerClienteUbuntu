@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using DCMLockerCommunication;
 using System.Linq;
+using DCMLocker.Server.Webhooks;
 
 namespace DCMLocker.Server.Controllers
 {
@@ -32,6 +33,7 @@ namespace DCMLocker.Server.Controllers
 
         private readonly TBaseLockerController _base;
         private readonly LogController _evento;
+        private readonly WebhookService _webhookService;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
@@ -40,10 +42,11 @@ namespace DCMLocker.Server.Controllers
         /// <param name="context2"></param>
         /// <param name="logger"></param>
         /// <param name="Base"></param>------------------------------------------------------
-        public SystemController(TBaseLockerController Base, LogController logController)
+        public SystemController(TBaseLockerController Base, LogController logController, WebhookService webhookService)
         {
             _base = Base;
             _evento = logController;
+            _webhookService = webhookService;
         }
 
         [HttpGet("GetIP")]
@@ -190,11 +193,12 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("Reset")]
-        public ActionResult Reset()
+        public async Task<ActionResult> Reset()
         {
             try
             {
                 _evento.AddEvento(new Evento("Reinicio manual del sistema", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", "Se reinició manualmente el sistema", new { Accion = "Reinicio" });
 
                 string s0 = cmd("reboot");
                 return Ok(s0);
@@ -206,11 +210,12 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("Shutdown")]
-        public ActionResult Shutdown()
+        public async Task<ActionResult> Shutdown()
         {
             try
             {
                 _evento.AddEvento(new Evento("Apagado manual del sistema", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", "Se apagó manualmente el sistema", new { Accion = "Apagado" });
 
                 string s0 = cmd("shutdown -h now");
                 return Ok(s0);
@@ -222,11 +227,12 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("ResetService")]
-        public string ResetService()
+        public async Task<string> ResetService()
         {
             try
             {
                 _evento.AddEvento(new Evento("Reinicio manual del servicio", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", "Se reinició manualmente el servicio", new { Accion = "Reinicio servicio" });
 
                 cmd("systemctl restart dcmlocker.service");
                 return "Reseteado con éxito";
@@ -239,11 +245,12 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("TewerID")]
-        public IActionResult TewerID()
+        public async Task<IActionResult> TewerID()
         {
             try
             {
                 _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "debug"));
+                await _webhookService.SendWebhookAsync("Debug", "Se consultó el ID de TeamViewer", new { Accion = "ID TeamViewer" });
 
                 string s0 = cmd("teamviewer daemon start");
                 string s1 = cmd("teamviewer info --get-id");
@@ -269,12 +276,12 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("TewerPASS")]
-        public IActionResult TewerPASS()
+        public async Task<IActionResult> TewerPASS()
         {
             try
             {
-
                 _evento.AddEvento(new Evento("Se estableció la contraseña preestablecida de TeamViewer", "debug"));
+                await _webhookService.SendWebhookAsync("Debug", "Se estableció la contraseña preestablecida de TeamViewer", new { Accion = "Pass TeamViewer" });
 
                 string s0 = cmd("teamviewer daemon start");
                 string s1 = cmd("teamviewer passwd lockerinteligente");
@@ -288,12 +295,13 @@ namespace DCMLocker.Server.Controllers
 
 
         [HttpPost("Update")]
-        public ActionResult Update()
+        public async Task<ActionResult> Update()
         {
             try
             {
                 string version = GetVersion();
                 _evento.AddEvento(new Evento($"Se actualizó el sistema de la versión {version} a la siguiente", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó el sistema de la versión {version} a la siguiente", new { Accion = "Pass TeamViewer" });
 
                 string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
                 return Ok(s0);
@@ -436,6 +444,33 @@ namespace DCMLocker.Server.Controllers
                 return BadRequest(er.Message);
             }
         }
+
+        /// <summary>
+        /// send webhooks
+        /// </summary>
+        /// <returns></returns>
+
+        [HttpPost("Webhook")]
+        public async Task<ActionResult> SendWebhookAsync([FromBody] WebhookRequest request)
+        {
+            try
+            {
+                await _webhookService.SendWebhookAsync(request.Evento, request.Descripcion, request.Data);
+                return Ok();
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
+            }
+        }
+
+        public class WebhookRequest
+        {
+            public string Evento { get; set; }
+            public string Descripcion { get; set; }
+            public object Data { get; set; }
+        }
+
 
         /// <summary>
         /// cosillas de las cerraduuuras

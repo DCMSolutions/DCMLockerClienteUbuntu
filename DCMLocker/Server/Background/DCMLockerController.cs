@@ -11,6 +11,7 @@ using DCMLocker.Server.Hubs;
 using DCMLocker.Shared;
 using DCMLocker.Server.Controllers;
 using DCMLocker.Server.Webhooks;
+using System.Text.Json;
 
 namespace DCMLocker.Server.Background
 {
@@ -42,7 +43,7 @@ namespace DCMLocker.Server.Background
         private readonly LogController _evento;
         private readonly SystemController _system;
         private readonly ServerHub _chatHub;
-        //private readonly WebhookService _webhookService;
+        private readonly WebhookService _webhookService;
 
 
         static DCMLockerTCPDriver driver = new DCMLockerTCPDriver();
@@ -52,12 +53,12 @@ namespace DCMLocker.Server.Background
         /// Configura los eventos del driver
         /// </summary>
         // --------------------------------------------------------------------------
-        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub/*, WebhookService webhookService*/)
+        public DCMLockerController(IHubContext<LockerHub, ILockerHub> context2, LogController logController, SystemController system, ServerHub chatHub, WebhookService webhookService)
         {
             _hubContext = context2;
             _evento = logController;
             _system = system;
-            //_webhookService = webhookService;
+            _webhookService = webhookService;
 
             driver.OnConnection += Driver_OnConnection;
             driver.OnDisConnection += Driver_OnDisConnection;
@@ -90,9 +91,12 @@ namespace DCMLocker.Server.Background
             driver.Port = 4001;
 
             driver.Start();
-            
-            _evento.AddEvento(new Evento($"El sistema se ha iniciado", "sistema"));
-            //await _webhookService.SendWebhookAsync("Sistema", new { Accion = "Inicio" });
+
+            //printear la version y esperar a que tenga config para la ip del webhook
+            string version = GetVersion();
+
+            _evento.AddEvento(new Evento($"El sistema se ha iniciado con versión {version}", "sistema"));
+            _webhookService.SendWebhook("Sistema", $"El locker se ha iniciado con versión {version}", new { Accion = "Inicio" });
 
             //_system.OpenChromium();
 
@@ -131,7 +135,7 @@ namespace DCMLocker.Server.Background
             Console.WriteLine("ERROR:" + ((EvtArgError)e).Er.Message); 
             _system.ChangeEstado("Desconectadas");
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras con error", "cerraduras falla"));
-            //await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion con error" });
+            _webhookService.SendWebhook("Cerraduras", "Se desconectaron las cerraduras con un error", new { Accion = "Desconexion con error" });
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -146,7 +150,7 @@ namespace DCMLocker.Server.Background
         {
             _system.ChangeEstado("Desconectadas");
             _evento.AddEvento(new Evento("Se desconectaron las cerraduras", "cerraduras falla"));
-            //await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Desconexion" });
+            _webhookService.SendWebhook("Cerraduras", "Se desconectaron las cerraduras", new { Accion = "Desconexion" });
             await _chatHub.UpdateCerraduras("Desconectadas");
         }
         //------------------------------------------------------------------------------
@@ -161,7 +165,7 @@ namespace DCMLocker.Server.Background
         {
             _system.ChangeEstado("Conectadas");
             _evento.AddEvento(new Evento("Se conectaron las cerraduras", "cerraduras"));
-            //await _webhookService.SendWebhookAsync("Cerraduras", new { Accion = "Conexion" });
+            _webhookService.SendWebhook("Cerraduras", "Se conectaron las cerraduras", new { Accion = "Conexion" });
             await _chatHub.UpdateCerraduras("Conectadas");
         }
         //------------------------------------------------------------------------------
@@ -212,6 +216,33 @@ namespace DCMLocker.Server.Background
         public static void SetBox(int CU, int Box)
         {
             driver.OpenBox(CU, Box);
+        }
+
+        private string GetVersion()
+        {
+            try
+            {
+                var configPath = "appsettings.json";
+                if (!System.IO.File.Exists(configPath))
+                {
+                    return "";
+                }
+
+                var json = System.IO.File.ReadAllText(configPath);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("Version", out JsonElement versionElement))
+                {
+                    return versionElement.GetString() ?? "";
+                }
+
+                return "";
+            }
+            catch
+            {
+                return "";
+            }
         }
     }
 }
