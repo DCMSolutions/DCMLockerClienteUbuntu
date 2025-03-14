@@ -105,6 +105,7 @@ namespace DCMLocker.Server.Background
                         Version = _configuration["Version"],
                         IP = GetIP(),
                         EstadoCerraduras = _system.GetEstadoCerraduras(),
+                        LastUpdateTime = DateTime.Now,
                         Locker = GetLockerStatus(previousStates) // Function to optimize locker status retrieval
                     };
 

@@ -190,6 +190,7 @@ else if (screen == "red")
         </div>
     </div>
     <button type="button" class="btn btn-success btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará"))">Actualizar locker</button>
+    <button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará a testing"))">Actualizar locker a testing</button>
     <button type="button" class="btn btn-warning btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("reseteará"))">Resetear locker</button>
     <button type="button" class="btn btn-danger btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
 
@@ -404,7 +405,7 @@ else if (screen == "alerta")
         if (resultado == "3942")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
-            await Cliente.SendWebhookAsync("Debug", "Se ingresó el código de superadmin", new { Accion = "Superadmin" });
+            Cliente.SendWebhookAsync("Debug", "Se ingresó el código de superadmin", new { Accion = "Superadmin" });
 
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
@@ -415,7 +416,7 @@ else if (screen == "alerta")
         else if (resultado == "6641")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 6641", "debug"));
-            await Cliente.SendWebhookAsync("Debug", "Se ingresó el código de admin", new { Accion = "Admin" });
+            Cliente.SendWebhookAsync("Debug", "Se ingresó el código de admin", new { Accion = "Admin" });
 
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
@@ -494,6 +495,7 @@ else if (screen == "alerta")
     {
         if (pregunta == "apagará") await Cliente.System_Shutdown();
         else if (pregunta == "reseteará") await Cliente.System_Reset();
+        else if (pregunta == "actualizará a testing") await Cliente.System_UpdateTesting();
         else if (pregunta == "actualizará") await Cliente.System_Update();
         else CheckEstados();
     }

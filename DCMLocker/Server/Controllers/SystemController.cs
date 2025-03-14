@@ -300,10 +300,28 @@ namespace DCMLocker.Server.Controllers
             try
             {
                 string version = GetVersion();
-                _evento.AddEvento(new Evento($"Se actualizó el sistema de la versión {version} a la siguiente", "sistema"));
-                await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó el sistema de la versión {version} a la siguiente", new { Accion = "Pass TeamViewer" });
+                _evento.AddEvento(new Evento($"Se actualizó a producción el sistema de la versión {version} a la siguiente", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó a producción el sistema de la versión {version} a la siguiente", new { Accion = "Actualizacion produccion" });
 
                 string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/update.sh | bash");
+                return Ok(s0);
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
+            }
+        }
+
+        [HttpPost("UpdateTesting")]
+        public async Task<ActionResult> UpdateTesting()
+        {
+            try
+            {
+                string version = GetVersion();
+                _evento.AddEvento(new Evento($"Se actualizó a testing el sistema de la versión {version} a la siguiente", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó a testing el sistema de la versión {version} a la siguiente", new { Accion = "Actualizacion testing" });
+
+                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/updateTesting.sh | bash");
                 return Ok(s0);
             }
             catch (Exception er)
