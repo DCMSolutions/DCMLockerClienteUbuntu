@@ -66,7 +66,7 @@ namespace DCMLocker.Server.Background
                 {
                     try
                     {
-                        using var response = await _httpClient.GetAsync("https://www.google.com");
+                        using var response = await _httpClient.GetAsync("https://www.google.com", stoppingToken);
                         if (response.IsSuccessStatusCode)
                         {
                             _evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
@@ -94,19 +94,20 @@ namespace DCMLocker.Server.Background
 
             while (true)    //!stoppingToken.IsCancellationRequested dio problemas
             {
-                await Task.Delay(1000);     //parece troll que este arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
+                await Task.Delay(1000);     //parece troll que esté arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
 
                 try
                 {
+                    string cerraduras = _system.GetEstadoCerraduras();
 
                     var serverCommunication = new ServerStatus
                     {
                         NroSerie = _base.Config.LockerID,
                         Version = _configuration["Version"],
                         IP = GetIP(),
-                        EstadoCerraduras = _system.GetEstadoCerraduras(),
+                        EstadoCerraduras = cerraduras,
                         LastUpdateTime = DateTime.Now,
-                        Locker = GetLockerStatus(previousStates) // Function to optimize locker status retrieval
+                        Locker = GetLockerStatus(previousStates, cerraduras == "Conectadas") // Function to optimize locker status retrieval
                     };
 
                     var response = await _httpClient.PostAsJsonAsync($"{_base.Config.UrlServer}api/locker/status", serverCommunication);
@@ -140,7 +141,7 @@ namespace DCMLocker.Server.Background
                 }
             }
 
-            List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates)
+            List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates, bool cerrConectadas)
             {
                 var newList = new List<TLockerMapDTO>();
 
@@ -155,7 +156,7 @@ namespace DCMLocker.Server.Background
                     bool _ocupacion = status.SensorStatus[_Box];
 
                     // Check if state changed
-                    if (previousStates.TryGetValue(locker.IdBox, out var previousState))
+                    if (cerrConectadas && previousStates.TryGetValue(locker.IdBox, out var previousState))
                     {
                         if (previousState.Puerta != _puerta)
                         {

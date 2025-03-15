@@ -264,13 +264,11 @@ else if (screen == "alerta")
 
     protected override async Task OnInitializedAsync()
     {
-        estadoCerraduras = await Cliente.GetEstadoCerraduras();
         Ips = await Cliente.System_GetIP();
         IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
         bool pingServer = await Cliente.PingServer();
         if (!pingServer) statusRed = "Desconexion del servidor";
         if (IpsFiltered.Count() == 0) statusRed = "Desconexion de red";
-        
 
         version = await Cliente.GetVersion();
         fecha = await Cliente.GetFecha();
@@ -345,6 +343,7 @@ else if (screen == "alerta")
         await QRhubConnection.StartAsync();
         await ServerHubConnection.StartAsync();
 
+        estadoCerraduras = await Cliente.GetEstadoCerraduras();
         CheckEstados();
     }
 
