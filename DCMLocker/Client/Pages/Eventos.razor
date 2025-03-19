@@ -21,7 +21,10 @@
     <div class="tablacontent" style="position:relative;">
         <RadzenDataGrid AllowColumnResize="true" AllowAlternatingRows="true" FilterMode="FilterMode.Simple" AllowSorting="false" PageSize="100" Density="Density.Compact"
                         AllowPaging="true" AllowFiltering="true" ShowPagingSummary="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" EmptyText="No hay consultas aún." @ref="grid"
-                        Data="@listaDeEventos" TItem="Evento" LogicalFilterOperator="LogicalFilterOperator.And" PagerHorizontalAlign="HorizontalAlign.Center">
+                        Data="@listaDeEventos" TItem="Evento" LogicalFilterOperator="LogicalFilterOperator.And" PagerHorizontalAlign="HorizontalAlign.Center"
+                        EqualsText="Igual a" NotEqualsText="No es igual" LessThanText="Menor que" LessThanOrEqualsText="Menor o igual que" GreaterThanText="Mayor que"
+                        GreaterThanOrEqualsText="Mayor o igual que" ClearFilterText="Limpiar filtro" ApplyFilterText="Aplicar filtro" IsNullText="Es nulo"
+                        IsNotNullText="No es nulo">
             <Columns>
                 <RadzenDataGridColumn TItem="Evento" Property="Fecha" Title="Fecha" Width="200px" />
                 <RadzenDataGridColumn TItem="Evento" Property="Identificador" Title="Identificador" Width="150px" />
@@ -33,11 +36,11 @@
 }
 else
 {
-<div class="abs-center">
-    <div class="spinner-grow text-secondary"></div>
-    <div class="spinner-grow text-secondary"></div>
-    <div class="spinner-grow text-secondary"></div>
-</div>
+    <div class="abs-center">
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+        <div class="spinner-grow text-secondary"></div>
+    </div>
 }
 
 

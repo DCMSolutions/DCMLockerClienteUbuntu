@@ -713,6 +713,7 @@ namespace DCMLocker.Server.Controllers
             {
                 bool changeID = _base.Config.LockerID != data.LockerID;
                 bool changeURL = _base.Config.UrlServer != data.UrlServer;
+                var viejaURL = _base.Config.UrlServer;
 
                 if (changeID)
                 {
@@ -739,7 +740,7 @@ namespace DCMLocker.Server.Controllers
                 _base.Config.UrlServer = data.UrlServer;
                 _base.Config.Save(_base.PathBase);
 
-                if (changeURL) await _webhookService.SendWebhookAsync("ConfiguracionURL", $"Se cambió la configuración del locker: la URL del servidor cambió de {_base.Config.UrlServer} a {data.UrlServer}", new { Viejo = _base.Config.UrlServer, Nuevo = data.UrlServer });
+                if (changeURL) await _webhookService.SendWebhookAsync("ConfiguracionURL", $"Se cambió la configuración del locker: la URL del servidor cambió de {viejaURL} a {data.UrlServer}", new { Viejo = viejaURL, Nuevo = data.UrlServer });
 
                 return Ok();
             }
