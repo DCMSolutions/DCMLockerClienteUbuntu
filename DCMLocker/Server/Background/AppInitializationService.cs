@@ -5,6 +5,7 @@ using DCMLocker.Server.Hubs;
 using System.Threading.Tasks;
 using System.IO;
 using System.Text;
+using System.Linq;
 
 namespace DCMLocker.Server.Background
 {
@@ -65,7 +66,8 @@ namespace DCMLocker.Server.Background
                 string[] devices = Directory.GetFiles(devicesDirectory);
 
                 // Filtrar solo los dispositivos serie (puertos COM)
-                var serialDevices = Array.FindAll(devices, d => d.StartsWith("/dev/tty"));
+                var serialDevices = devices.Where(d =>
+                    d.StartsWith("/dev/ttyUSB") || d.StartsWith("/dev/ttyACM")).ToArray();
 
                 if (serialDevices.Length == 0)
                 {

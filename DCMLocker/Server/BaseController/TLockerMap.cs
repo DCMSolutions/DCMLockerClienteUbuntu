@@ -26,7 +26,7 @@ namespace DCMLocker.Server.BaseController
                 if (!Directory.Exists(dirbck)) Directory.CreateDirectory(dirbck);
 
                 string sf = System.IO.Path.Combine(Path, FileName);
-                string sf2 = System.IO.Path.Combine("/home/pi", FileName);
+                string sf2 = System.IO.Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), FileName);
                 //string sfb = System.IO.Path.Combine(dirbck, FileNamebkc + DateTime.Now.ToString("yyyyMMddHHmmss") + ".bck");
                 string s = JsonSerializer.Serialize<TLockerMapContent>(this);
                 //if (File.Exists(sf)) File.Move(sf, sfb);
@@ -43,7 +43,7 @@ namespace DCMLocker.Server.BaseController
         }
         public static TLockerMapContent Create(string Path)
         {
-            string sf2 = System.IO.Path.Combine("/home/pi", FileName);
+            string sf2 = System.IO.Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), FileName);
 
             try
             {

@@ -15,7 +15,8 @@ namespace DCMLocker.Server.BaseController
         {
             try
             {
-                string sf2 = System.IO.Path.Combine("/home/pi", FileName);
+                string parentDir = System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), ".."));
+                string sf2 = System.IO.Path.Combine(parentDir, FileName);
 
                 //string sf = System.IO.Path.Combine(Path, FileName);
                 string s = JsonSerializer.Serialize<LockerConfig>(this);
@@ -34,7 +35,8 @@ namespace DCMLocker.Server.BaseController
 
         public static TLockerConfig Create(string Path)
         {
-            string sf2 = System.IO.Path.Combine("/home/pi", FileName);
+            string parentDir = System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), ".."));
+            string sf2 = System.IO.Path.Combine(parentDir, FileName);
             try
             {
                 if (File.Exists(sf2))
