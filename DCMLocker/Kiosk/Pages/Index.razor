@@ -411,6 +411,7 @@ else if (screen == "alerta")
     async void send()
     {
         string resultado = string.Concat(token);
+        token = new int[0];
         if (resultado == "3942")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
@@ -454,7 +455,6 @@ else if (screen == "alerta")
             }
         }
         Console.WriteLine($"screen {screen}");
-        token = new int[0];
 
         StateHasChanged();
     }
