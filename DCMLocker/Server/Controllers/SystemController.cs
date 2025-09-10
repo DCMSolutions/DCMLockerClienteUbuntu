@@ -244,54 +244,54 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpGet("TewerID")]
-        public async Task<IActionResult> TewerID()
-        {
-            try
-            {
-                _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "debug"));
-                await _webhookService.SendWebhookAsync("Debug", "Se consultó el ID de TeamViewer", new { Accion = "ID TeamViewer" });
+        //[HttpGet("TewerID")]
+        //public async Task<IActionResult> TewerID()
+        //{
+        //    try
+        //    {
+        //        _evento.AddEvento(new Evento("Se consultó el ID de TeamViewer", "debug"));
+        //        await _webhookService.SendWebhookAsync("Debug", "Se consultó el ID de TeamViewer", new { Accion = "ID TeamViewer" });
 
-                string s0 = cmd("teamviewer daemon start");
-                string s1 = cmd("teamviewer info --get-id");
-                string pattern = @"\d{10}";
+        //        string s0 = cmd("teamviewer daemon start");
+        //        string s1 = cmd("teamviewer info --get-id");
+        //        string pattern = @"\d{10}";
 
-                Match match = Regex.Match(s1, pattern);
-                string s2 = "";
-                if (match.Success)
-                {
-                    s2 = match.Value;
-                    Console.WriteLine("First occurrence of 10 digits: " + s2);
-                }
-                else
-                {
-                    Console.WriteLine("No 10 consecutive digits found.");
-                }
-                return Ok(s2);
-            }
-            catch (Exception er)
-            {
-                return BadRequest(er.Message);
-            }
-        }
+        //        Match match = Regex.Match(s1, pattern);
+        //        string s2 = "";
+        //        if (match.Success)
+        //        {
+        //            s2 = match.Value;
+        //            Console.WriteLine("First occurrence of 10 digits: " + s2);
+        //        }
+        //        else
+        //        {
+        //            Console.WriteLine("No 10 consecutive digits found.");
+        //        }
+        //        return Ok(s2);
+        //    }
+        //    catch (Exception er)
+        //    {
+        //        return BadRequest(er.Message);
+        //    }
+        //}
 
-        [HttpGet("TewerPASS")]
-        public async Task<IActionResult> TewerPASS()
-        {
-            try
-            {
-                _evento.AddEvento(new Evento("Se estableció la contraseña preestablecida de TeamViewer", "debug"));
-                await _webhookService.SendWebhookAsync("Debug", "Se estableció la contraseña preestablecida de TeamViewer", new { Accion = "Pass TeamViewer" });
+        //[HttpGet("TewerPASS")]
+        //public async Task<IActionResult> TewerPASS()
+        //{
+        //    try
+        //    {
+        //        _evento.AddEvento(new Evento("Se estableció la contraseña preestablecida de TeamViewer", "debug"));
+        //        await _webhookService.SendWebhookAsync("Debug", "Se estableció la contraseña preestablecida de TeamViewer", new { Accion = "Pass TeamViewer" });
 
-                string s0 = cmd("teamviewer daemon start");
-                string s1 = cmd("teamviewer passwd lockerinteligente");
-                return Ok(s1);
-            }
-            catch (Exception er)
-            {
-                return BadRequest(er.Message);
-            }
-        }
+        //        string s0 = cmd("teamviewer daemon start");
+        //        string s1 = cmd("teamviewer passwd lockerinteligente");
+        //        return Ok(s1);
+        //    }
+        //    catch (Exception er)
+        //    {
+        //        return BadRequest(er.Message);
+        //    }
+        //}
 
 
         [HttpPost("Update")]
@@ -312,23 +312,23 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpPost("UpdateTesting")]
-        public async Task<ActionResult> UpdateTesting()
-        {
-            try
-            {
-                string version = GetVersion();
-                _evento.AddEvento(new Evento($"Se actualizó a testing el sistema de la versión {version} a la siguiente", "sistema"));
-                await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó a testing el sistema de la versión {version} a la siguiente", new { Accion = "Actualizacion testing" });
+        //[HttpPost("UpdateTesting")]
+        //public async Task<ActionResult> UpdateTesting()
+        //{
+        //    try
+        //    {
+        //        string version = GetVersion();
+        //        _evento.AddEvento(new Evento($"Se actualizó a testing el sistema de la versión {version} a la siguiente", "sistema"));
+        //        await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó a testing el sistema de la versión {version} a la siguiente", new { Accion = "Actualizacion testing" });
 
-                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/updateUbuntu.sh | bash");
-                return Ok(s0);
-            }
-            catch (Exception er)
-            {
-                return BadRequest(er.Message);
-            }
-        }
+        //        string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/updateUbuntu.sh | bash");
+        //        return Ok(s0);
+        //    }
+        //    catch (Exception er)
+        //    {
+        //        return BadRequest(er.Message);
+        //    }
+        //}
 
         private string GetVersion()
         {
@@ -373,33 +373,6 @@ namespace DCMLocker.Server.Controllers
             return s;
         }
 
-        //[HttpPost("OpenChromium")]
-        //public ActionResult OpenChromium()
-        //{
-        //    try
-        //    {
-        //        cmdSinSudoNiRta("DISPLAY=:0 chromium-browser --start-fullscreen --kiosk --force-device-scale-factor=1 --app=http://localhost:5022/ --disable-pinch --incognito --no-sandbox");
-
-        //        return Ok();
-        //    }
-        //    catch (Exception er)
-        //    {
-        //        return BadRequest(er.Message);
-        //    }
-        //}
-
-        //private void cmdSinSudoNiRta(string comando)
-        //{
-        //    using (Process cmd = new Process())
-        //    {
-        //        cmd.StartInfo.FileName = "/bin/bash";
-        //        cmd.StartInfo.Arguments = $"-c \"{comando}\"";
-        //        cmd.StartInfo.UseShellExecute = false;
-        //        cmd.StartInfo.RedirectStandardOutput = false; // No need to capture output
-        //        cmd.StartInfo.RedirectStandardError = false;  // Avoid blocking on errors
-        //        cmd.Start();
-        //    }
-        //}
 
         [HttpGet("GetEthernetConfig")]
         public SystemNetwork GetEthernetConfig()
@@ -558,6 +531,201 @@ namespace DCMLocker.Server.Controllers
 
 
 
+        /// <summary>
+        /// cosillas de la config
+        /// </summary>
+        /// <returns></returns>
 
+        [HttpGet("DelayStatus")]
+        public ActionResult<int> GetDelayStatus()
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["DelayStatus"] is null)
+                    return NotFound();
+
+                int delayStatus = node["DelayStatus"]!.GetValue<int>();
+                return Ok(delayStatus);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al leer DelayStatus: " + ex.Message);
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("SuperadminTime")]
+        public ActionResult<int> GetSuperadminTime()
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["SuperadminTime"] is null)
+                    return NotFound();
+
+                int superadminTime = node["SuperadminTime"]!.GetValue<int>();
+                return Ok(superadminTime);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al leer SuperadminTime: " + ex.Message);
+                return StatusCode(500);
+            }
+        }
+
+        [HttpGet("AdminTime")]
+        public ActionResult<int> GetAdminTime()
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["AdminTime"] is null)
+                    return NotFound();
+
+                int adminTime = node["AdminTime"]!.GetValue<int>();
+                return Ok(adminTime);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al leer AdminTime: " + ex.Message);
+                return StatusCode(500);
+            }
+        }
+
+        [HttpPost("DelayStatus")]
+        public bool UpdateDelayStatus([FromBody] int delayStatus)
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                // Leer y parsear
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["DelayStatus"] is null)
+                    return false;
+
+                // Modificar el valor
+                node["DelayStatus"] = delayStatus;
+
+                // Escribir el archivo de vuelta (sobrescribir)
+                using (var writeStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var writer = new StreamWriter(writeStream))
+                {
+                    writer.Write(node.ToJsonString(new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }));
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        [HttpPost("SuperadminTime")]
+        public bool UpdateSuperadminTime([FromBody] int superadminTime)
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                // Leer y parsear
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["SuperadminTime"] is null)
+                    return false;
+
+                // Modificar el valor
+                node["SuperadminTime"] = superadminTime;
+
+                // Escribir el archivo de vuelta (sobrescribir)
+                using (var writeStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var writer = new StreamWriter(writeStream))
+                {
+                    writer.Write(node.ToJsonString(new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }));
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        [HttpPost("AdminTime")]
+        public bool UpdateAdminTime([FromBody] int adminTime)
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                // Leer y parsear
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["AdminTime"] is null)
+                    return false;
+
+                // Modificar el valor
+                node["AdminTime"] = adminTime;
+
+                // Escribir el archivo de vuelta (sobrescribir)
+                using (var writeStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var writer = new StreamWriter(writeStream))
+                {
+                    writer.Write(node.ToJsonString(new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }));
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

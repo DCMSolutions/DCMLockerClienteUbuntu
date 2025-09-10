@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DCMLocker.Server.Controllers
@@ -13,25 +14,34 @@ namespace DCMLocker.Server.Controllers
     [ApiController]
     public class LogController : ControllerBase
     {
-        private string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+        private static readonly SemaphoreSlim _fileLock = new(1, 1);
+
+        private static readonly JsonSerializerOptions _jsonWriteOpts = new() { WriteIndented = true };
+        private static readonly JsonSerializerOptions _jsonOpts = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            WriteIndented = false
+        };
 
         [HttpGet]
-        public List<Evento> GetEventos()
+        public async Task<List<Evento>> GetEventos()
         {
+            string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
             try
             {
                 if (!System.IO.File.Exists(fileNameAhora))
                 {
-                    CrearVacia();
+                    await _fileLock.WaitAsync();
+                    try { await EnsureFileReadyAsync(fileNameAhora, overwrite: false); }
+                    finally { _fileLock.Release(); }
                     return new List<Evento>();
                 }
-                else
-                {
-                    string content = System.IO.File.ReadAllText(fileNameAhora);
-                    List<Evento> consultas = DeserializarConReintento(content);
-                    consultas.Reverse();
-                    return consultas;
-                }
+
+                var eventos = await LeerEventosDesdeArchivo(fileNameAhora);
+                eventos.Reverse();
+                return eventos;
             }
             catch
             {
@@ -40,7 +50,7 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("viejo")]
-        public List<Evento> GetEventosViejos(int mesesAtras)
+        public async Task<List<Evento>> GetEventosViejos(int mesesAtras)
         {
             string fileNameVieja = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now.AddMonths(-mesesAtras):MM-yyyy}.ans");
 
@@ -50,13 +60,10 @@ namespace DCMLocker.Server.Controllers
                 {
                     return new List<Evento>();
                 }
-                else
-                {
-                    string content = System.IO.File.ReadAllText(fileNameVieja);
-                    List<Evento> consultas = DeserializarConReintento(content);
-                    consultas.Reverse();
-                    return consultas;
-                }
+
+                var eventos = await LeerEventosDesdeArchivo(fileNameVieja);
+                eventos.Reverse();
+                return eventos;
             }
             catch
             {
@@ -65,23 +72,30 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost]
-        public bool AddEvento([FromBody] Evento evento)
+        public async Task<bool> AddEvento([FromBody] Evento evento)
         {
+            string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+
             try
             {
-                if (!System.IO.File.Exists(fileNameAhora))
+                await _fileLock.WaitAsync();
+                try
                 {
-                    CrearConEvento(evento);
-                    return true;
-                }
-                else
-                {
-                    string content = System.IO.File.ReadAllText(fileNameAhora);
-                    List<Evento> eventos = DeserializarConReintento(content);
+                    List<Evento> eventos = System.IO.File.Exists(fileNameAhora)
+                        ? await LeerEventosDesdeArchivo(fileNameAhora)
+                        : new List<Evento>();
+
                     eventos.Add(evento);
-                    Guardar(eventos);
-                    return true;
+
+                    string json = JsonSerializer.Serialize(eventos, _jsonWriteOpts);
+                    await AtomicWriteAsync(fileNameAhora, json);
                 }
+                finally
+                {
+                    _fileLock.Release();
+                }
+
+                return true;
             }
             catch
             {
@@ -89,11 +103,20 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        public bool DeleteAllEventos()
+        public async Task<bool> DeleteAllEventos()
         {
             try
             {
-                CrearVacia();
+                string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+                await _fileLock.WaitAsync();
+                try
+                {
+                    await EnsureFileReadyAsync(fileNameAhora, overwrite: true);
+                }
+                finally
+                {
+                    _fileLock.Release();
+                }
                 return true;
             }
             catch
@@ -103,47 +126,88 @@ namespace DCMLocker.Server.Controllers
         }
 
         //funciones auxiliares
-        void CrearVacia()
+        private static async Task AtomicWriteAsync(string path, string json)
         {
-            List<Evento> nuevaLista = new();
-            string json = JsonSerializer.Serialize(nuevaLista, new JsonSerializerOptions { WriteIndented = true });
-            using StreamWriter sw = System.IO.File.CreateText(fileNameAhora);
-            sw.Write(json);
-        }
-        void CrearConEvento(Evento evento)
-        {
-            List<Evento> nuevaLista = new() { evento };
-            string json = JsonSerializer.Serialize(nuevaLista, new JsonSerializerOptions { WriteIndented = true });
-            using StreamWriter sw = System.IO.File.CreateText(fileNameAhora);
-            sw.Write(json);
-        }
-        void Guardar(List<Evento> eventos)
-        {
-            string json = JsonSerializer.Serialize(eventos, new JsonSerializerOptions { WriteIndented = true });
-            using (StreamWriter sw = new StreamWriter(fileNameAhora, false)) // false to overwrite
+            var dir = Path.GetDirectoryName(path) ?? ".";
+            var name = Path.GetFileName(path);
+            Directory.CreateDirectory(dir);
+            var tmp = Path.Combine(dir, $".{name}.{Guid.NewGuid():N}.tmp");
+
+            await System.IO.File.WriteAllTextAsync(tmp, json);
+
+            try
             {
-                sw.Write(json);
+                // On many platforms this is atomic. If not supported, we fall back below.
+                System.IO.File.Replace(tmp, path, null);
+            }
+            catch (PlatformNotSupportedException)
+            {
+                if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+                System.IO.File.Move(tmp, path);
+            }
+            catch (IOException)
+            {
+                // e.g., Replace failed due to FS; best-effort fallback.
+                if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
+                System.IO.File.Move(tmp, path);
             }
         }
 
-        public List<Evento> DeserializarConReintento(string content)
+        private static async Task EnsureFileReadyAsync(string path, bool overwrite = false)
         {
-            while (!string.IsNullOrEmpty(content))
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+
+            if (!overwrite && System.IO.File.Exists(path))
+                return;
+
+            var json = JsonSerializer.Serialize(new List<Evento>(), _jsonWriteOpts);
+            await AtomicWriteAsync(path, json);
+        }
+
+
+        public async Task<List<Evento>> LeerEventosDesdeArchivo(string fileName)
+        {
+            try
             {
+                using var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                var eventos = await JsonSerializer.DeserializeAsync<List<Evento>>(fs, _jsonOpts);
+                return eventos ?? new();
+            }
+            catch (JsonException)
+            {
+                var nuevos = new List<Evento> { new Evento("se corrompio el viejo", "error") };
+
                 try
                 {
-                    // Intentamos deserializar el contenido
-                    return JsonSerializer.Deserialize<List<Evento>>(content);
-                }
-                catch (JsonException)
-                {
-                    // Si falla, eliminamos el último carácter y reintentamos
-                    content = content.Substring(0, content.Length - 1);
-                }
-            }
+                    var dir = Path.GetDirectoryName(fileName) ?? ".";
+                    var name = Path.GetFileNameWithoutExtension(fileName);
+                    var ext = Path.GetExtension(fileName);
+                    var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+                    var backup = Path.Combine(dir, $"{name}.corrupt-{stamp}{ext}");
 
-            // Si el string queda vacío y no se pudo deserializar, retornamos null o una lista vacía, según prefieras
-            return new();
+                    // Renombrar el archivo corrupto
+                    if (System.IO.File.Exists(fileName))
+                        System.IO.File.Move(fileName, backup); // .NET 5: sin overwrite
+
+                    // Escribir nuevo archivo con un solo evento (movida “atómica” simple)
+                    var tmp = Path.Combine(dir, $"{name}.{Guid.NewGuid():N}.tmp");
+                    await System.IO.File.WriteAllTextAsync(tmp, JsonSerializer.Serialize(nuevos, _jsonWriteOpts));
+                    if (System.IO.File.Exists(fileName)) System.IO.File.Delete(fileName);
+                    System.IO.File.Move(tmp, fileName);
+                }
+                catch
+                {
+                    // Si algo falla al resguardar/crear, devolvemos igual la lista en memoria
+                }
+
+                return nuevos;
+            }
+            catch (IOException)
+            {
+                return new();
+            }
         }
     }
 }

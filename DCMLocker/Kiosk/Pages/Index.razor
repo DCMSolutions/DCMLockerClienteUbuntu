@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using DCMLocker.Kiosk.Pages.Components
 @using Microsoft.AspNetCore.SignalR.Client;
+@using System.Threading
 @inject NavigationManager Nav
 @inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
 @inject NotificationService NotificationService
@@ -8,7 +9,7 @@
 @if (screen == "keyboard")
 {
     <br />
-    <br />
+    <br /> 
     <div class="row justify-content-center align-items-center">
         <div class="col-12 text-center">
             <h1 style="margin-bottom: 5px;">Ingrese su código</h1>
@@ -20,7 +21,7 @@
             {
                 @for (int i = 0; i < 6; i++)
                 {
-                    <Circle text=@(token.Length >i ? token[i].ToString():"") />
+                    <Circle text=@(token.Length > i ? token[i].ToString() : "") />
                 }
 
                 <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
@@ -31,7 +32,7 @@
             {
                 @for (int i = 0; i < 6; i++)
                 {
-                    <Circle text=@(token.Length >i ? "*":"") />
+                    <Circle text=@(token.Length > i ? "*" : "") />
                 }
 
                 <div @onclick=visibility style="position: absolute; right: 80%; width: 20%;">
@@ -44,18 +45,18 @@
 
         <div class="row justify-content-center align-items-center">
 
-            <div @onclick="()=>addNumber(1)">
-                <Button text="1" />
+            <div>
+                <Button OnClick="@(() => addNumber(1))" text="1" />
             </div>
 
 
-            <div @onclick="()=>addNumber(2)">
-                <Button text="2" />
+            <div>
+                <Button OnClick="@(() => addNumber(2))" text="2" />
             </div>
 
 
-            <div @onclick="()=>addNumber(3)">
-                <Button text="3" />
+            <div>
+                <Button OnClick="@(() => addNumber(3))" text="3" />
             </div>
 
 
@@ -64,18 +65,18 @@
         <div class="row justify-content-center align-items-center">
 
 
-            <div @onclick="()=>addNumber(4)">
-                <Button text="4" />
+            <div>
+                <Button OnClick="@(() => addNumber(4))" text="4" />
             </div>
 
 
-            <div @onclick="()=>addNumber(5)">
-                <Button text="5" />
+            <div>
+                <Button OnClick="@(() => addNumber(5))" text="5" />
             </div>
 
 
-            <div @onclick="()=>addNumber(6)">
-                <Button text="6" />
+            <div>
+                <Button OnClick="@(() => addNumber(6))" text="6" />
             </div>
 
         </div>
@@ -84,18 +85,18 @@
         <div class="row justify-content-center align-items-center">
 
 
-            <div @onclick="()=>addNumber(7)">
-                <Button text="7" />
+            <div>
+                <Button OnClick="@(() => addNumber(7))" text="7" />
             </div>
 
 
-            <div @onclick="()=>addNumber(8)">
-                <Button text="8" />
+            <div>
+                <Button OnClick="@(() => addNumber(8))" text="8" />
             </div>
 
 
-            <div @onclick="()=>addNumber(9)">
-                <Button text="9" />
+            <div>
+                <Button OnClick="@(() => addNumber(9))" text="9" />
             </div>
 
         </div>
@@ -103,16 +104,16 @@
         <div class="row justify-content-center align-items-center">
 
 
-            <div @onclick="()=>deleteNumber()">
-                <Button text="delete" />
+            <div>
+                <Button OnClick="@(() => deleteNumber())" text="delete" />
             </div>
 
-            <div @onclick="()=>addNumber(0)">
-                <Button text="0" />
+            <div>
+                <Button OnClick="@(() => addNumber(0))" text="0" />
             </div>
 
-            <div @onclick="()=>send()">
-                <Button text="send" />
+            <div>
+                <Button OnClick="@(disableTick ? null : (() => send()))" text="send" />
             </div>
 
         </div>
@@ -181,25 +182,27 @@ else if (screen == "red")
             }
         </div>
     }
-    <div class="row mb-2">
+    @* <div class="row mb-2">
         <div class="col-6">
             <button type="button" class="btn btn-info btn-user btn-block" @onclick="InfoTewer" title="Obtener ID del teamviewer">Info tewer</button>
         </div>
         <div class="col-6">
             <button type="button" class="btn btn-info btn-user btn-block" @onclick="PassTewer" title="Establecer la contraseña de TeamViewer">Contraseña tewer</button>
         </div>
-    </div>
+    </div> *@
     <button type="button" class="btn btn-success btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará"))">Actualizar locker</button>
-    <button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará a testing"))">Actualizar locker a testing</button>
+    @* <button type="button" class="btn btn-primary btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("actualizará a testing"))">Actualizar locker a testing</button> *@
     <button type="button" class="btn btn-warning btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("reseteará"))">Resetear locker</button>
     <button type="button" class="btn btn-danger btn-user btn-block mb-2" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
 
-    <br />
+    @* <br />
     <a>@tewerID</a>
     <a>@tewerPASS</a>
-    <br />
+    <br /> *@
 
     <a>Versión @version del día @fecha</a>
+    <br />
+    <a>Número de serie: @nroSerie</a>
 
 }
 else if (screen == "ip")
@@ -229,13 +232,20 @@ else if (screen == "ip")
     <button type="button" class="btn btn-danger btn-user btn-block" @onclick="@(e => alertaGeneral("apagará"))">Apagar locker</button>
 
     <br />
-    <div>- 01: Error de conexión con controladora de cerraduras.</div>
-    <div>- 02: Error de conexión al servidor.</div>
-    <div>- 03: Error de conexión de red ethernet.</div>
-    <div>- 04: Error de conexión a internet.</div>
-    <div>- 05: Error de conexión de cerraduras y de internet.</div>
-    <div>- 99: Error inesperado.</div>
+    <a>- 01: Error de conexión con controladora de cerraduras.</a>
     <br />
+    <a>- 02: Error de conexión al servidor.</a>
+    <br />
+    <a>- 03: Error de conexión de red ethernet.</a>
+    <br />
+    <a>- 04: Error de conexión a internet.</a>
+    <br />
+    <a>- 05: Error de conexión de cerraduras y de internet.</a>
+    <br />
+    <a>- 99: Error inesperado.</a>
+    <br />
+    <a>Número de serie: @nroSerie</a>
+
 }
 else if (screen == "alerta")
 {
@@ -254,6 +264,7 @@ else if (screen == "alerta")
 @code {
     int[] token = { };
     bool isVisible;
+
     string screen = "keyboard";
     int door;
     private HubConnection QRhubConnection;
@@ -262,13 +273,17 @@ else if (screen == "alerta")
     string statusRed = "Conexion al servidor";
     string codigo;
     string pregunta;
+    bool disableTick = false;
+    CancellationTokenSource? _cts;      //es para cancelar los task.delay
+
 
     SystemNetwork[] Ips { get; set; }
     SystemNetwork[] IpsFiltered { get; set; }
     string version;
     string fecha;
-    string tewerID;
-    string tewerPASS;
+    string nroSerie;
+    // string tewerID;
+    // string tewerPASS;
 
     protected override async Task OnInitializedAsync()
     {
@@ -280,6 +295,7 @@ else if (screen == "alerta")
 
         version = await Cliente.GetVersion();
         fecha = await Cliente.GetFecha();
+        nroSerie = await Cliente.GetNroSerie();
 
         QRhubConnection = new HubConnectionBuilder()
         .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
@@ -365,6 +381,7 @@ else if (screen == "alerta")
 
     void CheckEstados()
     {
+        _cts?.Cancel();
         StateHasChanged();
         if (estadoCerraduras == "Conectadas" && statusRed == "Conexion al servidor") screen = "keyboard";
         else if (estadoCerraduras == "Desconectadas" && (statusRed == "Desconexion del servidor" || statusRed == "Desconexion de red" || statusRed == "Desconexion de internet")) ScreenError("05");
@@ -408,36 +425,54 @@ else if (screen == "alerta")
 
     async void send()
     {
+        disableTick = true;
         string resultado = string.Concat(token);
         token = new int[0];
+        _cts?.Cancel();
+
         if (resultado == "3942")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
             Cliente.SendWebhookAsync("Debug", "Se ingresó el código de superadmin", new { Accion = "Superadmin" });
 
+            int superadminTime = await Cliente.GetSuperadminTime();
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "red";
             StateHasChanged();
+            _cts = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(superadminTime, _cts.Token);
+                CheckEstados();
+            }
+            catch (TaskCanceledException) { } // no hacer nada, el usuario apretó "Volver"
         }
         else if (resultado == "6641")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 6641", "debug"));
             Cliente.SendWebhookAsync("Debug", "Se ingresó el código de admin", new { Accion = "Admin" });
 
+            int adminTime = await Cliente.GetAdminTime();
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "ip";
             StateHasChanged();
+            _cts = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(adminTime);
+                CheckEstados();
+            }
+            catch (TaskCanceledException) { } // no hacer nada, el usuario apretó "Volver"
         }
-        else
+        else if (resultado != "" && resultado != null && resultado != "0")
         {
             try
             {
                 await esperarQueSeAbra(resultado);
-
                 screen = "success";
                 StateHasChanged();
                 await Task.Delay(3000);
@@ -452,8 +487,7 @@ else if (screen == "alerta")
                 CheckEstados();
             }
         }
-        Console.WriteLine($"screen {screen}");
-
+        disableTick = false;
         StateHasChanged();
     }
 
@@ -461,12 +495,12 @@ else if (screen == "alerta")
     {
         Console.WriteLine("notif error");
         NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Error",
-                Detail = message,
-                Duration = 4000
-            });
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = "Error",
+            Detail = message,
+            Duration = 4000
+        });
     }
 
     async Task esperarQueSeAbra(string resultado)
@@ -502,22 +536,22 @@ else if (screen == "alerta")
     {
         if (pregunta == "apagará") await Cliente.System_Shutdown();
         else if (pregunta == "reseteará") await Cliente.System_Reset();
-        else if (pregunta == "actualizará a testing") await Cliente.System_UpdateTesting();
+        // else if (pregunta == "actualizará a testing") await Cliente.System_UpdateTesting();
         else if (pregunta == "actualizará") await Cliente.System_Update();
         else CheckEstados();
     }
 
-    protected async void InfoTewer()
-    {
-        tewerID = await Cliente.System_TewerID();
-        StateHasChanged();
-    }
+    // protected async void InfoTewer()
+    // {
+    //     tewerID = await Cliente.System_TewerID();
+    //     StateHasChanged();
+    // }
 
-    protected async void PassTewer()
-    {
-        tewerPASS = await Cliente.System_TewerPASS();
-        StateHasChanged();
-    }
+    // protected async void PassTewer()
+    // {
+    //     tewerPASS = await Cliente.System_TewerPASS();
+    //     StateHasChanged();
+    // }
 
     public void alertaGeneral(string funcion)
     {
