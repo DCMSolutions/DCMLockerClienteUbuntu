@@ -1,0 +1,60 @@
+﻿@page "/assets"
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="vh-100 d-flex flex-column justify-content-center align-items-center">
+    <h1 class="mb-3">Acerque su tarjeta</h1>
+
+    @if (!string.IsNullOrEmpty(_last))
+    {
+        <div class="text-center">
+            <div style="font-size:64px;line-height:1;word-break:break-all;">@_last</div>
+            <div class="text-muted mt-2">Leído @(_readAt.ToString("HH:mm:ss"))</div>
+        </div>
+    }
+    else
+    {
+        <div class="text-muted">Esperando lectura…</div>
+    }
+</div>
+
+@code {
+    private IJSObjectReference? _scannerModule;
+    private DotNetObjectReference<Assets>? _selfRef;
+
+    private string _last = "";
+    private DateTime _readAt;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Import dinámico del módulo (no hace falta <script> en index.html)
+        _scannerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/LectorRFID.js");
+        _selfRef = DotNetObjectReference.Create(this);
+
+        await _scannerModule.InvokeVoidAsync("attach", _selfRef, new
+        {
+            acceptTabAsEnter = true // ponelo en false si no querés usar Tab como Enter
+        });
+    }
+
+    [JSInvokable]
+    public Task OnScanEnter(string text)
+    {
+        // Futuro: acá podés transformar el valor leído antes de mostrarlo/enviarlo
+        _last = text;
+        _readAt = DateTime.Now;
+
+        // TODO (luego): llamar a backend / abrir puerta / etc.
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { if (_scannerModule != null) await _scannerModule.InvokeVoidAsync("detach"); } catch { }
+        _selfRef?.Dispose();
+    }
+}
