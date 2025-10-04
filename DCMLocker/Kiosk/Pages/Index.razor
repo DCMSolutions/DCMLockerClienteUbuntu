@@ -1,4 +1,4 @@
-﻿@page "/test"
+﻿@page "/"
 @using DCMLocker.Kiosk.Pages.Components
 @using Microsoft.AspNetCore.SignalR.Client;
 @using System.Threading
@@ -282,11 +282,12 @@ else if (screen == "alerta")
     string version;
     string fecha;
     string nroSerie;
-    // string tewerID;
-    // string tewerPASS;
 
     protected override async Task OnInitializedAsync()
     {
+        var Config = await Cliente.GetConfig();
+        if (Config.IsAssets) Nav.NavigateTo("/assets"); // despues ver como bajar esto y pasar la info a la otra url
+
         Ips = await Cliente.System_GetIP();
         IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
         bool pingServer = await Cliente.PingServer();

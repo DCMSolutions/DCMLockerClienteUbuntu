@@ -1,4 +1,5 @@
-﻿@page "/"
+﻿@page "/assets"
+@using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime JS
@@ -22,39 +23,58 @@
 @code {
     private IJSObjectReference? _scannerModule;
     private DotNetObjectReference<Assets>? _selfRef;
+    
+    private HubConnection? _hub;
 
     private string _last = "";
     private DateTime _readAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/RFIDReaderHub")) 
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<string>("ReceiveRFID", (token) =>                       
+        {
+            _last = token;
+            _readAt = DateTime.Now;
+            InvokeAsync(StateHasChanged);
+        });
+
+        await _hub.StartAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        // Import dinámico del módulo (no hace falta <script> en index.html)
         _scannerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/LectorRFID.js");
         _selfRef = DotNetObjectReference.Create(this);
 
-        await _scannerModule.InvokeVoidAsync("attach", _selfRef, new
-        {
-            acceptTabAsEnter = true // ponelo en false si no querés usar Tab como Enter
-        });
+        await _scannerModule.InvokeVoidAsync("attach", _selfRef, new { acceptTabAsEnter = true });
     }
 
+
     [JSInvokable]
-    public Task OnScanEnter(string text)
+    public async Task OnScanEnter(string text)  
     {
-        // Futuro: acá podés transformar el valor leído antes de mostrarlo/enviarlo
+        // 1) mostrar local
         _last = text;
         _readAt = DateTime.Now;
-
-        // TODO (luego): llamar a backend / abrir puerta / etc.
         StateHasChanged();
-        return Task.CompletedTask;
+
+        // 2) publicar para TODAS las /assets (otras pestañas y equipos)
+        if (_hub is not null && _hub.State == HubConnectionState.Connected)
+            await _hub.SendAsync("SendToken", text);
     }
 
     public async ValueTask DisposeAsync()
     {
         try { if (_scannerModule != null) await _scannerModule.InvokeVoidAsync("detach"); } catch { }
         _selfRef?.Dispose();
+        try { if (_hub != null) { await _hub.StopAsync(); await _hub.DisposeAsync(); } } catch { }
     }
+
 }

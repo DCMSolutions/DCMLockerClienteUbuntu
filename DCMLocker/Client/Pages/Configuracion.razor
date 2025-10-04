@@ -31,6 +31,14 @@
             </div>
             <hr><br>
             <div class="form-group">
+                <label><strong>Configuracion de modo</strong></label>
+                <p>Conmutador entre modo tokens y modo assets.</p>
+                <div style="display: flex; justify-content: center;" class="form-check form-switch">
+                    <input type="checkbox" @bind="Config.IsAssets" class="form-check-input" />
+                </div>
+            </div>
+            <hr><br>
+            <div class="form-group">
                 <label><strong>Tiempo de envío de status</strong></label>
                 <p>Configuración del intervalo entre cada envío de estado, en milisegundos.</p>
                 <div style="display: flex; justify-content: center;">

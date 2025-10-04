@@ -229,6 +229,7 @@ namespace DCMLocker.Server
                     {
                         endpoints.MapControllers();
                         endpoints.MapRazorPages();
+                        endpoints.MapHub<RFIDReaderHub>("/KioskApp/RFIDReaderHub");
                         endpoints.MapHub<QRReaderHub>("/KioskApp/QRReaderHub");
                         endpoints.MapHub<ServerHub>("/KioskApp/ServerHub");
                         endpoints.MapFallbackToFile("/KioskApp/{*path:nonfile}",
