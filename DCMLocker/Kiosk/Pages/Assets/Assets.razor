@@ -1,21 +1,52 @@
 ﻿@page "/assets"
 
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.JSInterop
 @implements IAsyncDisposable
 
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
 
-<div class="container vh-100 d-flex flex-column justify-content-center">
+<style>
+    /* Kiosk sin scroll */
+    html, body {
+        height: 100%;
+        overflow: hidden;
+    }
+    /* Cards grandes y responsivas */
+    .asset-card {
+        min-height: 28vh; /* ocupa buena parte de la pantalla */
+        border-width: 2px; /* borde más visible en BS4 */
+        transition: transform .08s ease-in-out;
+    }
 
-    <!-- Encabezado común -->
-    <div class="text-center mb-4">
-        <h1 class="mb-1">Acerque su tarjeta</h1>
-        <p class="text-muted m-0">Escanee su RFID y seleccione acción</p>
-    </div>
+        .asset-card:active {
+            transform: scale(0.99);
+        }
+
+        .asset-card .card-body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .asset-card h4 {
+            font-size: 2rem;
+            margin: 0;
+        }
+</style>
+
+<div class="container vh-100 d-flex flex-column justify-content-center">
 
     @if (_screen == Screen.Select)
     {
+        <!-- Encabezado solo en la pantalla 1 -->
+        <div class="text-center mb-4">
+            <p class="text-muted m-0">Escanee su tarjeta y seleccione acción</p>
+        </div>
+
         <!-- RFID leído (si hay) -->
         <div class="text-center mb-4">
             @if (!string.IsNullOrEmpty(_rfid))
@@ -29,22 +60,24 @@
             }
         </div>
 
-        <!-- Cards de acción (BS4) -->
+        <!-- Cards de acción (grandes) -->
         <div class="row justify-content-center">
-            <div class="col-sm-6 col-md-5 col-lg-4 mb-3">
-                <div class="card shadow-sm @CardBorder(AssetsAccion.Retiro)" style="cursor:pointer"
+            <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
+                <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Retiro) ? "bg-primary text-white border-primary" : "border-secondary")"
+                     style="cursor:pointer"
                      @onclick="() => SelectAccion(AssetsAccion.Retiro)">
                     <div class="card-body text-center">
-                        <h4 class="card-title mb-0">Retiro</h4>
+                        <h4 class="card-title">Retiro</h4>
                     </div>
                 </div>
             </div>
 
-            <div class="col-sm-6 col-md-5 col-lg-4 mb-3">
-                <div class="card shadow-sm @CardBorder(AssetsAccion.Devolucion)" style="cursor:pointer"
+            <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
+                <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Devolucion) ? "bg-primary text-white border-primary" : "border-secondary")"
+                     style="cursor:pointer"
                      @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
                     <div class="card-body text-center">
-                        <h4 class="card-title mb-0">Devolución</h4>
+                        <h4 class="card-title">Devolución</h4>
                     </div>
                 </div>
             </div>
@@ -68,7 +101,7 @@
 
         <div class="mb-2 text-muted">Volviendo en @_countdown s…</div>
         <div class="progress mb-3" style="height: 12px;">
-            <div class="progress-bar" role="progressbar" style="width:@PercentDone()%"></div>
+            <div class="progress-bar" role="progressbar" style="width:@PercentDone()"></div>
         </div>
 
         <button class="btn btn-outline-secondary btn-sm" @onclick="Reset">Volver ahora</button>
@@ -102,9 +135,10 @@
             .WithAutomaticReconnect()
             .Build();
 
-        // Recibir lecturas de OTRAS pestañas/equipos
+        // Recibir lecturas de OTRAS pestañas/equipos — solo si estamos en Select
         _hub.On<string>("ReceiveRFID", token =>
         {
+            if (_screen != Screen.Select) return; // ignorar fuera de la pantalla 1
             SetRfid(token);
         });
 
@@ -124,6 +158,8 @@
     [JSInvokable]
     public async Task OnScanEnter(string text)
     {
+        if (_screen != Screen.Select) return; // ignorar fuera de la pantalla 1
+
         // Local
         SetRfid(text);
 
@@ -143,12 +179,10 @@
     }
 
     // -------- UI helpers --------
-    string CardBorder(AssetsAccion card) =>
-        _accion == card ? "border-primary" : "border-secondary";
+    bool IsSelected(AssetsAccion a) => _accion == a;
 
     void SelectAccion(AssetsAccion a)
     {
-        // selección única; si clickean la misma, queda seleccionada
         _accion = a;
         _ = TryProceedAsync();
         StateHasChanged();
@@ -157,8 +191,7 @@
     async Task TryProceedAsync()
     {
         if (_sending) return;
-        
-        if (string.IsNullOrWhiteSpace(_rfid) || _accion is null) return; // esta maravilla corta si falta alguno osea manda apenas esten los dos
+        if (string.IsNullOrWhiteSpace(_rfid) || _accion is null) return;
 
         _sending = true;
         _screen = Screen.Loading;
@@ -168,10 +201,8 @@
         {
             var req = new AssetsRequest { IdEmpleado = _rfid!, Accion = _accion.Value };
 
-            // llamada al backend
             var resp = await Cliente.SendRequest(req);
 
-            // mostrar "tal cual": si no es string, serialize
             _resultRaw = resp.ToString();
 
             _screen = Screen.Result;
@@ -199,7 +230,7 @@
     async Task StartCountdownAsync(int seconds, CancellationToken token)
     {
         _countdown = seconds;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         while (_countdown > 0 && !token.IsCancellationRequested)
         {
@@ -224,8 +255,9 @@
 
     string PercentDone()
     {
+        // 0% al entrar, 100% al terminar
         var done = (_resultSeconds - _countdown) * 100 / Math.Max(1, _resultSeconds);
-        return $"{done}%";
+        return done.ToString() + "%";
     }
 
     public async ValueTask DisposeAsync()
