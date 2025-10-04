@@ -34,7 +34,10 @@
                 <label><strong>Configuracion de modo</strong></label>
                 <p>Conmutador entre modo tokens y modo assets.</p>
                 <div style="display: flex; justify-content: center;" class="form-check form-switch">
-                    <input type="checkbox" @bind="Config.IsAssets" class="form-check-input" />
+                    <div style="display:flex;justify-content:center" class="custom-control custom-switch">
+                        <input type="checkbox" id="isAssetsSwitch" @bind="isAssets" class="custom-control-input" />
+                        <label class="custom-control-label" for="isAssetsSwitch"></label>
+                    </div>
                 </div>
             </div>
             <hr><br>
@@ -194,6 +197,7 @@ else
     int delayStatus, originalDelayStatus;
     int superadminTime, originalSuperadminTime;
     int adminTime, originalAdminTime;
+    bool isAssets, originalIsAssets;
 
 
     protected override async Task OnInitializedAsync()
@@ -201,10 +205,12 @@ else
         delayStatus = await Cliente.GetDelayStatus();
         superadminTime = await Cliente.GetSuperadminTime();
         adminTime = await Cliente.GetAdminTime();
+        isAssets = await Cliente.GetIsAssets();
 
         originalDelayStatus = delayStatus;
         originalSuperadminTime = superadminTime;
         originalAdminTime = adminTime;
+        originalIsAssets = isAssets;
 
         Config = await Cliente.GetConfig();
         url = $"{Config.UrlServer}";
@@ -233,6 +239,12 @@ else
             {
                 if (!await Cliente.SetAdminTime(adminTime))
                     Console.WriteLine("Error al guardar AdminTime.");
+            }
+            
+            if (isAssets != originalIsAssets)
+            {
+                if (!await Cliente.SetIsAssets(isAssets))
+                    Console.WriteLine("Error al guardar isAssets.");
             }
 
             bool r = await Cliente.SetConfig(Config);

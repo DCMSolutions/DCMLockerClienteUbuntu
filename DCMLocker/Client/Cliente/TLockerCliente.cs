@@ -1423,7 +1423,37 @@ namespace DCMLocker.Client.Cliente
                 return false;
             }
         }
+        /// <summary>--------------------------------------------------------------------
+        /// Assets config 
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
 
+        public async Task<bool> GetIsAssets()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/isAssets");
+                var oRta = await response.Content.ReadFromJsonAsync<bool>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> SetIsAssets(bool isAssets)
+        {
+            try
+            {
+                var oRta = await _cliente.PostAsJsonAsync("system/isAssets", isAssets);
+                return oRta.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
         /// <summary>--------------------------------------------------------------------
         /// El log y eso xd
         /// </summary>

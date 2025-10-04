@@ -285,8 +285,8 @@ else if (screen == "alerta")
 
     protected override async Task OnInitializedAsync()
     {
-        var Config = await Cliente.GetConfig();
-        if (Config.IsAssets) Nav.NavigateTo("/assets"); // despues ver como bajar esto y pasar la info a la otra url
+        var isAssets = await Cliente.GetIsAssets();
+        if (isAssets) Nav.NavigateTo("/assets"); // despues ver como bajar esto y pasar la info a la otra url
 
         Ips = await Cliente.System_GetIP();
         IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();

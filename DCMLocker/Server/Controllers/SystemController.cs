@@ -614,6 +614,32 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpGet("isAssets")]
+        public ActionResult<bool> GetIsAssets()
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["IsAssets"] is null)
+                    return NotFound();
+
+                bool isAssets = node["IsAssets"]!.GetValue<bool>();
+                return Ok(isAssets);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al leer IsAssets: " + ex.Message);
+                return StatusCode(500);
+            }
+        }
+
         [HttpPost("DelayStatus")]
         public bool UpdateDelayStatus([FromBody] int delayStatus)
         {
@@ -709,6 +735,44 @@ namespace DCMLocker.Server.Controllers
 
                 // Modificar el valor
                 node["AdminTime"] = adminTime;
+
+                // Escribir el archivo de vuelta (sobrescribir)
+                using (var writeStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var writer = new StreamWriter(writeStream))
+                {
+                    writer.Write(node.ToJsonString(new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }));
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        [HttpPost("isAssets")]
+        public bool UpdateIsAssets([FromBody] bool isAssets)
+        {
+            try
+            {
+                var path = "configjson.json";
+
+                // Leer y parsear
+                JsonNode? node;
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    node = JsonNode.Parse(stream);
+                }
+
+                if (node is null || node["IsAssets"] is null)
+                    return false;
+
+                // Modificar el valor
+                node["IsAssets"] = isAssets;
 
                 // Escribir el archivo de vuelta (sobrescribir)
                 using (var writeStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))

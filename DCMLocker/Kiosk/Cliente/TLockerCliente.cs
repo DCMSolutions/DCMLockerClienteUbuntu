@@ -1178,6 +1178,20 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
+        public async Task<bool> GetIsAssets()
+        {
+            try
+            {
+                var response = await _cliente.GetAsync("system/isAssets");
+                var oRta = await response.Content.ReadFromJsonAsync<bool>();
+                return oRta;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         public async Task<bool> PingServer()
         {
             try
