@@ -1210,5 +1210,30 @@ namespace DCMLocker.Kiosk.Cliente
                 return false;
             }
         }
+
+        /// <summary>--------------------------------------------------------------------
+        /// Lo de assets
+        /// </summary>
+        /// <returns></returns>----------------------------------------------------------
+
+        public async Task<bool> SendRequest(AssetsRequest req)
+        {
+            try
+            {
+                //var response = await _cliente.GetAsync("Locker/PingServer");
+                //if (response.IsSuccessStatusCode)
+                //{
+                //    // Read the response as a boolean
+                //    var result = await response.Content.ReadAsStringAsync();
+                //    return bool.TryParse(result, out var isSuccess) && isSuccess;
+                //}
+                await Task.Delay(5000);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
