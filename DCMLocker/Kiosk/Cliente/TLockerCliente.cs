@@ -1216,23 +1216,21 @@ namespace DCMLocker.Kiosk.Cliente
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
 
-        public async Task<bool> SendRequest(AssetsRequest req)
+        public async Task<AssetsResponse> SendRequest(AssetsRequest req)
         {
             try
             {
-                //var response = await _cliente.GetAsync("Locker/PingServer");
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    // Read the response as a boolean
-                //    var result = await response.Content.ReadAsStringAsync();
-                //    return bool.TryParse(result, out var isSuccess) && isSuccess;
-                //}
-                await Task.Delay(5000);
-                return true;
+                var response = await _cliente.PostAsJsonAsync("assets/SendRequest", req);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<AssetsResponse>();
+                    return result ?? new AssetsResponse(); // por si viniera null
+                }
+                return new();
             }
             catch
             {
-                return false;
+                return new();
             }
         }
     }

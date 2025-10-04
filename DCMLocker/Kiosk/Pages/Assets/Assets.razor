@@ -1,12 +1,7 @@
 ﻿@page "/assets"
 
-@using Microsoft.AspNetCore.SignalR.Client
-@using Microsoft.JSInterop
 @implements IAsyncDisposable
-
 @inject IJSRuntime JS
-@inject NavigationManager Nav
-@inject DCMLocker.Kiosk.Cliente.TLockerCliente Cliente
 
 <style>
     /* Kiosk sin scroll */
@@ -14,10 +9,30 @@
         height: 100%;
         overflow: hidden;
     }
-    /* Cards grandes y responsivas */
+
+    /* Contenedores de pantalla */
+    .kiosk-full {
+        height: 100vh;
+    }
+
+    .kiosk-up {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 8vh;
+    }
+    /* pantalla 1 un poco arriba */
+    .kiosk-center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    /* loading/result centrado */
+
+    /* Cards grandes */
     .asset-card {
-        min-height: 28vh; /* ocupa buena parte de la pantalla */
-        border-width: 2px; /* borde más visible en BS4 */
+        min-height: 28vh;
+        border-width: 2px;
         transition: transform .08s ease-in-out;
     }
 
@@ -36,48 +51,55 @@
             font-size: 2rem;
             margin: 0;
         }
+
+    /* Barra de progreso más suave */
+    .progress-bar {
+        transition: width .3s linear;
+    }
 </style>
 
-<div class="container vh-100 d-flex flex-column justify-content-center">
+<div class="container kiosk-full">
 
     @if (_screen == Screen.Select)
     {
-        <!-- Encabezado solo en la pantalla 1 -->
-        <div class="text-center mb-4">
-            <p class="text-muted m-0">Escanee su tarjeta y seleccione acción</p>
-        </div>
-
-        <!-- RFID leído (si hay) -->
-        <div class="text-center mb-4">
-            @if (!string.IsNullOrEmpty(_rfid))
-            {
-                <div style="font-size:48px;line-height:1;word-break:break-all;">@_rfid</div>
-                <div class="text-muted mt-2">Leído @(_readAt.ToString("HH:mm:ss"))</div>
-            }
-            else
-            {
-                <div class="text-muted">Esperando lectura…</div>
-            }
-        </div>
-
-        <!-- Cards de acción (grandes) -->
-        <div class="row justify-content-center">
-            <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
-                <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Retiro) ? "bg-primary text-white border-primary" : "border-secondary")"
-                     style="cursor:pointer"
-                     @onclick="() => SelectAccion(AssetsAccion.Retiro)">
-                    <div class="card-body text-center">
-                        <h4 class="card-title">Retiro</h4>
-                    </div>
-                </div>
+        <div class="kiosk-up">
+            <!-- Encabezado SOLO en pantalla 1 -->
+            <div class="text-center mb-4">
+                <p class="text-muted m-0">Escanee su tarjeta y seleccione acción</p>
             </div>
 
-            <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
-                <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Devolucion) ? "bg-primary text-white border-primary" : "border-secondary")"
-                     style="cursor:pointer"
-                     @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
-                    <div class="card-body text-center">
-                        <h4 class="card-title">Devolución</h4>
+            <!-- RFID leído (si hay) -->
+            <div class="text-center mb-4">
+                @if (!string.IsNullOrEmpty(_rfid))
+                {
+                    <div style="font-size:48px;line-height:1;word-break:break-all;">@_rfid</div>
+                    <div class="text-muted mt-2">Leído @(_readAt.ToString("HH:mm:ss"))</div>
+                }
+                else
+                {
+                    <div class="text-muted">Esperando lectura…</div>
+                }
+            </div>
+
+            <!-- Cards -->
+            <div class="row justify-content-center">
+                <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
+                    <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Retiro) ? "bg-primary text-white border-primary" : "border-secondary")"
+                         style="cursor:pointer"
+                         @onclick="() => SelectAccion(AssetsAccion.Retiro)">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Retiro</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
+                    <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Devolucion) ? "bg-primary text-white border-primary" : "border-secondary")"
+                         style="cursor:pointer"
+                         @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Devolución</h4>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -85,7 +107,7 @@
     }
     else if (_screen == Screen.Loading)
     {
-        <div class="d-flex flex-column align-items-center justify-content-center">
+        <div class="kiosk-center text-center">
             <div class="spinner-border text-primary mb-3" role="status">
                 <span class="sr-only">Cargando...</span>
             </div>
@@ -94,22 +116,25 @@
     }
     else if (_screen == Screen.Result)
     {
-        <div class="mb-3">
-            <h4>Respuesta del servidor</h4>
-            <pre class="bg-light p-3 rounded" style="white-space:pre-wrap; word-break:break-word;">@_resultRaw</pre>
-        </div>
+        <div class="kiosk-center">
+            <div class="mb-3">
+                <h4>Respuesta del servidor</h4>
+                <pre class="bg-light p-3 rounded" style="white-space:pre-wrap; word-break:break-word;">@_resultRaw</pre>
+            </div>
 
-        <div class="mb-2 text-muted">Volviendo en @_countdown s…</div>
-        <div class="progress mb-3" style="height: 12px;">
-            <div class="progress-bar" role="progressbar" style="width:@PercentDone()"></div>
-        </div>
+            <div class="mb-2 text-muted text-center">Volviendo en @_countdown s…</div>
+            <div class="progress mb-3" style="height: 12px;">
+                <div class="progress-bar" role="progressbar" style="width:@PercentDone()"></div>
+            </div>
 
-        <button class="btn btn-outline-secondary btn-sm" @onclick="Reset">Volver ahora</button>
+            <div class="text-center">
+                <button class="btn btn-outline-secondary btn-sm" @onclick="Reset">Volver ahora</button>
+            </div>
+        </div>
     }
 </div>
 
 @code {
-    // -------- Pantallas / estado --------
     enum Screen { Select, Loading, Result }
     Screen _screen = Screen.Select;
 
@@ -123,7 +148,6 @@
     private CancellationTokenSource? _countdownCts;
     private bool _sending;
 
-    // -------- Infra: JS + Hub --------
     private IJSObjectReference? _scannerModule;
     private DotNetObjectReference<Assets>? _selfRef;
     private HubConnection? _hub;
@@ -135,7 +159,6 @@
             .WithAutomaticReconnect()
             .Build();
 
-        // Recibir lecturas de OTRAS pestañas/equipos — solo si estamos en Select
         _hub.On<string>("ReceiveRFID", token =>
         {
             if (_screen != Screen.Select) return; // ignorar fuera de la pantalla 1
@@ -160,10 +183,8 @@
     {
         if (_screen != Screen.Select) return; // ignorar fuera de la pantalla 1
 
-        // Local
         SetRfid(text);
 
-        // Broadcast (a otras /assets)
         if (_hub is not null && _hub.State == HubConnectionState.Connected)
             await _hub.SendAsync("SendToken", text);
     }
@@ -172,13 +193,10 @@
     {
         _rfid = token;
         _readAt = DateTime.Now;
-
-        // si ya hay acción, avanzamos
         _ = TryProceedAsync();
         StateHasChanged();
     }
 
-    // -------- UI helpers --------
     bool IsSelected(AssetsAccion a) => _accion == a;
 
     void SelectAccion(AssetsAccion a)
@@ -203,11 +221,11 @@
 
             var resp = await Cliente.SendRequest(req);
 
-            _resultRaw = resp.ToString();
+            // Mostrar tal cual
+            _resultRaw = "el goat " + resp.NombreEmpleado + " tiene " + resp.AssetsList.Count() + " assets";
 
             _screen = Screen.Result;
 
-            // countdown para volver
             _countdownCts?.Cancel();
             _countdownCts = new CancellationTokenSource();
             _ = StartCountdownAsync(_resultSeconds, _countdownCts.Token);
@@ -216,6 +234,7 @@
         {
             _resultRaw = $"ERROR: {ex.Message}";
             _screen = Screen.Result;
+
             _countdownCts?.Cancel();
             _countdownCts = new CancellationTokenSource();
             _ = StartCountdownAsync(_resultSeconds, _countdownCts.Token);
@@ -255,9 +274,8 @@
 
     string PercentDone()
     {
-        // 0% al entrar, 100% al terminar
         var done = (_resultSeconds - _countdown) * 100 / Math.Max(1, _resultSeconds);
-        return done.ToString() + "%";
+        return done + "%";
     }
 
     public async ValueTask DisposeAsync()
