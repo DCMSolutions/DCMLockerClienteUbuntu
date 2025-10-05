@@ -30,4 +30,15 @@ namespace DCMLocker.Shared
         public string NombreAsset { get; set; } = string.Empty;
         public int IdBox { get; set; }
     }
+
+    public enum AssetsEstado
+    {
+        Funcional,
+        Defectuoso,
+        Mantenimiento,
+        Perdido,
+        EOL,
+        Archivado
+    }
+
 }
