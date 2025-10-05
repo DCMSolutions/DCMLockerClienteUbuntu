@@ -10,7 +10,6 @@
         overflow: hidden;
     }
 
-    /* Contenedores de pantalla */
     .kiosk-full {
         height: 100vh;
     }
@@ -19,40 +18,47 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        padding-top: 8vh;
+        padding-top: 6vh;
     }
-    /* pantalla 1 un poco arriba */
+
     .kiosk-center {
         display: flex;
         flex-direction: column;
         justify-content: center;
+        min-height: 100vh;
     }
-    /* loading/result centrado */
 
-    /* Cards grandes */
-    .asset-card {
-        min-height: 28vh;
+    /* Cards grandes de acción */
+    .action-card, .asset-card {
+        min-height: 24vh;
         border-width: 2px;
-        transition: transform .08s ease-in-out;
+        transition: transform .08s ease-in-out, box-shadow .08s ease-in-out;
+        cursor: pointer;
     }
 
-        .asset-card:active {
+        .action-card:active, .asset-card:active {
             transform: scale(0.99);
         }
 
-        .asset-card .card-body {
+        .action-card .card-body, .asset-card .card-body {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
         }
 
-        .asset-card h4 {
-            font-size: 2rem;
+        .action-card h4, .asset-card h5 {
             margin: 0;
         }
 
-    /* Barra de progreso más suave */
+    /* Seleccionadas */
+    .selected {
+        background: #007bff;
+        color: #fff;
+        border-color: #007bff;
+    }
+
+    /* Barra de progreso suave */
     .progress-bar {
         transition: width .3s linear;
     }
@@ -63,12 +69,10 @@
     @if (_screen == Screen.Select)
     {
         <div class="kiosk-up">
-            <!-- Encabezado SOLO en pantalla 1 -->
             <div class="text-center mb-4">
                 <p class="text-muted m-0">Escanee su tarjeta y seleccione acción</p>
             </div>
 
-            <!-- RFID leído (si hay) -->
             <div class="text-center mb-4">
                 @if (!string.IsNullOrEmpty(_rfid))
                 {
@@ -81,24 +85,21 @@
                 }
             </div>
 
-            <!-- Cards -->
             <div class="row justify-content-center">
                 <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
-                    <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Retiro) ? "bg-primary text-white border-primary" : "border-secondary")"
-                         style="cursor:pointer"
+                    <div class="card action-card shadow-sm @(IsSelected(AssetsAccion.Retiro) ? "selected" : "border-secondary")"
                          @onclick="() => SelectAccion(AssetsAccion.Retiro)">
                         <div class="card-body text-center">
-                            <h4 class="card-title">Retiro</h4>
+                            <h4>Retiro</h4>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
-                    <div class="card asset-card shadow-sm @(IsSelected(AssetsAccion.Devolucion) ? "bg-primary text-white border-primary" : "border-secondary")"
-                         style="cursor:pointer"
+                    <div class="card action-card shadow-sm @(IsSelected(AssetsAccion.Devolucion) ? "selected" : "border-secondary")"
                          @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
                         <div class="card-body text-center">
-                            <h4 class="card-title">Devolución</h4>
+                            <h4>Devolución</h4>
                         </div>
                     </div>
                 </div>
@@ -111,14 +112,78 @@
             <div class="spinner-border text-primary mb-3" role="status">
                 <span class="sr-only">Cargando...</span>
             </div>
-            <div class="text-muted">Enviando solicitud…</div>
+            <div class="text-muted">@_loadingText</div>
+        </div>
+    }
+    else if (_screen == Screen.ChooseAsset)
+    {
+        <div class="kiosk-up">
+            <div class="text-center mb-3">
+                <h4 class="m-0">Seleccione el asset a retirar</h4>
+                @if (!string.IsNullOrEmpty(_employeeName))
+                {
+                    <div class="text-muted">Empleado: @_employeeName</div>
+                }
+            </div>
+
+            @if (_assets.Count == 0)
+            {
+                <div class="text-center text-muted">No hay assets disponibles para retiro.</div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-secondary" @onclick="Reset">Volver</button>
+                </div>
+            }
+            else
+            {
+                <div class="row justify-content-center">
+                    @foreach (var a in _assets)
+                    {
+                        var isSel = _selectedAsset?.IdAsset == a.IdAsset;
+                        <div class="col-12 col-md-6 col-lg-5 mb-4">
+                            <div class="card asset-card shadow-sm @(isSel ? "selected" : "border-secondary")"
+                                 @onclick="@(() => SelectAsset(a))">
+                                <div class="card-body text-center">
+                                    <div>
+                                        <h5 class="mb-2">@a.NombreAsset</h5>
+                                        <div class="small @(isSel ? "text-white-50" : "text-muted")">ID: @a.IdAsset &nbsp;|&nbsp; Box: @a.IdBox</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="text-center">
+                    <button class="btn btn-primary btn-lg"
+                            disabled="@(_selectedAsset == null)"
+                            @onclick="GoConfirmRetiro">
+                        Continuar
+                    </button>
+                    <button class="btn btn-outline-secondary btn-lg ml-2" @onclick="Reset">Cancelar</button>
+                </div>
+            }
+        </div>
+    }
+    else if (_screen == Screen.ConfirmRetiro)
+    {
+        <div class="kiosk-center text-center">
+            <h4 class="mb-3">¿Confirmar retiro?</h4>
+            <div class="mb-3">
+                <div class="lead mb-1">@_selectedAsset?.NombreAsset</div>
+                <div class="text-muted">ID: @_selectedAsset?.IdAsset &nbsp;|&nbsp; Box: @_selectedAsset?.IdBox</div>
+            </div>
+
+            <div>
+                <button class="btn btn-success btn-lg mr-2" @onclick="SendRetiro">Sí, confirmar</button>
+                <button class="btn btn-outline-secondary btn-lg" @onclick="CancelConfirm">No, volver</button>
+            </div>
         </div>
     }
     else if (_screen == Screen.Result)
     {
         <div class="kiosk-center">
             <div class="mb-3">
-                <h4>Respuesta del servidor</h4>
+                <h4>Respuesta</h4>
                 <pre class="bg-light p-3 rounded" style="white-space:pre-wrap; word-break:break-word;">@_resultRaw</pre>
             </div>
 
@@ -135,23 +200,34 @@
 </div>
 
 @code {
-    enum Screen { Select, Loading, Result }
+    enum Screen { Select, Loading, ChooseAsset, ConfirmRetiro, Result }
     Screen _screen = Screen.Select;
 
+    // entrada
     private string? _rfid;
     private AssetsAccion? _accion;
-
     private DateTime _readAt;
+
+    // respuesta de SendRequest
+    private string _employeeName = "";
+    private List<ShortAsset> _assets = new();
+    private ShortAsset? _selectedAsset;
+
+    // resultado final
     private string _resultRaw = "";
     private int _countdown = 20;
     private const int _resultSeconds = 20;
     private CancellationTokenSource? _countdownCts;
-    private bool _sending;
 
+    private bool _sending;
+    private string _loadingText = "Enviando solicitud…";
+
+    // JS / SignalR
     private IJSObjectReference? _scannerModule;
     private DotNetObjectReference<Assets>? _selfRef;
     private HubConnection? _hub;
 
+    // --- inicialización ---
     protected override async Task OnInitializedAsync()
     {
         _hub = new HubConnectionBuilder()
@@ -161,7 +237,7 @@
 
         _hub.On<string>("ReceiveRFID", token =>
         {
-            if (_screen != Screen.Select) return; // ignorar fuera de la pantalla 1
+            if (_screen != Screen.Select) return;
             SetRfid(token);
         });
 
@@ -174,15 +250,13 @@
 
         _scannerModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/LectorRFID.js");
         _selfRef = DotNetObjectReference.Create(this);
-
         await _scannerModule.InvokeVoidAsync("attach", _selfRef, new { acceptTabAsEnter = true });
     }
 
     [JSInvokable]
     public async Task OnScanEnter(string text)
     {
-        if (_screen != Screen.Select) return; // ignorar fuera de la pantalla 1
-
+        if (_screen != Screen.Select) return;
         SetRfid(text);
 
         if (_hub is not null && _hub.State == HubConnectionState.Connected)
@@ -206,44 +280,89 @@
         StateHasChanged();
     }
 
+    // --- paso 1: enviar solicitud y decidir flujo ---
     async Task TryProceedAsync()
     {
         if (_sending) return;
         if (string.IsNullOrWhiteSpace(_rfid) || _accion is null) return;
 
         _sending = true;
+        _loadingText = "Enviando solicitud…";
         _screen = Screen.Loading;
         StateHasChanged();
 
         try
         {
             var req = new AssetsRequest { IdEmpleado = _rfid!, Accion = _accion.Value };
-
             var resp = await Cliente.SendRequest(req);
 
-            // Mostrar tal cual
-            _resultRaw = "el goat " + resp.NombreEmpleado + " tiene " + resp.AssetsList.Count() + " assets";
+            _employeeName = resp?.NombreEmpleado ?? "";
+            _assets = resp?.AssetsList ?? new List<ShortAsset>();
 
-            _screen = Screen.Result;
-
-            _countdownCts?.Cancel();
-            _countdownCts = new CancellationTokenSource();
-            _ = StartCountdownAsync(_resultSeconds, _countdownCts.Token);
+            if (_accion == AssetsAccion.Retiro)
+            {
+                _selectedAsset = null;
+                _screen = Screen.ChooseAsset;
+            }
+            else if (_accion == AssetsAccion.Devolucion)
+            {
+                // placeholder hasta implementar
+                _resultRaw = "Devolución: flujo pendiente de implementar.";
+                GoResult();
+            }
         }
         catch (Exception ex)
         {
             _resultRaw = $"ERROR: {ex.Message}";
-            _screen = Screen.Result;
-
-            _countdownCts?.Cancel();
-            _countdownCts = new CancellationTokenSource();
-            _ = StartCountdownAsync(_resultSeconds, _countdownCts.Token);
+            GoResult();
         }
         finally
         {
             _sending = false;
             StateHasChanged();
         }
+    }
+
+    // --- selección de asset (retiro) ---
+    void SelectAsset(ShortAsset a) => _selectedAsset = a;
+
+    void GoConfirmRetiro()
+    {
+        if (_selectedAsset == null) return;
+        _screen = Screen.ConfirmRetiro;
+    }
+
+    void CancelConfirm() => _screen = Screen.ChooseAsset;
+
+    // --- confirmar retiro ---
+    async Task SendRetiro()
+    {
+        if (_selectedAsset == null) return;
+
+        _loadingText = "Procesando retiro…";
+        _screen = Screen.Loading;
+        StateHasChanged();
+
+        try
+        {
+            var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
+            _resultRaw = ret?.ToString() ?? "OK";
+            GoResult();
+        }
+        catch (Exception ex)
+        {
+            _resultRaw = $"ERROR: {ex.Message}";
+            GoResult();
+        }
+    }
+
+    // --- result + countdown ---
+    void GoResult()
+    {
+        _screen = Screen.Result;
+        _countdownCts?.Cancel();
+        _countdownCts = new CancellationTokenSource();
+        _ = StartCountdownAsync(_resultSeconds, _countdownCts.Token);
     }
 
     async Task StartCountdownAsync(int seconds, CancellationToken token)
@@ -257,8 +376,7 @@
             _countdown--;
             await InvokeAsync(StateHasChanged);
         }
-        if (!token.IsCancellationRequested)
-            Reset();
+        if (!token.IsCancellationRequested) Reset();
     }
 
     void Reset()
@@ -267,6 +385,10 @@
 
         _rfid = null;
         _accion = null;
+        _employeeName = "";
+        _assets.Clear();
+        _selectedAsset = null;
+
         _resultRaw = "";
         _screen = Screen.Select;
         StateHasChanged();
@@ -278,6 +400,7 @@
         return done + "%";
     }
 
+    // --- dispose ---
     public async ValueTask DisposeAsync()
     {
         try { if (_scannerModule != null) await _scannerModule.InvokeVoidAsync("detach"); } catch { }

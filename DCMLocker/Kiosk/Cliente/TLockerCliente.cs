@@ -1233,5 +1233,23 @@ namespace DCMLocker.Kiosk.Cliente
                 return new();
             }
         }
+
+        public async Task<bool> OpenBoxByFisico(int IdBox)
+        {
+            try
+            {
+                var response = await _cliente.PostAsJsonAsync("assets/OpenBox", IdBox);     //444 del locker controller
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<bool>();
+                    return result;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

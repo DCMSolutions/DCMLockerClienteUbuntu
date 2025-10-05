@@ -39,16 +39,18 @@ namespace DCMLocker.Server.Controllers
         private readonly HttpClient _http;
         private readonly LogController _evento;
         private readonly WebhookService _webhookService;
+        private readonly IDCMLockerController _driver;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
         /// </summary>
-        public AssetsController(TBaseLockerController Base, HttpClient http, LogController logController, WebhookService webhookService)
+        public AssetsController(TBaseLockerController Base, HttpClient http, LogController logController, WebhookService webhookService, IDCMLockerController driver)
         {
             _base = Base;
             _http = http;
             _evento = logController;
             _webhookService = webhookService;
+            _driver = driver;
         }
 
 
@@ -91,5 +93,30 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+
+        [HttpPost("OpenBox")]
+        public async Task<IActionResult> OpenBox([FromBody] int IdBox)
+        {
+            try
+            {
+                var _IdBox = _base.LockerMap.LockerMaps.Where(b => b.Value.IdBox == IdBox).First().Value.IdFisico;
+                if (_IdBox != null)
+                {
+                    int _CU = _IdBox.GetValueOrDefault() / 16;
+                    int _Box = _IdBox.GetValueOrDefault() % 16;
+                    _driver.SetBox(_CU, _Box);
+                    
+                    return Ok(true);
+                }
+                return StatusCode(404);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(403);
+            }
+        }
+
+
+       
     }
 }
