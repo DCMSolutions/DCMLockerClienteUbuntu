@@ -1251,5 +1251,23 @@ namespace DCMLocker.Kiosk.Cliente
                 return false;
             }
         }
+
+        public async Task<bool> ReportEvento(AssetsHistorial evento)
+        {
+            try
+            {
+                var response = await _cliente.PostAsJsonAsync("assets/ReportEvento", evento);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<bool>();
+                    return result;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

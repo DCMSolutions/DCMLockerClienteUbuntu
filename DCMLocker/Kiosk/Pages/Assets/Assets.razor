@@ -54,6 +54,30 @@
     .progress-bar {
         transition: width .3s linear;
     }
+
+    /* Estado visual de assets en selección de RETIRO */
+    .asset-card.asset-defectuoso {
+        background: #dc3545; /* rojo */
+        color: #fff;
+        border-color: #dc3545;
+    }
+
+    .asset-card.asset-warning {
+        background: #ffc107; /* amarillo */
+        color: #212529;
+        border-color: #ffc107;
+    }
+
+    /* Cuando está seleccionado, mantenemos color de estado; si es funcional (sin clase), va azul */
+    .asset-card.selected {
+        box-shadow: 0 0 0 4px rgba(0,123,255,.35);
+    }
+
+        .asset-card.selected:not(.asset-defectuoso):not(.asset-warning) {
+            background: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
 </style>
 
 <div class="container kiosk-full">
@@ -124,7 +148,7 @@
                     {
                         var isSel = _selectedAsset?.IdAsset == a.IdAsset;
                         <div class="col-12 col-md-6 col-lg-5 mb-4">
-                            <div class="card asset-card shadow-sm @(isSel ? "selected" : "border-secondary")"
+                            <div class="card asset-card shadow-sm @AssetCardClasses(a, isSel)"
                                  @onclick="@(() => SelectAsset(a))">
                                 <div class="card-body text-center">
                                     <div>
@@ -241,6 +265,7 @@
     private AssetsAccion? _accion;
     private DateTime _readAt;
 
+
     // respuesta SendRequest
     private string _employeeName = "";
     private List<ShortAsset> _assets = new();
@@ -321,7 +346,20 @@
     }
 
     bool IsSelected(AssetsAccion a) => _accion == a;
-    void SelectAccion(AssetsAccion a) { _accion = a; _ = TryProceedAsync(); StateHasChanged(); }
+    void SelectAccion(AssetsAccion a)
+    {
+        if (_accion == a)
+        {
+            // si toco la misma, deselecciono
+            _accion = null;
+            StateHasChanged();
+            return;
+        }
+
+        _accion = a;
+        _ = TryProceedAsync();
+        StateHasChanged();
+    }
 
     // --- paso 1: enviar solicitud y ramificar ---
     async Task TryProceedAsync()
@@ -390,6 +428,16 @@
         {
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
             _resultRaw = ret.ToString() ?? "OK";
+
+            var evt = new AssetsHistorial
+            {
+                IdAsset = _selectedAsset.IdAsset,
+                IdEmpleado = _rfid!,
+                Evento = AssetsEvento.CheckOut,
+                FechaEvento = DateTime.Now
+            };
+            await Cliente.ReportEvento(evt);
+
             GoResult();
         }
         catch (Exception ex)
@@ -397,6 +445,20 @@
             _resultRaw = $"ERROR: {ex.Message}";
             GoResult();
         }
+    }
+
+    string AssetStateClass(ShortAsset a)
+    {
+        // Rojo si Defectuoso; Amarillo si NO es Funcional ; (Funcional sin clase)
+        return a.Estado == AssetsEstado.Defectuoso
+            ? "asset-defectuoso"
+            : (a.Estado == AssetsEstado.Funcional ? "" : "asset-warning");
+    }
+
+    string AssetCardClasses(ShortAsset a, bool isSel)
+    {
+        var state = AssetStateClass(a);
+        return $"{(isSel ? "selected" : "border-secondary")} {state}".Trim();
     }
 
     // --- DEVOLUCIÓN ---
@@ -423,7 +485,7 @@
         if (_selectedAsset == null) return;
 
         // (Guardamos el estado elegido en memoria para usarlo luego en backend si hace falta)
-        var estadoElegido = _devolEstado; // no se usa aún
+        var estadoElegido = _devolEstado;
 
         _loadingText = "Procesando devolución…";
         _screen = Screen.Loading;
@@ -433,6 +495,17 @@
         {
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
             _resultRaw = ret.ToString() ?? "OK";
+
+            var evt = new AssetsHistorial
+            {
+                IdAsset = _selectedAsset.IdAsset,
+                IdEmpleado = _rfid!,
+                Evento = AssetsEvento.CheckIn,
+                EstadoNuevo = estadoElegido,
+                FechaEvento = DateTime.Now
+            };
+            await Cliente.ReportEvento(evt);
+
             GoResult();
         }
         catch (Exception ex)

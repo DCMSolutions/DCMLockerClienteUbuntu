@@ -1,5 +1,8 @@
 ﻿
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DCMLocker.Shared
 {
@@ -28,6 +31,7 @@ namespace DCMLocker.Shared
     {
         public string IdAsset { get; set; } = string.Empty;
         public string NombreAsset { get; set; } = string.Empty;
+        public AssetsEstado Estado { get; set; } = AssetsEstado.Funcional;
         public int IdBox { get; set; }
     }
 
@@ -41,4 +45,29 @@ namespace DCMLocker.Shared
         Archivado
     }
 
+    //el historial que es solo los eventos por assets:
+    public class AssetsHistorial
+    {
+        public int Id { get; set; }
+        public string IdAsset { get; set; } = default!;
+        public string? IdEmpleado { get; set; }
+        public string? NroSerieLocker { get; set; }
+
+        public AssetsEvento Evento { get; set; } = AssetsEvento.Creacion;
+        public AssetsEstado? EstadoPrevio { get; set; }
+        public AssetsEstado? EstadoNuevo { get; set; }
+
+
+        public DateTime? FechaEvento { get; set; } = DateTime.Now;
+    }
+
+    public enum AssetsEvento
+    {
+        Creacion,
+        CheckIn,
+        CheckOut,
+        AsignacionAEmpleado,
+        AsignacionAGrupo,
+        ActualizacionEstado
+    }
 }

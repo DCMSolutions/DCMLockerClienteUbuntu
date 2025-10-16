@@ -116,7 +116,40 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpPost("ReportEvento")]
+        public async Task<IActionResult> ReportEvento([FromBody] AssetsHistorial evento)
+        {
+            try
+            {
+                evento.NroSerieLocker = _base.Config.LockerID;
 
-       
+                Uri uri = new Uri(_base.Config.UrlServer, "api/AssetsLocker/evento");
+                _http.Timeout = TimeSpan.FromSeconds(5);
+
+                var response = await _http.PostAsJsonAsync(uri, evento);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var serverResponse = await response.Content.ReadFromJsonAsync<bool>();
+                        return Ok(serverResponse);
+                    }
+                    catch (Exception ex)
+                    {
+                        return StatusCode((int)response.StatusCode);
+                    }
+                }
+                else
+                {
+                    return StatusCode((int)response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(403);
+            }
+        }
+
     }
 }

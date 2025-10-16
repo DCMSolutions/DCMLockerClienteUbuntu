@@ -755,10 +755,11 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("isAssets")]
-        public bool UpdateIsAssets([FromBody] bool isAssets)
+        public async Task<bool> UpdateIsAssets([FromBody] bool isAssets)
         {
             try
             {
+
                 var path = "configjson.json";
 
                 // Leer y parsear
@@ -783,6 +784,10 @@ namespace DCMLocker.Server.Controllers
                         WriteIndented = true
                     }));
                 }
+                var deViejoANuevo = isAssets ? "de modo tokens a modo assets" : "de modo assets a modo tokens";
+
+                _evento.AddEvento(new Evento($"Cambio de configuración: Modo de funcionamiento, {deViejoANuevo}", "sistema"));
+                await _webhookService.SendWebhookAsync("ConfiguracionModo", $"Se cambió la configuración del locker: el modo de funcionamiento cambio {deViejoANuevo}", new { Viejo = !isAssets, Nuevo = isAssets });
 
                 return true;
             }
