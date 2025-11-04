@@ -78,6 +78,32 @@
             color: #fff;
             border-color: #007bff;
         }
+
+    /* Botón invisible */
+    .hidden-admin-trigger {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 10vh; 
+        background: transparent;
+        border: 0;
+        opacity: 0; /* invisible pero clickeable */
+        z-index: 10;
+    }
+
+    /* Pantalla PIN */
+    .pin-dots {
+        letter-spacing: .35rem;
+        font-size: 2rem;
+        user-select: none;
+    }
+
+    .keypad button {
+        min-width: 84px;
+        min-height: 84px;
+        font-size: 1.6rem;
+    }
 </style>
 
 <div class="container kiosk-full">
@@ -117,7 +143,51 @@
                 </div>
             </div>
         </div>
+        <button class="hidden-admin-trigger" title=""
+                @onclick="() => _screen = Screen.SecretPin"
+                tabindex="-1"></button>
     }
+    else if (_screen == Screen.SecretPin)
+    {
+        <div class="kiosk-center text-center">
+            <h4 class="mb-3">Acceso</h4>
+            <div class="pin-dots mb-4">@(new string('*', _pinInput.Length))</div>
+
+            <div class="d-flex justify-content-center">
+                <div class="keypad">
+                    @for (var fila = 0; fila < 3; fila++)
+                    {
+                        <div class="mb-2 text-center">
+                            @for (var col = 1; col <= 3; col++)
+                            {
+                                var d = (fila * 3 + col).ToString();
+                                <button class="btn btn-outline-secondary m-1"
+                                        @onclick="@(() => PinAdd(d))">
+                                    @d
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    <div class="mb-3 text-center">
+                        <button class="btn btn-outline-secondary m-1" @onclick="PinClear">C</button>
+                        <button class="btn btn-outline-secondary m-1" @onclick="@(() => PinAdd("0"))">0</button>
+                        <button class="btn btn-outline-secondary m-1" @onclick="PinBackspace">←</button>
+                    </div>
+
+                    <div class="text-center">
+                        <button class="btn btn-primary mr-2"
+                                disabled="@(_pinInput.Length == 0)"
+                                @onclick="SubmitPin">
+                            Ingresar
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="PinCancel">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     else if (_screen == Screen.Loading)
     {
         <div class="kiosk-center text-center">
@@ -254,10 +324,79 @@
             </div>
         </div>
     }
+    else if (_screen == Screen.Admin)
+    {
+        <div class="kiosk-up">
+            <div class="text-center mb-3">
+                <h4 class="m-0">Administrador</h4>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="card shadow-sm border-secondary mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap justify-content-center mb-3">
+                                <button class="btn btn-danger m-2" @onclick="AdminShutdown" disabled="@_adminBusy">Apagar</button>
+                                <button class="btn btn-warning m-2" @onclick="AdminReset" disabled="@_adminBusy">Reiniciar</button>
+                                <button class="btn btn-primary m-2" @onclick="AdminUpdate" disabled="@_adminBusy">Actualizar</button>
+                                <button class="btn btn-outline-secondary m-2" @onclick="AdminBack" disabled="@_adminBusy">Volver</button>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(_adminMsg))
+                            {
+                                <div class="alert alert-info py-2 mb-3">@_adminMsg</div>
+                            }
+
+                            <div class="row text-center">
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="text-muted small">Versión</div>
+                                        <div class="lead">@(_adminVersion ?? "—")</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="text-muted small">Fecha</div>
+                                        <div class="lead">@(_adminFecha ?? "—")</div>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <div class="border rounded p-3 h-100">
+                                        <div class="text-muted small">IPs</div>
+                                        @if (_adminIPs.Count == 0)
+                                        {
+                                            <div class="lead">—</div>
+                                        }
+                                        else
+                                        {
+                                            <ul class="list-unstyled m-0">
+                                                @foreach (var ip in _adminIPs)
+                                                {
+                                                    <li class="lead">@ip</li>
+                                                }
+                                            </ul>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (_adminBusy)
+                            {
+                                <div class="text-center mt-3">
+                                    <div class="spinner-border text-primary" role="status"><span class="sr-only">Cargando…</span></div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
 </div>
 
 @code {
-    enum Screen { Select, Loading, ChooseAsset, ConfirmRetiro, ScanQr, DevolucionSetEstado, Result }
+    enum Screen { Select, Loading, ChooseAsset, ConfirmRetiro, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin }
     Screen _screen = Screen.Select;
 
     // entrada
@@ -287,6 +426,19 @@
     private DotNetObjectReference<Assets>? _selfRef;
     private HubConnection? _hub;            // RFID
     private HubConnection? QRhubConnection; // QR
+    
+    // para el pin para la pantalla de seguridad 
+    private string _pinInput = "";
+    private const int _pinMax = 8;
+    private const string _adminPin = "39426641";
+
+    // --- Admin ---
+    private bool _adminBusy;
+    private string? _adminVersion;
+    private string? _adminFecha;
+    private List<string> _adminIPs = new();
+    private string? _adminMsg;
+
 
     // --- init ---
     protected override async Task OnInitializedAsync()
@@ -560,6 +712,107 @@
         return done + "%";
     }
 
+    // PANTALLA DE ID
+    void PinAdd(string d)
+    {
+        if (_pinInput.Length < _pinMax)
+            _pinInput += d;
+    }
+
+    void PinBackspace()
+    {
+        if (_pinInput.Length > 0)
+            _pinInput = _pinInput[..^1];
+    }
+
+    void PinClear() => _pinInput = "";
+
+    void PinCancel()
+    {
+        _pinInput = "";
+        _screen = Screen.Select;
+    }
+
+    async Task SubmitPin()
+    {
+        var pin = _pinInput;
+        _pinInput = "";
+
+        if (pin == _adminPin)
+        {
+            _screen = Screen.Admin;
+            StateHasChanged();
+            await LoadAdminAsync();
+        }
+        else
+        {
+            // PIN incorrecto → volver a la pantalla principal
+            PinCancel();
+        }
+    }
+
+    async Task LoadAdminAsync()
+    {
+        _adminBusy = true;
+        _adminMsg = null;
+        _adminVersion = null;
+        _adminFecha = null;
+        _adminIPs.Clear();
+        StateHasChanged();
+
+        try
+        {
+            _adminVersion = await Cliente.GetVersion();
+            _adminFecha = await Cliente.GetFecha();
+            var nets = await Cliente.System_GetIP(); // devuelve SystemNetwork[]
+            if (nets != null)
+                _adminIPs = nets
+                    .Select(n => n?.IP)
+                    .Where(ip => !string.IsNullOrWhiteSpace(ip))
+                    .Distinct()
+                    .ToList();
+        }
+        catch (Exception ex)
+        {
+            _adminMsg = $"ERROR: {ex.Message}";
+        }
+        finally
+        {
+            _adminBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task AdminShutdown()
+    {
+        if (_adminBusy) return;
+        _adminBusy = true; _adminMsg = "Enviando apagado…"; StateHasChanged();
+        try { await Cliente.System_Shutdown(); _adminMsg = "Comando de apagado enviado."; }
+        catch (Exception ex) { _adminMsg = $"ERROR: {ex.Message}"; }
+        finally { _adminBusy = false; StateHasChanged(); }
+    }
+
+    async Task AdminReset()
+    {
+        if (_adminBusy) return;
+        _adminBusy = true; _adminMsg = "Enviando reinicio…"; StateHasChanged();
+        try { await Cliente.System_Reset(); _adminMsg = "Comando de reinicio enviado."; }
+        catch (Exception ex) { _adminMsg = $"ERROR: {ex.Message}"; }
+        finally { _adminBusy = false; StateHasChanged(); }
+    }
+
+    async Task AdminUpdate()
+    {
+        if (_adminBusy) return;
+        _adminBusy = true; _adminMsg = "Enviando actualización…"; StateHasChanged();
+        try { await Cliente.System_Update(); _adminMsg = "Comando de actualización enviado."; }
+        catch (Exception ex) { _adminMsg = $"ERROR: {ex.Message}"; }
+        finally { _adminBusy = false; StateHasChanged(); }
+    }
+
+    void AdminBack() { _screen = Screen.Select; }
+
+
     // --- dispose ---
     public async ValueTask DisposeAsync()
     {
@@ -570,4 +823,5 @@
         try { if (QRhubConnection != null) { await QRhubConnection.StopAsync(); await QRhubConnection.DisposeAsync(); } } catch { }
         try { _countdownCts?.Cancel(); } catch { }
     }
+
 }
