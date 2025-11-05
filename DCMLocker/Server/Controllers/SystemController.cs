@@ -303,7 +303,7 @@ namespace DCMLocker.Server.Controllers
                 _evento.AddEvento(new Evento($"Se actualizó a producción el sistema de la versión {version} a la siguiente", "sistema"));
                 await _webhookService.SendWebhookAsync("Sistema", $"Se actualizó a producción el sistema de la versión {version} a la siguiente", new { Accion = "Actualizacion produccion" });
 
-                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/updateUbuntu.sh | bash");
+                string s0 = cmd("wget -O - https://raw.githubusercontent.com/DCMSolutions/DCMLockerUpdate/main/updateUbuntu.sh | sudo bash -s");
                 return Ok(s0);
             }
             catch (Exception er)

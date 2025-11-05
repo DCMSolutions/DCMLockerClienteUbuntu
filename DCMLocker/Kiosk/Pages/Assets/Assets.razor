@@ -104,45 +104,108 @@
         min-height: 84px;
         font-size: 1.6rem;
     }
+
+    .select-layout {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding-top: 4vh;
+        padding-bottom: 4vh;
+    }
+
+    .select-hero {
+        height: 42vh;               /* espacio del “banner” */
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+    }
+
+    /* cuando hay RFID, dejamos el espacio en blanco (sin imagen) */
+    .select-hero.blank {
+        background-image: none !important;
+        background-color: transparent;
+    }
+
+    /* imagen por defecto */
+    .select-hero.image {
+        background-image: url("/img/1-rfid-hand");
+    }
+
+    .select-message {
+        text-align: center;
+        font-size: 1.25rem;
+        color: #6c757d;
+        margin-top: 1rem;
+        min-height: 2.2rem; /* evita saltos visuales */
+    }
+
+    .select-bottom {
+        text-align: center;
+    }
+
+    .select-bottom h6 {
+        color: #6c757d;
+        margin-bottom: 0.75rem;
+    }
+
+    /* Botones de opción: azules por defecto y resaltado al seleccionar */
+    .option-btn {
+        min-width: 160px;
+        padding: .6rem 1.25rem;
+        font-size: 1.05rem;
+        margin: .25rem .5rem;
+        transition: transform .08s, box-shadow .08s;
+    }
+    .option-btn:active { transform: scale(0.98); }
+
+    /* Ambos son azules; al seleccionar, agregamos un “ring” y negrita */
+    .option-btn.is-selected {
+        box-shadow: 0 0 0 4px rgba(0,123,255,.35);
+        font-weight: 600;
+    }
 </style>
 
 <div class="container kiosk-full">
 
     @if (_screen == Screen.Select)
     {
-        <div class="kiosk-up">
-            <div class="text-center mb-4">
-                <p class="text-muted m-0">Escanee su tarjeta y seleccione acción</p>
-            </div>
+        <div class="select-layout">
+            <!-- Top: imagen grande + mensaje -->
+            <div>
+                <div class="select-hero @(string.IsNullOrEmpty(_rfid) ? "image" : "blank")"></div>
 
-            <div class="text-center mb-4">
-                @if (!string.IsNullOrEmpty(_rfid))
-                {
-                    <div style="font-size:48px;line-height:1;word-break:break-all;">@_rfid</div>
-                    <div class="text-muted mt-2">Leído @(_readAt.ToString("HH:mm:ss"))</div>
-                }
-                else
-                {
-                    <div class="text-muted">Esperando lectura…</div>
-                }
-            </div>
-
-            <div class="row justify-content-center">
-                <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
-                    <div class="card action-card shadow-sm @(IsSelected(AssetsAccion.Retiro) ? "selected" : "border-secondary")"
-                         @onclick="() => SelectAccion(AssetsAccion.Retiro)">
-                        <div class="card-body text-center"><h4>Retiro</h4></div>
-                    </div>
+                <div class="select-message">
+                    @if (string.IsNullOrEmpty(_rfid))
+                    {
+                        <span>Acerque la tarjeta al lector para comenzar a operar</span>
+                    }
+                    else
+                    {
+                        <span>Bienvenido/a</span>
+                    }
                 </div>
+            </div>
 
-                <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
-                    <div class="card action-card shadow-sm @(IsSelected(AssetsAccion.Devolucion) ? "selected" : "border-secondary")"
-                         @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
-                        <div class="card-body text-center"><h4>Devolución</h4></div>
-                    </div>
+            <!-- Bottom: acciones -->
+            <div class="select-bottom">
+                <h6>Seleccione una opción</h6>
+                <div class="d-flex justify-content-center flex-wrap">
+                    <!-- Ingresar ≡ Devolución -->
+                    <button class="btn btn-primary option-btn @(IsSelected(AssetsAccion.Devolucion) ? "is-selected" : "")"
+                            @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
+                        Ingresar
+                    </button>
+
+                    <!-- Retirar ≡ Retiro -->
+                    <button class="btn btn-primary option-btn @(IsSelected(AssetsAccion.Retiro) ? "is-selected" : "")"
+                            @onclick="() => SelectAccion(AssetsAccion.Retiro)">
+                        Retirar
+                    </button>
                 </div>
             </div>
         </div>
+
         <button class="hidden-admin-trigger" title=""
                 @onclick="() => _screen = Screen.SecretPin"
                 tabindex="-1"></button>
@@ -240,7 +303,7 @@
             }
         </div>
     }
-    else if (_screen == Screen.ConfirmRetiro)
+    @* else if (_screen == Screen.ConfirmRetiro)
     {
         <div class="kiosk-center text-center">
             <h4 class="mb-3">¿Confirmar retiro?</h4>
@@ -254,7 +317,7 @@
                 <button class="btn btn-outline-secondary btn-lg" @onclick="CancelConfirm">No, volver</button>
             </div>
         </div>
-    }
+    } *@
     else if (_screen == Screen.ScanQr)
     {
         <div class="kiosk-center text-center">
@@ -396,7 +459,7 @@
 </div>
 
 @code {
-    enum Screen { Select, Loading, ChooseAsset, ConfirmRetiro, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin }
+    enum Screen { Select, Loading, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin }
     Screen _screen = Screen.Select;
 
     // entrada
@@ -566,7 +629,11 @@
 
     // --- RETIRO ---
     void SelectAsset(ShortAsset a) => _selectedAsset = a;
-    void GoConfirmRetiro() { if (_selectedAsset == null) return; _screen = Screen.ConfirmRetiro; }
+    async Task GoConfirmRetiro()
+    {
+        if (_selectedAsset == null) return;
+        await SendRetiro();
+    }
     void CancelConfirm() => _screen = Screen.ChooseAsset;
 
     async Task SendRetiro()
