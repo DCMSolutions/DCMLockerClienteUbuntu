@@ -82,14 +82,15 @@
     /* Botón invisible */
     .hidden-admin-trigger {
         position: fixed;
-        bottom: 0;
+        top: 0;
         left: 0;
-        width: 100%;
-        height: 10vh; 
+        width: 12vh; 
+        height: 12vh;
         background: transparent;
         border: 0;
         opacity: 0; /* invisible pero clickeable */
-        z-index: 10;
+        z-index: 100; 
+        pointer-events: auto;
     }
 
     /* Pantalla PIN */
@@ -132,38 +133,47 @@
         background-image: url("/img/1-rfid-hand.png");
     }
 
+    /* Mensajes más grandes y legibles en kiosk */
     .select-message {
         text-align: center;
-        font-size: 1.25rem;
         color: #6c757d;
         margin-top: 1rem;
-        min-height: 2.2rem; /* evita saltos visuales */
-    }
-
-    .select-bottom {
-        text-align: center;
+        min-height: 2.6rem;
+        font-size: clamp(1.2rem, 2.6vh, 2rem); /* responsive por altura */
     }
 
     .select-bottom h6 {
         color: #6c757d;
-        margin-bottom: 0.75rem;
+        margin-bottom: .9rem;
+        font-size: clamp(1.1rem, 2.2vh, 1.5rem);
     }
 
-    /* Botones de opción: azules por defecto y resaltado al seleccionar */
+    /* Contenedor de acciones con gap real (más separación) */
+    .select-actions {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 1.2rem 2rem; /* fila x columna */
+        padding-bottom: 1rem;
+    }
+
+    /* Botones azules por defecto, más grandes */
     .option-btn {
-        min-width: 160px;
-        padding: .6rem 1.25rem;
-        font-size: 1.05rem;
-        margin: .25rem .5rem;
+        min-width: clamp(180px, 35vw, 240px);
+        padding: .9rem 1.6rem;
+        font-size: clamp(1.05rem, 2.4vh, 1.35rem);
         transition: transform .08s, box-shadow .08s;
     }
-    .option-btn:active { transform: scale(0.98); }
 
-    /* Ambos son azules; al seleccionar, agregamos un “ring” y negrita */
-    .option-btn.is-selected {
-        box-shadow: 0 0 0 4px rgba(0,123,255,.35);
-        font-weight: 600;
-    }
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Seleccionado: resaltado distinto (anillo y negrita) */
+        .option-btn.is-selected {
+            box-shadow: 0 0 0 4px rgba(0,123,255,.35);
+            font-weight: 600;
+        }
 </style>
 
 <div class="container kiosk-full">
