@@ -116,11 +116,12 @@
     }
 
     .select-hero {
-        height: 42vh;               /* espacio del “banner” */
+        height: 46vh; 
         background-position: center;
         background-repeat: no-repeat;
         background-size: contain;
     }
+
 
     /* cuando hay RFID, dejamos el espacio en blanco (sin imagen) */
     .select-hero.blank {
@@ -138,30 +139,36 @@
         text-align: center;
         color: #6c757d;
         margin-top: 1rem;
-        min-height: 2.6rem;
-        font-size: clamp(1.2rem, 2.6vh, 2rem); /* responsive por altura */
+        min-height: 3.2rem; /* antes 2.6rem */
+        line-height: 1.2;
+        font-weight: 700;
+        font-size: clamp(2.2rem, 6.8vh, 4.4rem); /* antes clamp(1.2rem, 2.6vh, 2rem) */
     }
 
-    .select-bottom h6 {
-        color: #6c757d;
-        margin-bottom: .9rem;
-        font-size: clamp(1.1rem, 2.2vh, 1.5rem);
+    .select-bottom {
+        text-align: center;
     }
+
+        .select-bottom h6 {
+            color: #6c757d;
+            margin-bottom: 1.1rem; /* antes .9rem */
+            font-weight: 700;
+            font-size: clamp(1.8rem, 5.2vh, 3.2rem); /* antes clamp(1.1rem, 2.2vh, 1.5rem) */
+        }
 
     /* Contenedor de acciones con gap real (más separación) */
     .select-actions {
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 1.2rem 2rem; /* fila x columna */
-        padding-bottom: 1rem;
+        gap: clamp(200px, 28vw, 320px); /* antes 1.2rem 2rem */
+        padding-bottom: 2vh; /* antes 1rem */
     }
 
-    /* Botones azules por defecto, más grandes */
     .option-btn {
-        min-width: clamp(180px, 35vw, 240px);
-        padding: .9rem 1.6rem;
-        font-size: clamp(1.05rem, 2.4vh, 1.35rem);
+        min-width: clamp(220px, 36vw, 320px); /* antes clamp(180px, 35vw, 240px) */
+        padding: 1.2rem 2.2rem; /* antes .9rem 1.6rem */
+        font-size: clamp(1.6rem, 4.2vh, 2.4rem); /* antes clamp(1.05rem, 2.4vh, 1.35rem) */
         transition: transform .08s, box-shadow .08s;
     }
 
@@ -169,10 +176,10 @@
             transform: scale(0.98);
         }
 
-        /* Seleccionado: resaltado distinto (anillo y negrita) */
+        /* Seleccionado: anillo más notorio y negrita fuerte */
         .option-btn.is-selected {
-            box-shadow: 0 0 0 4px rgba(0,123,255,.35);
-            font-weight: 600;
+            box-shadow: 0 0 0 6px rgba(0,123,255,.35); /* antes 4px */
+            font-weight: 800; /* antes 600 */
         }
 </style>
 
