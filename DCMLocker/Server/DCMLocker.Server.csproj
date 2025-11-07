@@ -49,5 +49,11 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-	
+
+
+	<Target Name="CopyGitIgnoreAfterPublish" AfterTargets="Publish">
+		<Copy SourceFiles="$(MSBuildProjectDirectory)\.gitignore"
+			  DestinationFiles="$(PublishDir).gitignore"
+			  SkipUnchangedFiles="true" />
+	</Target>
 </Project>
