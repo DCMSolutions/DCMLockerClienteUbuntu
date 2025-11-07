@@ -25,10 +25,24 @@ namespace DCMLocker.Server.Controllers
             WriteIndented = false
         };
 
+        // === NEW: Centralize eventos directory & file naming ===
+        private static readonly string _eventosDir = Path.Combine(Directory.GetCurrentDirectory(), "eventos");
+
+
+        private static void EnsureEventosDir() => Directory.CreateDirectory(_eventosDir);
+
+        private static string EventosFilePath(int monthsBack = 0)
+        {
+            EnsureEventosDir();
+            var stamp = DateTime.Now.AddMonths(-monthsBack).ToString("MM-yyyy");
+            return Path.Combine(_eventosDir, $"eventos-{stamp}.ans");
+        }
+        // =======================================================
+
         [HttpGet]
         public async Task<List<Evento>> GetEventos()
         {
-            string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+            string fileNameAhora = EventosFilePath(0);
             try
             {
                 if (!System.IO.File.Exists(fileNameAhora))
@@ -52,7 +66,7 @@ namespace DCMLocker.Server.Controllers
         [HttpGet("viejo")]
         public async Task<List<Evento>> GetEventosViejos(int mesesAtras)
         {
-            string fileNameVieja = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now.AddMonths(-mesesAtras):MM-yyyy}.ans");
+            string fileNameVieja = EventosFilePath(mesesAtras);
 
             try
             {
@@ -67,14 +81,14 @@ namespace DCMLocker.Server.Controllers
             }
             catch
             {
-                throw new Exception($"Hubo un error al buscar los eventos del {DateTime.Now.AddMonths(-mesesAtras):MM de yyyy}");
+                throw new Exception($"Hubo un error al buscar los eventos del {DateTime.Now.AddMonths(-mesesAtras):MM 'de' yyyy}");
             }
         }
 
         [HttpPost]
         public async Task<bool> AddEvento([FromBody] Evento evento)
         {
-            string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+            string fileNameAhora = EventosFilePath(0);
 
             try
             {
@@ -107,7 +121,7 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                string fileNameAhora = Path.Combine(System.IO.Path.GetFullPath(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "..")), $"eventos-{DateTime.Now:MM-yyyy}.ans");
+                string fileNameAhora = EventosFilePath(0);
                 await _fileLock.WaitAsync();
                 try
                 {
@@ -125,7 +139,7 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        //funciones auxiliares
+        // ======= auxiliares (sin cambios funcionales) =======
         private static async Task AtomicWriteAsync(string path, string json)
         {
             var dir = Path.GetDirectoryName(path) ?? ".";
@@ -137,7 +151,6 @@ namespace DCMLocker.Server.Controllers
 
             try
             {
-                // On many platforms this is atomic. If not supported, we fall back below.
                 System.IO.File.Replace(tmp, path, null);
             }
             catch (PlatformNotSupportedException)
@@ -147,7 +160,6 @@ namespace DCMLocker.Server.Controllers
             }
             catch (IOException)
             {
-                // e.g., Replace failed due to FS; best-effort fallback.
                 if (System.IO.File.Exists(path)) System.IO.File.Delete(path);
                 System.IO.File.Move(tmp, path);
             }
@@ -165,7 +177,6 @@ namespace DCMLocker.Server.Controllers
             var json = JsonSerializer.Serialize(new List<Evento>(), _jsonWriteOpts);
             await AtomicWriteAsync(path, json);
         }
-
 
         public async Task<List<Evento>> LeerEventosDesdeArchivo(string fileName)
         {
@@ -187,20 +198,15 @@ namespace DCMLocker.Server.Controllers
                     var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
                     var backup = Path.Combine(dir, $"{name}.corrupt-{stamp}{ext}");
 
-                    // Renombrar el archivo corrupto
                     if (System.IO.File.Exists(fileName))
-                        System.IO.File.Move(fileName, backup); // .NET 5: sin overwrite
+                        System.IO.File.Move(fileName, backup);
 
-                    // Escribir nuevo archivo con un solo evento (movida “atómica” simple)
                     var tmp = Path.Combine(dir, $"{name}.{Guid.NewGuid():N}.tmp");
                     await System.IO.File.WriteAllTextAsync(tmp, JsonSerializer.Serialize(nuevos, _jsonWriteOpts));
                     if (System.IO.File.Exists(fileName)) System.IO.File.Delete(fileName);
                     System.IO.File.Move(tmp, fileName);
                 }
-                catch
-                {
-                    // Si algo falla al resguardar/crear, devolvemos igual la lista en memoria
-                }
+                catch { }
 
                 return nuevos;
             }
