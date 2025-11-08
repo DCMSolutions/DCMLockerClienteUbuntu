@@ -664,7 +664,7 @@
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
             _resultRaw = ret.ToString() ?? "OK";
 
-            var evt = new AssetsHistorial
+            var evt = new AssetsEventoLocker
             {
                 IdAsset = _selectedAsset.IdAsset,
                 IdEmpleado = _rfid!,
@@ -731,10 +731,11 @@
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
             _resultRaw = ret.ToString() ?? "OK";
 
-            var evt = new AssetsHistorial
+            var evt = new AssetsEventoLocker
             {
                 IdAsset = _selectedAsset.IdAsset,
                 IdEmpleado = _rfid!,
+                Box = _selectedAsset.IdBox,
                 Evento = AssetsEvento.CheckIn,
                 EstadoNuevo = estadoElegido,
                 FechaEvento = DateTime.Now

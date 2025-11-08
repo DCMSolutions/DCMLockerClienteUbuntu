@@ -117,7 +117,7 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpPost("ReportEvento")]
-        public async Task<IActionResult> ReportEvento([FromBody] AssetsHistorial evento)
+        public async Task<IActionResult> ReportEvento([FromBody] AssetsEventoLocker evento)
         {
             try
             {

@@ -45,19 +45,16 @@ namespace DCMLocker.Shared
         Archivado
     }
 
-    //el historial que es solo los eventos por assets:
-    public class AssetsHistorial
+    // los eventos por assets:
+    public class AssetsEventoLocker
     {
-        public int Id { get; set; }
         public string IdAsset { get; set; } = default!;
         public string? IdEmpleado { get; set; }
         public string? NroSerieLocker { get; set; }
+        public int? Box { get; set; }
 
         public AssetsEvento Evento { get; set; } = AssetsEvento.Creacion;
-        public AssetsEstado? EstadoPrevio { get; set; }
         public AssetsEstado? EstadoNuevo { get; set; }
-
-
         public DateTime? FechaEvento { get; set; } = DateTime.Now;
     }
 

@@ -1252,7 +1252,7 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
-        public async Task<bool> ReportEvento(AssetsHistorial evento)
+        public async Task<bool> ReportEvento(AssetsEventoLocker evento)
         {
             try
             {
