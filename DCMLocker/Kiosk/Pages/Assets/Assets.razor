@@ -87,7 +87,6 @@
             </div>
         </div>
     }
-
     else if (_screen == Screen.Loading)
     {
         <div class="kiosk-center text-center">
@@ -144,12 +143,11 @@
                             @onclick="GoConfirmRetiro">
                         Continuar
                     </button>
-                    <button class="btn btn-outline-secondary btn-lg ml-2" @onclick="Reset">Cancelar</button>
+                    <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
                 </div>
             }
         </div>
     }
-
     @* else if (_screen == Screen.ConfirmRetiro)
     {
         <div class="kiosk-center text-center">
@@ -231,20 +229,18 @@
     }
     else if (_screen == Screen.Result)
     {
-        <div class="kiosk-center">
-            <div class="mb-3">
-                <h4>Respuesta</h4>
-                <pre class="bg-light p-3 rounded" style="white-space:pre-wrap; word-break:break-word;">@_resultRaw</pre>
-            </div>
-
-            <div class="mb-2 text-muted text-center">Volviendo en @_countdown s…</div>
-            <div class="progress mb-3" style="height: 12px;">
-                <div class="progress-bar" role="progressbar" style="width:@PercentDone()"></div>
-            </div>
-
+        <div class="select-layout">
             <div class="text-center">
-                <button class="btn btn-outline-secondary btn-sm" @onclick="Reset">Volver ahora</button>
+                <div class="select-hero" style="background-image:url('@_resImage')"></div>
+                <div class="select-message">@_resTitle</div>
+                @if (!string.IsNullOrWhiteSpace(_resSubtitle))
+                {
+                    <div class="result-sub">@_resSubtitle</div>
+                }
             </div>
+
+            <!-- sin botones; countdown corre “por detrás” -->
+            <div></div>
         </div>
     }
     else if (_screen == Screen.Admin)
@@ -336,10 +332,19 @@
     // devolución: estado del activo (guardado pero no usado aún para el backend)
     private AssetsEstado? _devolEstado;
 
+    // Resultado UI (éxito / error)
+    private bool _resSuccess;
+    private string _resTitle = "";
+    private string? _resSubtitle;
+    private string _resImage = "";
+
+    // Countdown de resultado (nuevo default 10s)
+    private int _countdown = 10;
+    private const int _resultSeconds = 10;
+
+
     // resultado final
     private string _resultRaw = "";
-    private int _countdown = 20;
-    private const int _resultSeconds = 20;
     private CancellationTokenSource? _countdownCts;
     private bool _sending;
     private string _loadingText = "Enviando solicitud…";
@@ -386,6 +391,7 @@
 
         _hub.On<string>("ReceiveRFID", token =>
         {
+            Console.WriteLine(token);
             if (_screen != Screen.Select) return;
             SetRfid(token);
         });
@@ -455,8 +461,20 @@
             _employeeName = resp?.NombreEmpleado ?? "";
             _assets = resp?.AssetsList ?? new List<ShortAsset>();
 
+            if (string.IsNullOrWhiteSpace(_employeeName))
+            {
+                ShowError("Usuario no registrado", "Por favor, comuniquese con el administrador. Gracias.");
+                return;
+            }
+
             if (_accion == AssetsAccion.Retiro)
             {
+                if (_assets.Count == 0)
+                {
+                    ShowError($"No hay activos disponibles para {_employeeName}");
+                    return;
+                }
+
                 _selectedAsset = null;
                 _screen = Screen.ChooseAsset;
             }
@@ -464,21 +482,19 @@
             {
                 if (_assets.Count == 0)
                 {
-                    _resultRaw = "No hay activos disponibles para devolución.";
-                    GoResult();
+                    ShowError("No hay activos disponibles para devolución", "Por favor, intente en otro momento. Gracias.");
+                    return;
                 }
-                else
-                {
-                    _selectedAsset = null;
-                    _devolEstado = null;
-                    _screen = Screen.ScanQr; // esperar QR del activo
-                }
+
+                _selectedAsset = null;
+                _devolEstado = null;
+                _screen = Screen.ScanQr; // esperar QR del activo
             }
+
         }
         catch (Exception ex)
         {
-            _resultRaw = $"ERROR: {ex.Message}";
-            GoResult();
+            ShowError("Error procesando la solicitud", "Por favor, intente nuevamente o comuníquese con el administrador.");
         }
         finally
         {
@@ -494,7 +510,6 @@
         if (_selectedAsset == null) return;
         await SendRetiro();
     }
-    void CancelConfirm() => _screen = Screen.ChooseAsset;
 
     async Task SendRetiro()
     {
@@ -506,8 +521,8 @@
         try
         {
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
-            _resultRaw = ret.ToString() ?? "OK";
 
+            // evento
             var evt = new AssetsEventoLocker
             {
                 IdAsset = _selectedAsset.IdAsset,
@@ -517,12 +532,14 @@
             };
             await Cliente.ReportEvento(evt);
 
-            GoResult();
+            // pantalla de éxito (10s)
+            ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+
         }
         catch (Exception ex)
         {
-            _resultRaw = $"ERROR: {ex.Message}";
-            GoResult();
+            ShowError("Error al procesar retiro", "Por favor, intente nuevamente o comuníquese con el administrador.");
+
         }
     }
 
@@ -543,11 +560,18 @@
     // --- DEVOLUCIÓN ---
     void HandleQrScan(string text)
     {
-        var match = _assets.FirstOrDefault(a => string.Equals(a.IdAsset, text?.Trim(), StringComparison.OrdinalIgnoreCase));
+        var code = text?.Trim();
+        var match = _assets.FirstOrDefault(a => string.Equals(a.IdAsset, code, StringComparison.OrdinalIgnoreCase));
+
         if (match == null)
         {
-            _resultRaw = "Activo no registrado";
-            GoResult();
+            ShowError("Activo no registrado", "Por favor, comuniquese con el administrador. Gracias.");
+            return;
+        }
+
+        if (match.IdBox == 0)
+        {
+            ShowError("No hay boxes disponibles", "Por favor, intente en otro momento. Gracias.");
             return;
         }
 
@@ -557,11 +581,28 @@
         StateHasChanged();
     }
 
+
     async Task SelectEstadoAndProceed(AssetsEstado estado)
     {
         _devolEstado = estado;
         await ProceedDevolucion();
     }
+
+    void ShowDoorThenFinal(int box)
+    {
+        // 1) 5s “Puerta abierta…”
+        ShowResult(true,
+            $"Puerta {box} abierta.",
+            "Por favor, al terminar cierre la puerta. Gracias",
+            5,
+            onFinished: async () =>
+            {
+                // 2) 10s “Operación exitosa”
+                ShowSuccess("Operación exitosa", null, 10);
+                await Task.CompletedTask;
+            });
+    }
+
 
     async Task ProceedDevolucion()
     {
@@ -577,8 +618,8 @@
         try
         {
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
-            _resultRaw = ret.ToString() ?? "OK";
 
+            // evento
             var evt = new AssetsEventoLocker
             {
                 IdAsset = _selectedAsset.IdAsset,
@@ -590,25 +631,41 @@
             };
             await Cliente.ReportEvento(evt);
 
-            GoResult();
+            // cadena de éxito: 5s + 10s
+            ShowDoorThenFinal(_selectedAsset.IdBox);
         }
         catch (Exception ex)
         {
-            _resultRaw = $"ERROR: {ex.Message}";
-            GoResult();
+            ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
+
         }
     }
 
     // --- Result + countdown ---
-    void GoResult()
+    void ShowResult(bool success, string title, string? subtitle, int seconds, Func<Task>? onFinished = null)
     {
+        _resSuccess = success;
+        _resTitle = title;
+        _resSubtitle = subtitle;
+        _resImage = success ? "/img/tick.png" : "/img/cross.png";
+
         _screen = Screen.Result;
+
         _countdownCts?.Cancel();
         _countdownCts = new CancellationTokenSource();
-        _ = StartCountdownAsync(_resultSeconds, _countdownCts.Token);
+
+        // por defecto, al finalizar volvemos a la pantalla inicial
+        _ = StartCountdownAsync(seconds, _countdownCts.Token, onFinished ?? (async () => Reset()));
+        StateHasChanged();
     }
 
-    async Task StartCountdownAsync(int seconds, CancellationToken token)
+    void ShowSuccess(string title, string? subtitle = null, int seconds = 10)
+        => ShowResult(true, title, subtitle, seconds);
+
+    void ShowError(string title, string? subtitle = null, int seconds = 10)
+        => ShowResult(false, title, subtitle, seconds);
+
+    async Task StartCountdownAsync(int seconds, CancellationToken token, Func<Task>? onFinished = null)
     {
         _countdown = seconds;
         await InvokeAsync(StateHasChanged);
@@ -619,8 +676,14 @@
             _countdown--;
             await InvokeAsync(StateHasChanged);
         }
-        if (!token.IsCancellationRequested) Reset();
+
+        if (!token.IsCancellationRequested)
+        {
+            if (onFinished != null) await onFinished();
+            else Reset();
+        }
     }
+
 
     void Reset()
     {

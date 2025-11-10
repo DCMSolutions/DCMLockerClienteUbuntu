@@ -41,6 +41,13 @@ html, body {
         transform: scale(.98);
     }
 
+/* Subtítulo en pantallas de resultado (más chico que el principal) */
+.result-sub {
+    text-align: center;
+    color: #6c757d;
+    margin-top: .5rem;
+    font-size: clamp(1.2rem, 2.6vh, 2rem);
+}
 
 .action-card, .asset-card, .state-card {
     min-height: 24vh;
