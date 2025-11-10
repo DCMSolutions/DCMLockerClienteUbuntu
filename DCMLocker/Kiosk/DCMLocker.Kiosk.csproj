@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Pages\Assets\Assets.razor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="wwwroot\disconnectHandler.js" />
   </ItemGroup>
 
