@@ -22,6 +22,26 @@ html, body {
     min-height: 100vh;
 }
 
+/* Botón "Cancelar" unificado (discreto) */
+.btn-cancel {
+    background: transparent;
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    padding: .6rem 1.1rem;
+    font-size: clamp(1rem, 2.4vh, 1.4rem);
+    border-radius: .5rem;
+    transition: transform .08s, opacity .08s;
+}
+
+    .btn-cancel:hover {
+        opacity: .9;
+    }
+
+    .btn-cancel:active {
+        transform: scale(.98);
+    }
+
+
 .action-card, .asset-card, .state-card {
     min-height: 24vh;
     border-width: 2px;

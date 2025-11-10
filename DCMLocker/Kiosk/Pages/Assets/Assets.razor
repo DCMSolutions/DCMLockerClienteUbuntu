@@ -98,26 +98,31 @@
     else if (_screen == Screen.ChooseAsset)
     {
         <div class="kiosk-up">
-            <div class="text-center mb-3">
-                <h4 class="m-0">Seleccione el asset a retirar</h4>
-                @if (!string.IsNullOrEmpty(_employeeName))
-                {
-                    <div class="text-muted">Empleado: @_employeeName</div>
-                }
+            <!-- Encabezado: Bienvenido + Seleccione activo (reuso estilos grandes) -->
+            <div class="mb-2">
+                <div class="select-message">
+                    Bienvenido/a @(_employeeName?.Length > 0 ? _employeeName : "")
+                </div>
+                <div class="select-bottom">
+                    <h6>Seleccione activo</h6>
+                </div>
             </div>
 
             @if (_assets.Count == 0)
             {
                 <div class="text-center text-muted">No hay assets disponibles para retiro.</div>
-                <div class="text-center mt-4"><button class="btn btn-outline-secondary" @onclick="Reset">Volver</button></div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-outline-secondary" @onclick="Reset">Volver</button>
+                </div>
             }
             else
             {
+                <!-- Lista: UNO por fila, más anchos horizontalmente -->
                 <div class="row justify-content-center">
                     @foreach (var a in _assets)
                     {
                         var isSel = _selectedAsset?.IdAsset == a.IdAsset;
-                        <div class="col-12 col-md-6 col-lg-5 mb-4">
+                        <div class="col-12 col-lg-10 col-xl-9 mb-4">
                             <div class="card asset-card shadow-sm @AssetCardClasses(a, isSel)"
                                  @onclick="@(() => SelectAsset(a))">
                                 <div class="card-body text-center">
@@ -134,12 +139,17 @@
                 </div>
 
                 <div class="text-center">
-                    <button class="btn btn-primary btn-lg" disabled="@(_selectedAsset == null)" @onclick="GoConfirmRetiro">Continuar</button>
+                    <button class="btn btn-primary btn-lg"
+                            disabled="@(_selectedAsset == null)"
+                            @onclick="GoConfirmRetiro">
+                        Continuar
+                    </button>
                     <button class="btn btn-outline-secondary btn-lg ml-2" @onclick="Reset">Cancelar</button>
                 </div>
             }
         </div>
     }
+
     @* else if (_screen == Screen.ConfirmRetiro)
     {
         <div class="kiosk-center text-center">
@@ -157,52 +167,65 @@
     } *@
     else if (_screen == Screen.ScanQr)
     {
-        <div class="kiosk-center text-center">
-            <div class="mb-3">
-                <h4 class="m-0">Escanee el QR de su activo</h4>
-                @if (!string.IsNullOrEmpty(_employeeName))
-                {
-                    <div class="text-muted">Empleado: @_employeeName</div>
-                }
+        <div class="select-layout">
+            <!-- Top: imagen grande + mensaje -->
+            <div>
+                <div class="select-hero" style="background-image:url('/img/7-rfid-tarjeta.png')"></div>
+
+                <div class="select-message">
+                    Acerque el TAG del activo al lector
+                </div>
             </div>
-            <div class="text-muted mb-4">Acerque el código frente al lector…</div>
-            <div><button class="btn btn-outline-secondary" @onclick="Reset">Cancelar</button></div>
+
+            <!-- Bottom: solo cancelar -->
+            <div class="text-center">
+                <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
+            </div>
         </div>
     }
     else if (_screen == Screen.DevolucionSetEstado)
     {
         <div class="kiosk-up">
-            <div class="text-center mb-3">
-                <h4 class="m-0">Activo seleccionado</h4>
-                <div class="text-muted">ID: @_selectedAsset?.IdAsset &nbsp;|&nbsp; Box: @_selectedAsset?.IdBox</div>
-                <div class="lead mt-2">@_selectedAsset?.NombreAsset</div>
+
+            <!-- Info del activo con la misma forma que la lista -->
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10 col-xl-9 mb-3">
+                    <div class="card asset-card shadow-sm border-secondary" style="cursor: default;">
+                        <div class="card-body text-center">
+                            <h5 class="mb-2">@_selectedAsset?.NombreAsset</h5>
+                            <div class="small text-muted">
+                                ID: @_selectedAsset?.IdAsset &nbsp;|&nbsp; Box: @_selectedAsset?.IdBox
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="text-center mb-3">
-                <p class="m-0">Seleccione estado del activo</p>
+            <!-- Título grande -->
+            <div class="select-message mb-3 text-center">
+                Seleccione en qué estado se encuentra el activo
             </div>
 
+            <!-- Opciones (auto-avanza) -->
             <div class="row justify-content-center">
                 <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
                     <div class="card state-card shadow-sm @(_devolEstado == AssetsEstado.Funcional ? "selected" : "border-secondary")"
-                         @onclick="@(() => SelectEstado(AssetsEstado.Funcional))">
-                        <div class="card-body text-center"><h5>Funcional</h5></div>
+                         @onclick="() => SelectEstadoAndProceed(AssetsEstado.Funcional)">
+                        <div class="card-body text-center"><h5>Bueno</h5></div>
                     </div>
                 </div>
 
                 <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
                     <div class="card state-card shadow-sm @(_devolEstado == AssetsEstado.Defectuoso ? "selected" : "border-secondary")"
-                         @onclick="@(() => SelectEstado(AssetsEstado.Defectuoso))">
+                         @onclick="() => SelectEstadoAndProceed(AssetsEstado.Defectuoso)">
                         <div class="card-body text-center"><h5>Defectuoso</h5></div>
                     </div>
                 </div>
             </div>
 
-            <div class="text-center">
-                <button class="btn btn-primary btn-lg" disabled="@(_devolEstado is null)" @onclick="ProceedDevolucion">
-                    Continuar
-                </button>
-                <button class="btn btn-outline-secondary btn-lg ml-2" @onclick="Reset">Cancelar</button>
+            <!-- Cancelar (discreto y unificado) -->
+            <div class="text-center mt-3">
+                <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
             </div>
         </div>
     }
@@ -534,7 +557,11 @@
         StateHasChanged();
     }
 
-    void SelectEstado(AssetsEstado estado) => _devolEstado = estado;
+    async Task SelectEstadoAndProceed(AssetsEstado estado)
+    {
+        _devolEstado = estado;
+        await ProceedDevolucion();
+    }
 
     async Task ProceedDevolucion()
     {
