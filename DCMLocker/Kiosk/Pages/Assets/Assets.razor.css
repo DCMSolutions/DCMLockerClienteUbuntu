@@ -1,7 +1,4 @@
-﻿html, body {
-    height: 100%;
-    overflow: hidden;
-}
+﻿
 
 .kiosk-full {
     height: 100vh;
@@ -227,8 +224,10 @@
 }
 
     .scroll-card .card-body {
-        overflow: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
+
 
 .asset-card.compact {
     min-height: 16vh;

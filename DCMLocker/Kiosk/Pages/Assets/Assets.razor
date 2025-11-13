@@ -60,7 +60,7 @@
             <div class="keypad-grid">
                 @foreach (var key in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "←" })
                 {
-                    <button class="btn key-btn" @onclick="@(() => OnKey(key))">@key</button>
+                    <button class="btn btn-outline-secondary key-btn" @onclick="@(() => OnKey(key))">@key</button>
                 }
             </div>
 
@@ -313,7 +313,6 @@
     // entrada
     private string? _rfid;
     private AssetsAccion? _accion;
-    private DateTime _readAt;
 
 
     // respuesta SendRequest
@@ -325,18 +324,15 @@
     private AssetsEstado? _devolEstado;
 
     // Resultado UI (éxito / error)
-    private bool _resSuccess;
     private string _resTitle = "";
     private string? _resSubtitle;
     private string _resImage = "";
 
     // Countdown de resultado (nuevo default 10s)
     private int _countdown = 10;
-    private const int _resultSeconds = 10;
 
 
     // resultado final
-    private string _resultRaw = "";
     private CancellationTokenSource? _countdownCts;
     private bool _sending;
     private string _loadingText = "Enviando solicitud…";
@@ -413,7 +409,6 @@
     private void SetRfid(string token)
     {
         _rfid = token;
-        _readAt = DateTime.Now;
         _ = TryProceedAsync();
         StateHasChanged();
     }
@@ -634,7 +629,6 @@
     // --- Result + countdown ---
     void ShowResult(bool success, string title, string? subtitle, int seconds, Func<Task>? onFinished = null)
     {
-        _resSuccess = success;
         _resTitle = title;
         _resSubtitle = subtitle;
         _resImage = success ? "/img/tick.png" : "/img/cross.png";
@@ -686,15 +680,8 @@
         _selectedAsset = null;
         _devolEstado = null;
 
-        _resultRaw = "";
         _screen = Screen.Select;
         StateHasChanged();
-    }
-
-    string PercentDone()
-    {
-        var done = (_resultSeconds - _countdown) * 100 / Math.Max(1, _resultSeconds);
-        return done + "%";
     }
 
     // PANTALLA DE ID
