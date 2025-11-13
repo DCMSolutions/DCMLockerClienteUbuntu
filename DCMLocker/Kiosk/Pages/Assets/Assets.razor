@@ -111,39 +111,44 @@
             {
                 <div class="text-center text-muted">No hay assets disponibles para retiro.</div>
                 <div class="text-center mt-4">
-                    <button class="btn btn-outline-secondary" @onclick="Reset">Volver</button>
+                    <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
                 </div>
             }
             else
             {
-                <!-- Lista: UNO por fila, más anchos horizontalmente -->
-                <div class="row justify-content-center">
-                    @foreach (var a in _assets)
-                    {
-                        var isSel = _selectedAsset?.IdAsset == a.IdAsset;
-                        <div class="col-12 col-lg-10 col-xl-9 mb-4">
-                            <div class="card asset-card shadow-sm @AssetCardClasses(a, isSel)"
-                                 @onclick="@(() => SelectAsset(a))">
-                                <div class="card-body text-center">
-                                    <div>
-                                        <h5 class="mb-2">@a.NombreAsset</h5>
-                                        <div class="small @(isSel ? "text-white-50" : "text-muted")">
-                                            ID: @a.IdAsset &nbsp;|&nbsp; Box: @a.IdBox
+                <!-- Card scrolleable que mantiene fijo el header y la botonera -->
+                <div class="card scroll-card shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="row justify-content-center">
+                            @foreach (var a in _assets)
+                            {
+                                var isSel = _selectedAsset?.IdAsset == a.IdAsset;
+                                <div class="col-12 col-lg-10 col-xl-9 mb-3">
+                                    <div class="card asset-card compact shadow-sm @AssetCardClasses(a, isSel)"
+                                         @onclick="@(() => SelectAsset(a))">
+                                        <div class="card-body text-center">
+                                            <div class="asset-name">@a.NombreAsset</div>
+                                            <div class="asset-meta @(isSel ? "text-white-50" : "text-muted")">
+                                                Box: @a.IdBox
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
                         </div>
-                    }
+                    </div>
                 </div>
 
-                <div class="text-center">
-                    <button class="btn btn-primary btn-lg"
-                            disabled="@(_selectedAsset == null)"
-                            @onclick="GoConfirmRetiro">
-                        Continuar
-                    </button>
-                    <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
+                <!-- Botonera grande y consistente -->
+                <div class="select-bottom mt-3">
+                    <div class="select-actions">
+                        <button class="btn btn-primary option-btn"
+                                disabled="@(_selectedAsset == null)"
+                                @onclick="GoConfirmRetiro">
+                            Continuar
+                        </button>
+                        <button class="btn btn-cancel option-btn" @onclick="Reset">Cancelar</button>
+                    </div>
                 </div>
             }
         </div>
@@ -581,28 +586,11 @@
         StateHasChanged();
     }
 
-
     async Task SelectEstadoAndProceed(AssetsEstado estado)
     {
         _devolEstado = estado;
         await ProceedDevolucion();
     }
-
-    void ShowDoorThenFinal(int box)
-    {
-        // 1) 5s “Puerta abierta…”
-        ShowResult(true,
-            $"Puerta {box} abierta.",
-            "Por favor, al terminar cierre la puerta. Gracias",
-            5,
-            onFinished: async () =>
-            {
-                // 2) 10s “Operación exitosa”
-                ShowSuccess("Operación exitosa", null, 10);
-                await Task.CompletedTask;
-            });
-    }
-
 
     async Task ProceedDevolucion()
     {
@@ -641,6 +629,21 @@
         }
     }
 
+    void ShowDoorThenFinal(int box)
+    {
+        // 1) 5s “Puerta abierta…”
+        ShowResult(true,
+            $"Puerta {box} abierta.",
+            "Por favor, al terminar cierre la puerta. Gracias",
+            3,
+            onFinished: async () =>
+            {
+                // 2) 3s “Operación exitosa”
+                ShowSuccess("Operación exitosa", null, 3);
+                await Task.CompletedTask;
+            });
+    }
+
     // --- Result + countdown ---
     void ShowResult(bool success, string title, string? subtitle, int seconds, Func<Task>? onFinished = null)
     {
@@ -659,10 +662,10 @@
         StateHasChanged();
     }
 
-    void ShowSuccess(string title, string? subtitle = null, int seconds = 10)
+    void ShowSuccess(string title, string? subtitle = null, int seconds = 5)
         => ShowResult(true, title, subtitle, seconds);
 
-    void ShowError(string title, string? subtitle = null, int seconds = 10)
+    void ShowError(string title, string? subtitle = null, int seconds = 5)
         => ShowResult(false, title, subtitle, seconds);
 
     async Task StartCountdownAsync(int seconds, CancellationToken token, Func<Task>? onFinished = null)

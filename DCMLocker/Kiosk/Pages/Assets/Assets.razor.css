@@ -203,3 +203,73 @@ html, body {
         box-shadow: 0 0 0 6px rgba(0,123,255,.35); /* antes 4px */
         font-weight: 800; /* antes 600 */
     }
+
+/* Que kiosk-up ocupe toda la altura para que el scroller funcione bien */
+.kiosk-up {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 6vh;
+    min-height: 100vh; /* <-- agregado */
+}
+
+/* Contenedor scrolleable */
+.scroll-card {
+    flex: 1 1 auto; /* ocupa el espacio libre */
+    min-height: 0; /* permite que el hijo haga overflow dentro del flex */
+}
+
+    .scroll-card .card-body {
+        overflow: auto; /* scrollea solo la lista */
+    }
+
+/* Asset más compacto en la lista */
+.asset-card.compact {
+    min-height: 14vh; /* antes 24vh */
+}
+
+    .asset-card.compact .card-body {
+        padding: 1rem 1.4rem; /* más ajustado */
+    }
+
+/* Tipografías grandes para la lista */
+.asset-name {
+    font-weight: 800;
+    line-height: 1.15;
+    font-size: clamp(1.6rem, 4.6vh, 2.8rem);
+}
+
+.asset-meta {
+    margin-top: .3rem;
+    font-size: clamp(1.2rem, 3.2vh, 1.8rem);
+}
+
+/* Rojo más suave por defecto y fuerte al seleccionar */
+.asset-card.asset-defectuoso {
+    background: #f8d7da; /* rojo suave (bootstrap danger-subtle) */
+    color: #842029; /* texto oscuro legible */
+    border-color: #f5c2c7;
+}
+
+.asset-card.selected.asset-defectuoso {
+    background: #dc3545; /* rojo fuerte al seleccionar */
+    color: #fff;
+    border-color: #dc3545;
+}
+
+/* Mantener el comportamiento existente para warning y selección normal */
+.asset-card.asset-warning {
+    background: #ffc107;
+    color: #212529;
+    border-color: #ffc107;
+}
+
+.asset-card.selected {
+    box-shadow: 0 0 0 4px rgba(0,123,255,.35);
+}
+
+    .asset-card.selected:not(.asset-defectuoso):not(.asset-warning) {
+        background: #007bff;
+        color: #fff;
+        border-color: #007bff;
+    }
