@@ -1105,7 +1105,7 @@ namespace DCMLocker.Kiosk.Cliente
         {
             try
             {
-                var oRta = await _cliente.GetFromJsonAsync<TLockerMap>($"System/GetBoxConfig?IdBox={idBox}");
+                var oRta = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfig?IdBox={idBox}");
                 return oRta;
             }
             catch (Exception ex)
@@ -1118,7 +1118,7 @@ namespace DCMLocker.Kiosk.Cliente
         {
             try
             {
-                var oRta = await _cliente.GetFromJsonAsync<TLockerMap>($"System/GetBoxConfigPorId?idBox={idBox}");
+                var oRta = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfigPorId?idBox={idBox}");
                 return oRta;
             }
             catch (Exception ex)
