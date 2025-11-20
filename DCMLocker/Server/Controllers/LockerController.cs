@@ -796,7 +796,10 @@ namespace DCMLocker.Server.Controllers
         [HttpGet("GetBoxStatusPorId")]
         public (bool puerta, bool ocupacion)? GetBoxStatusPorId(int idBox)
         {
-            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(b => b.IdFisico == idBox).FirstOrDefault();
+            Console.WriteLine("holiiiii");
+
+            var lockerMap = _base.LockerMap.LockerMaps.Values
+                .FirstOrDefault(b => b.IdFisico == idBox);
 
             if (lockerMap == null) return null;
 
@@ -808,6 +811,15 @@ namespace DCMLocker.Server.Controllers
 
             bool _puerta = status.DoorStatus[_Box];
             bool _ocupacion = status.SensorStatus[_Box];
+
+            Console.WriteLine("holaaaaa");
+            Console.WriteLine("holaaaaa");
+            Console.WriteLine("holaaaaa");
+            Console.WriteLine("holaaaaa");
+            Console.WriteLine("holaaaaa");
+            Console.WriteLine("holaaaaa");
+            Console.WriteLine("puerta: " + _puerta);
+            Console.WriteLine("ocupacion: " + _ocupacion);
 
             return (_puerta, _ocupacion);
         }
