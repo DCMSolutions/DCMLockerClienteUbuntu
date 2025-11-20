@@ -1102,11 +1102,11 @@ namespace DCMLocker.Kiosk.Cliente
         }
 
 
-        public async Task<(bool _puerta, bool _ocupacion)> GetBoxStatusPorId(int idBox)
+        public async Task<(bool _puerta, bool _ocupacion)?> GetBoxStatusPorId(int idBox)
         {
             try
             {
-                var oRta = await _cliente.GetFromJsonAsync<(bool _puerta, bool _ocupacion)>($"Locker/GetBoxStatusPorId?idBox={idBox}");
+                var oRta = await _cliente.GetFromJsonAsync<(bool _puerta, bool _ocupacion)?>($"Locker/GetBoxStatusPorId?idBox={idBox}");
                 return oRta;
             }
             catch (Exception ex)

@@ -794,11 +794,13 @@ namespace DCMLocker.Server.Controllers
 
 
         [HttpGet("GetBoxStatusPorId")]
-        public (bool puerta, bool ocupacion) GetBoxStatusPorId(int idBox)
+        public (bool puerta, bool ocupacion)? GetBoxStatusPorId(int idBox)
         {
-            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(b => b.IdBox == idBox).FirstOrDefault();
+            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(b => b.IdFisico == idBox).FirstOrDefault();
 
-            var idFisico = lockerMap.IdFisico.GetValueOrDefault();  //este es el de la cerradura, criminal todo
+            if (lockerMap == null) return null;
+
+            var idFisico = lockerMap.IdBox;  //este es el de la cerradura, criminal todo
             var _CU = idFisico / 16;
             var _Box = idFisico % 16;
 
@@ -815,12 +817,12 @@ namespace DCMLocker.Server.Controllers
         {
             List < (int idBox, bool puerta) > laLi = new();
 
-            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(l => l.IdBox != 0);
+            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(l => l.IdFisico != 0);
             foreach (var locker in lockerMap) 
             {
-                var idBox = locker.IdBox;  //este es el de front, criminal todo
+                var idBox = locker.IdFisico.GetValueOrDefault();  //este es el de front, criminal todo
 
-                var idFisico = locker.IdFisico.GetValueOrDefault();  //este es el de la cerradura, criminal todo
+                var idFisico = locker.IdBox;  //este es el de la cerradura, criminal todo
                 var _CU = idFisico / 16;
                 var _Box = idFisico % 16;
 
