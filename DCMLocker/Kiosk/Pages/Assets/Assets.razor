@@ -442,12 +442,7 @@
 
         await _statusHub.StartAsync();
 
-        var asd = await Cliente.GetBoxPorId(2);
-        var asd2 = await Cliente.GetBoxPorId2(2);
-
-        Console.WriteLine(asd);
-        Console.WriteLine(asd2);
-
+        var asd2 = await Cliente.GetBoxPorIdFisico(2);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

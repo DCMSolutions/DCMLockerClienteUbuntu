@@ -361,37 +361,6 @@ namespace DCMLocker.Client.Cliente
             }
         }
 
-        public async Task<TLockerMap> GetBoxConfigPorId(int idBox)
-        {
-            TLockerMap retorno = null;
-            var token = await _auth.GetTokenAsync();
-            if (!string.IsNullOrEmpty(token))
-            {
-                _cliente.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            }
-            try
-            {
-                retorno = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfigPorId?IdBox={idBox}");
-                return retorno;
-            }
-            catch (HttpRequestException er)
-            {
-                Console.WriteLine(er.Message);
-                if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
-                   (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
-                {
-                    _nav.NavigateTo("/login");
-                    return null;
-                }
-                else throw;
-            }
-            catch (Exception er)
-            {
-                Console.WriteLine(er.Message);
-                throw;
-            }
-        }
 
         /// <summary>---------------------------------------------------------------------
         ///  Set la configuracion de caja

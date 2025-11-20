@@ -110,7 +110,7 @@ else
         listaDeTamaños = await Cliente.GetListaDeTamaños();
         listaDeIdsDisponibles = await Cliente.GetListaDeIdBoxDisponibles();
 
-        Config = await Cliente.GetBoxConfigPorId(idBox);
+        Config = await Cliente.GetBoxConfig(idBox);
         Config.IdBox = idBox;
         if (Config.IdFisico == null) Config.Enable = true;
 

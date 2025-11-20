@@ -770,14 +770,13 @@ namespace DCMLocker.Server.Controllers
             }
             return null;
         }
-        [HttpGet("GetBoxConfigPorId")]
-        public TLockerMap GetBoxConfigPorId(int idBox)
+        [HttpGet("GetBoxConfigPorIdFisico")]
+        public TLockerMap GetBoxConfigPorIdFisico(int idBox)
         {
             TLockerMap lockerVacio = new();
-            if (idBox == 0) return lockerVacio;
             foreach (var lockerMap in _base.LockerMap.LockerMaps.Values)
             {
-                if (lockerMap.IdBox == idBox)
+                if (lockerMap.IdFisico == idBox)
                 {
                     return lockerMap;
                 }
