@@ -794,57 +794,61 @@ namespace DCMLocker.Server.Controllers
 
 
         [HttpGet("GetBoxStatusPorId")]
-        public (bool puerta, bool ocupacion)? GetBoxStatusPorId(int idBox)
+        public ActionResult<BoxStatusDto> GetBoxStatusPorId(int idBox)
         {
-            Console.WriteLine("holiiiii");
-
             var lockerMap = _base.LockerMap.LockerMaps.Values
-                .FirstOrDefault(b => b.IdFisico == idBox);
+                .FirstOrDefault(b => b.IdBox == idBox);
 
-            if (lockerMap == null) return null;
+            if (lockerMap == null)
+                return NotFound();
 
-            var idFisico = lockerMap.IdBox;  //este es el de la cerradura, criminal todo
+            var idFisico = lockerMap.IdFisico.Value;
             var _CU = idFisico / 16;
             var _Box = idFisico % 16;
 
             var status = _driver.GetCUState(_CU);
 
-            bool _puerta = status.DoorStatus[_Box];
-            bool _ocupacion = status.SensorStatus[_Box];
+            bool puerta = status.DoorStatus[_Box];
+            bool ocupacion = status.SensorStatus[_Box];
 
-            Console.WriteLine("holaaaaa");
-            Console.WriteLine("holaaaaa");
-            Console.WriteLine("holaaaaa");
-            Console.WriteLine("holaaaaa");
-            Console.WriteLine("holaaaaa");
-            Console.WriteLine("holaaaaa");
-            Console.WriteLine("puerta: " + _puerta);
-            Console.WriteLine("ocupacion: " + _ocupacion);
-
-            return (_puerta, _ocupacion);
+            return new BoxStatusDto
+            {
+                Puerta = puerta,
+                Ocupacion = ocupacion
+            };
         }
+
 
         [HttpGet("GetAllBoxStatus")]
-        public List<(int idBox, bool puerta)> GetAllBoxStatus()
+        public List<BoxPuertaDTO> GetAllBoxStatus()
         {
-            List < (int idBox, bool puerta) > laLi = new();
+            var laLi = new List<BoxPuertaDTO>();
 
-            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(l => l.IdFisico != 0);
-            foreach (var locker in lockerMap) 
+            var lockerMaps = _base.LockerMap.LockerMaps.Values
+                .Where(l => l.IdBox != 0);
+
+            foreach (var locker in lockerMaps)
             {
-                var idBox = locker.IdFisico.GetValueOrDefault();  //este es el de front, criminal todo
+                var idBoxFront = locker.IdBox;  // el que ve el front
 
-                var idFisico = locker.IdBox;  //este es el de la cerradura, criminal todo
-                var _CU = idFisico / 16;
-                var _Box = idFisico % 16;
+                var idFisicoCerradura = locker.IdFisico.Value;     // el de la cerradura
+                var cu = idFisicoCerradura / 16;
+                var boxIndex = idFisicoCerradura % 16;
 
-                var status = _driver.GetCUState(_CU);
+                var status = _driver.GetCUState(cu);
 
-                bool _puerta = status.DoorStatus[_Box];
-                laLi.Add((idBox, _puerta));
+                var dto = new BoxPuertaDTO
+                {
+                    IdBox = idBoxFront,
+                    Puerta = status.DoorStatus[boxIndex]
+                };
+
+                laLi.Add(dto);
             }
+
             return laLi;
         }
+
 
 
         /// <summary>----------------------------------------------------------------------

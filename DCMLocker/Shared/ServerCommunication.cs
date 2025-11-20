@@ -44,4 +44,17 @@ namespace DCMLocker.Shared
         public int? Size { get; set; }
         public int? Id { get; set; }
     }
+
+    public class BoxStatusDto
+    {
+        public bool Puerta { get; set; }
+        public bool Ocupacion { get; set; }
+    }
+
+    public class BoxPuertaDTO
+    {
+        public int IdBox { get; set; }
+        public bool Puerta { get; set; }
+    }
+
 }

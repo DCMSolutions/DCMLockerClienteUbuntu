@@ -1,14 +1,15 @@
-﻿using System;
+﻿using DCMLocker.Kiosk.Authentication;
+using DCMLocker.Shared;
+using DCMLocker.Shared.Locker;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.SignalR.Client;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
-using DCMLocker.Shared.Locker;
-using DCMLocker.Kiosk.Authentication;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.AspNetCore.Components;
-using DCMLocker.Shared;
+using System.Threading.Tasks;
 
 namespace DCMLocker.Kiosk.Cliente
 {
@@ -1102,32 +1103,28 @@ namespace DCMLocker.Kiosk.Cliente
         }
 
 
-        public async Task<(bool _puerta, bool _ocupacion)?> GetBoxStatusPorId(int idBox)
+        public async Task<BoxStatusDto?> GetBoxStatusPorId(int idBox)
         {
-            try
-            {
-                var oRta = await _cliente.GetFromJsonAsync<(bool _puerta, bool _ocupacion)?>($"Locker/GetBoxStatusPorId?idBox={idBox}");
-                return oRta;
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            var response = await _cliente.GetAsync(
+                $"Locker/GetBoxStatusPorId?idBox={idBox}");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return null;
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<BoxStatusDto>();
         }
 
 
-        public async Task<List<(int idBox, bool puerta)>> GetAllBoxStatus()
+
+        public async Task<List<BoxPuertaDTO>> GetAllBoxStatus()
         {
-            try
-            {
-                var oRta = await _cliente.GetFromJsonAsync<List<(int idBox, bool puerta)>>("Locker/GetAllBoxStatus");
-                return oRta;
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            var oRta = await _cliente.GetFromJsonAsync<List<BoxPuertaDTO>>(
+                "Locker/GetAllBoxStatus");
+
+            return oRta ?? new List<BoxPuertaDTO>();
         }
+
 
         /// <summary>--------------------------------------------------------------------
         /// La version y eso
