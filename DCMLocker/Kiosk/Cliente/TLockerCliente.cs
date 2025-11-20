@@ -1102,11 +1102,25 @@ namespace DCMLocker.Kiosk.Cliente
         }
 
 
-        public async Task<TLockerMap> GetBoxPorIdFisico(int idBox)
+        public async Task<(bool _puerta, bool _ocupacion)> GetBoxStatusPorId(int idBox)
         {
             try
             {
-                var oRta = await _cliente.GetFromJsonAsync<TLockerMap>($"Locker/GetBoxConfigPorIdFisico?idBox={idBox}");
+                var oRta = await _cliente.GetFromJsonAsync<(bool _puerta, bool _ocupacion)>($"Locker/GetBoxStatusPorId?idBox={idBox}");
+                return oRta;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+
+        public async Task<List<(int idBox, bool puerta)>> GetAllBoxStatus()
+        {
+            try
+            {
+                var oRta = await _cliente.GetFromJsonAsync<List<(int idBox, bool puerta)>>("Locker/GetAllBoxStatus");
                 return oRta;
             }
             catch (Exception ex)

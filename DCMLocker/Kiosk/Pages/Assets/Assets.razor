@@ -433,7 +433,7 @@
         // 2) Hub de estado (ServerHub: STATUS + UpdateCerraduras)
         //    Ajustá "/serverhub" si tu hub está mapeado con otro path.
         _statusHub = new HubConnectionBuilder()
-            .WithUrl(Nav.ToAbsoluteUri("/serverhub"))
+            .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
             .WithAutomaticReconnect()
             .Build();
 
@@ -442,7 +442,8 @@
 
         await _statusHub.StartAsync();
 
-        var asd2 = await Cliente.GetBoxPorIdFisico(2);
+        var asd2 = await Cliente.GetBoxStatusPorId(1);
+        var asd = await Cliente.GetAllBoxStatus();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

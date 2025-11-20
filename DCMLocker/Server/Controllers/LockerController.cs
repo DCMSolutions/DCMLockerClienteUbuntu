@@ -770,19 +770,6 @@ namespace DCMLocker.Server.Controllers
             }
             return null;
         }
-        [HttpGet("GetBoxConfigPorIdFisico")]
-        public TLockerMap GetBoxConfigPorIdFisico(int idBox)
-        {
-            TLockerMap lockerVacio = new();
-            foreach (var lockerMap in _base.LockerMap.LockerMaps.Values)
-            {
-                if (lockerMap.IdFisico == idBox)
-                {
-                    return lockerMap;
-                }
-            }
-            return lockerVacio;
-        }
 
         [HttpGet("GetAllBoxConfig")]
         public List<TLockerMap> GetAllBoxConfig()
@@ -805,6 +792,45 @@ namespace DCMLocker.Server.Controllers
             return listaLibres;
         }
 
+
+        [HttpGet("GetBoxStatusPorId")]
+        public (bool puerta, bool ocupacion) GetBoxStatusPorId(int idBox)
+        {
+            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(b => b.IdBox == idBox).FirstOrDefault();
+
+            var idFisico = lockerMap.IdFisico.GetValueOrDefault();  //este es el de la cerradura, criminal todo
+            var _CU = idFisico / 16;
+            var _Box = idFisico % 16;
+
+            var status = _driver.GetCUState(_CU);
+
+            bool _puerta = status.DoorStatus[_Box];
+            bool _ocupacion = status.SensorStatus[_Box];
+
+            return (_puerta, _ocupacion);
+        }
+
+        [HttpGet("GetAllBoxStatus")]
+        public List<(int idBox, bool puerta)> GetAllBoxStatus()
+        {
+            List < (int idBox, bool puerta) > laLi = new();
+
+            var lockerMap = _base.LockerMap.LockerMaps.Values.Where(l => l.IdBox != 0);
+            foreach (var locker in lockerMap) 
+            {
+                var idBox = locker.IdBox;  //este es el de front, criminal todo
+
+                var idFisico = locker.IdFisico.GetValueOrDefault();  //este es el de la cerradura, criminal todo
+                var _CU = idFisico / 16;
+                var _Box = idFisico % 16;
+
+                var status = _driver.GetCUState(_CU);
+
+                bool _puerta = status.DoorStatus[_Box];
+                laLi.Add((idBox, _puerta));
+            }
+            return laLi;
+        }
 
 
         /// <summary>----------------------------------------------------------------------
