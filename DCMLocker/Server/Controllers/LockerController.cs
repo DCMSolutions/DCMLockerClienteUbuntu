@@ -825,7 +825,7 @@ namespace DCMLocker.Server.Controllers
             var laLi = new List<BoxPuertaDTO>();
 
             var lockerMaps = _base.LockerMap.LockerMaps.Values
-                .Where(l => l.IdBox != 0);
+                .Where(l => l.IdBox != 0 && l.Enable == true);
 
             foreach (var locker in lockerMaps)
             {
