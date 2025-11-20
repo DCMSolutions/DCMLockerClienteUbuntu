@@ -438,12 +438,10 @@
             .Build();
 
         _statusHub.On<string>("STATUS", OnStatusChanged);
-        _statusHub.On<string>("UpdateCerraduras", OnCerradurasChanged);
+        _statusHub.On<string>("CERRADURAS", OnCerradurasChanged);
 
         await _statusHub.StartAsync();
 
-        var asd2 = await Cliente.GetBoxStatusPorId(1);
-        var asd = await Cliente.GetAllBoxStatus();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
