@@ -47,6 +47,26 @@
                 @onclick="() => _screen = Screen.SecretPin"
                 tabindex="-1"></button>
     }
+    else if (_screen == Screen.FueraServicio)
+    {
+        <div class="oos-screen">
+            <button class="hidden-admin-trigger" title=""
+                    @onclick="() => _screen = Screen.SecretPin"
+                    tabindex="-1"></button>
+
+            <div class="oos-content text-center">
+                <div class="oos-icon">⚠️</div>
+                <div class="oos-title">Temporalmente fuera de servicio</div>
+
+                @if (_errorCode != LockerErrorCode.None)
+                {
+                    <div class="oos-code">
+                        Código de error: @GetErrorCodeNumber() - @GetErrorCodeDescription()
+                    </div>
+                }
+            </div>
+        </div>
+    }
     else if (_screen == Screen.SecretPin)
     {
         <div class="kiosk-center text-center">
@@ -307,8 +327,9 @@
 </div>
 
 @code {
-    enum Screen { Select, Loading, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin }
+    enum Screen { Select, Loading, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin, FueraServicio }
     Screen _screen = Screen.Select;
+
 
     // entrada
     private string? _rfid;
@@ -342,6 +363,8 @@
     private DotNetObjectReference<Assets>? _selfRef;
     private HubConnection? _hub;            // RFID
     private HubConnection? QRhubConnection; // QR
+    // Hub de estado (STATUS + cerraduras)
+    private HubConnection? _statusHub;
     
     // para el pin para la pantalla de seguridad 
     private string _pinInput = "";
@@ -354,6 +377,24 @@
     private string? _adminFecha;
     private List<string> _adminIPs = new();
     private string? _adminMsg;
+
+    // lo de fuera de servicio
+    enum LockerErrorCode
+    {
+        None = 0,
+        Cerraduras = 1,          // 01
+        Servidor = 2,            // 02
+        RedEthernet = 3,         // 03
+        Internet = 4,            // 04
+        CerradurasYInternet = 5, // 05
+        Inesperado = 99          // 99
+    }
+    private LockerErrorCode _errorCode = LockerErrorCode.None;
+    private bool _cerradurasConectadas = true;
+    private bool _serverOk = true;
+    private bool _ethernetOk = true;
+    private bool _internetOk = true;
+
 
 
     // --- init ---
@@ -386,6 +427,21 @@
 
         await _hub.StartAsync();
         await QRhubConnection.StartAsync();
+
+        await InitializeStatusAsync();
+
+        // 2) Hub de estado (ServerHub: STATUS + UpdateCerraduras)
+        //    Ajustá "/serverhub" si tu hub está mapeado con otro path.
+        _statusHub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/serverhub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _statusHub.On<string>("STATUS", OnStatusChanged);
+        _statusHub.On<string>("UpdateCerraduras", OnCerradurasChanged);
+
+        await _statusHub.StartAsync();
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -680,7 +736,10 @@
         _selectedAsset = null;
         _devolEstado = null;
 
-        _screen = Screen.Select;
+        _screen = _errorCode == LockerErrorCode.None
+            ? Screen.Select
+            : Screen.FueraServicio;
+
         StateHasChanged();
     }
 
@@ -702,8 +761,11 @@
     void PinCancel()
     {
         _pinInput = "";
-        _screen = Screen.Select;
+        _screen = _errorCode == LockerErrorCode.None
+            ? Screen.Select
+            : Screen.FueraServicio;
     }
+
 
     async Task SubmitPin()
     {
@@ -791,7 +853,176 @@
         finally { _adminBusy = false; StateHasChanged(); }
     }
 
-    void AdminBack() { _screen = Screen.Select; }
+    void AdminBack()
+    {
+        _screen = _errorCode == LockerErrorCode.None
+            ? Screen.Select
+            : Screen.FueraServicio;
+    }
+
+
+
+    // lo de conexion:
+    private async Task InitializeStatusAsync()
+    {
+        try
+        {
+            try
+            {
+                var estadoCerraduras = await Cliente.GetEstadoCerraduras();
+                _cerradurasConectadas = string.Equals(
+                    estadoCerraduras,
+                    "Conectadas",
+                    StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                _cerradurasConectadas = true;
+            }
+
+            try
+            {
+                var nets = await Cliente.System_GetIP();
+                if (nets != null)
+                {
+                    var ipsFiltered = nets
+                        .Where(n => n != null && !n.IP.EndsWith(".2.3"))
+                        .ToArray();
+
+                    _ethernetOk = ipsFiltered.Length > 0;
+                }
+            }
+            catch
+            {
+                _ethernetOk = true;
+            }
+
+            try
+            {
+                _serverOk = await Cliente.PingServer();
+            }
+            catch
+            {
+                _serverOk = false;
+            }
+
+            _internetOk = _serverOk;
+
+            RecalculateErrorCode();
+        }
+        catch
+        {
+            _errorCode = LockerErrorCode.Inesperado;
+            _screen = Screen.FueraServicio;
+        }
+    }
+
+
+    private void OnStatusChanged(string status)
+    {
+        try
+        {
+            switch (status)
+            {
+                case "Desconexion de red":
+                    _ethernetOk = false;
+                    break;
+
+                case "Desconexion del servidor":
+                    _serverOk = false;
+                    break;
+
+                case "Desconexion de internet":
+                    _internetOk = false;
+                    break;
+
+                case "Conexion al servidor":
+                    _serverOk = true;
+                    _ethernetOk = true;
+                    _internetOk = true;
+                    break;
+
+                default:
+                    _errorCode = LockerErrorCode.Inesperado;
+                    _screen = Screen.FueraServicio;
+                    InvokeAsync(StateHasChanged);
+                    return;
+            }
+
+            RecalculateErrorCode();
+            InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            _errorCode = LockerErrorCode.Inesperado;
+            _screen = Screen.FueraServicio;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnCerradurasChanged(string estado)
+    {
+        _cerradurasConectadas = string.Equals(estado, "Conectadas",
+            StringComparison.OrdinalIgnoreCase);
+
+        RecalculateErrorCode();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void RecalculateErrorCode()
+    {
+        LockerErrorCode nuevo;
+
+        // 05: cerraduras + cualquier error de red/servidor/internet
+        if (!_cerradurasConectadas && (!_ethernetOk || !_serverOk || !_internetOk))
+            nuevo = LockerErrorCode.CerradurasYInternet;
+        else if (!_cerradurasConectadas)
+            nuevo = LockerErrorCode.Cerraduras;      // 01
+        else if (!_serverOk)
+            nuevo = LockerErrorCode.Servidor;        // 02
+        else if (!_ethernetOk)
+            nuevo = LockerErrorCode.RedEthernet;     // 03
+        else if (!_internetOk)
+            nuevo = LockerErrorCode.Internet;        // 04
+        else
+            nuevo = LockerErrorCode.None;
+
+        _errorCode = nuevo;
+
+        // Si hay error: siempre vamos a FueraServicio.
+        // Si se recupera: si estábamos en FueraServicio volvemos a Select.
+        if (_errorCode == LockerErrorCode.None)
+        {
+            if (_screen == Screen.FueraServicio)
+                _screen = Screen.Select;
+        }
+        else
+        {
+            _screen = Screen.FueraServicio;
+        }
+    }
+
+    private string GetErrorCodeNumber() => _errorCode switch
+    {
+        LockerErrorCode.Cerraduras => "01",
+        LockerErrorCode.Servidor => "02",
+        LockerErrorCode.RedEthernet => "03",
+        LockerErrorCode.Internet => "04",
+        LockerErrorCode.CerradurasYInternet => "05",
+        LockerErrorCode.Inesperado => "99",
+        _ => ""
+    };
+
+    private string GetErrorCodeDescription() => _errorCode switch
+    {
+        LockerErrorCode.Cerraduras => "Error de conexión con controladora de cerraduras.",
+        LockerErrorCode.Servidor => "Error de conexión al servidor.",
+        LockerErrorCode.RedEthernet => "Error de conexión de red ethernet.",
+        LockerErrorCode.Internet => "Error de conexión a internet.",
+        LockerErrorCode.CerradurasYInternet => "Error de conexión de cerraduras y de internet.",
+        LockerErrorCode.Inesperado => "Error inesperado.",
+        _ => ""
+    };
 
 
     // --- dispose ---
@@ -802,7 +1033,9 @@
 
         try { if (_hub != null) { await _hub.StopAsync(); await _hub.DisposeAsync(); } } catch { }
         try { if (QRhubConnection != null) { await QRhubConnection.StopAsync(); await QRhubConnection.DisposeAsync(); } } catch { }
+        try { if (_statusHub != null) { await _statusHub.StopAsync(); await _statusHub.DisposeAsync(); } } catch { }
         try { _countdownCts?.Cancel(); } catch { }
     }
+
 
 }
