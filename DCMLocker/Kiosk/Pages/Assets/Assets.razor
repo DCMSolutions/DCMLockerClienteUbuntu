@@ -627,13 +627,13 @@
             ShowError("Operación fallida", "No se pudo verificar el estado del box.");
             return;
         }
-    
+
         if (!_cerradurasConectadas)
         {
             // Se desconectaron las cerraduras en el medio; la lógica de fuera de servicio se encarga
             return;
         }
-    
+
         BoxStatusDto? status;
         try
         {
@@ -644,17 +644,17 @@
             ShowError("Operación fallida", "No se pudo obtener el estado del box.");
             return;
         }
-    
+
         if (status == null)
         {
             ShowError("Operación fallida", "No se pudo encontrar el box.");
             return;
         }
-    
+
         bool puertaCerrada = status.Puerta;   // true = cerrada
         bool ocupado = status.Ocupacion;      // true = algo adentro
         var accionActual = _accion ?? AssetsAccion.None;
-    
+
         if (puertaCerrada)
         {
             if (accionActual == AssetsAccion.Retiro)
@@ -773,12 +773,12 @@
             ShowError("Operación fallida", "No se pudo verificar el estado del box.");
             return;
         }
-        
+
         if (!_cerradurasConectadas)
         {
             return;
         }
-        
+
         BoxStatusDto? status;
         try
         {
@@ -789,24 +789,24 @@
             ShowError("Operación fallida", "No se pudo obtener el estado del box.");
             return;
         }
-        
+
         if (status == null)
         {
             ShowError("Operación fallida", "No se pudo encontrar el box.");
             return;
         }
-        
+
         bool puertaCerrada = status.Puerta;
         bool ocupado = status.Ocupacion;
         var accionActual = _accion ?? AssetsAccion.None;
-        
+
         if (!puertaCerrada)
         {
             // Sigue abierta por alguna razón → volvemos a la pantalla de puertas abiertas
             await MostrarPantallaPuertasAbiertasYMonitorearAsync();
             return;
         }
-        
+
         if (accionActual == AssetsAccion.Retiro)
         {
             // RETIRO: éxito = cerrada + vacío
@@ -845,9 +845,9 @@
             ShowError("Operación fallida", "No se pudo registrar la operación.");
             return;
         }
-    
+
         var accionActual = _accion ?? AssetsAccion.None;
-    
+
         try
         {
             if (accionActual == AssetsAccion.Retiro)
@@ -883,11 +883,11 @@
         {
             // En el futuro podés loguear; de cara al usuario la operación fue correcta
         }
-    
+
         // Pantalla final de éxito (3s) y luego Reset (porque ShowSuccess llama a ShowResult)
         ShowSuccess("Operación exitosa", null, 3);
     }
-    
+
 
 
     string AssetStateClass(ShortAsset a)
@@ -938,24 +938,24 @@
     }
 
     async Task ProceedDevolucion()
-{
-    if (_selectedAsset == null) return;
-
-    // Guardamos el estado elegido para usarlo luego al registrar el evento
-    _devolEstadoElegido = _devolEstado;
-
-    _loadingText = "Procesando devolución…";
-    _screen = Screen.Loading;
-    StateHasChanged();
-
-    try
     {
-        var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
+        if (_selectedAsset == null) return;
 
-        // Si las cerraduras NO están conectadas, usamos el flujo viejo
-        if (!_cerradurasConectadas)
+        // Guardamos el estado elegido para usarlo luego al registrar el evento
+        _devolEstadoElegido = _devolEstado;
+
+        _loadingText = "Procesando devolución…";
+        _screen = Screen.Loading;
+        StateHasChanged();
+
+        try
         {
-            var evt = new AssetsEventoLocker
+            var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
+
+            // Si las cerraduras NO están conectadas, usamos el flujo viejo
+            if (!_cerradurasConectadas)
+            {
+                var evt = new AssetsEventoLocker
             {
                 IdAsset = _selectedAsset.IdAsset,
                 IdEmpleado = _rfid!,
@@ -964,28 +964,28 @@
                 EstadoNuevo = _devolEstadoElegido,
                 FechaEvento = DateTime.Now
             };
-            await Cliente.ReportEvento(evt);
+                await Cliente.ReportEvento(evt);
 
-            ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
-            return;
+                ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                return;
+            }
+
+            // Cerraduras conectadas → nuevo flujo con verificación (igual que retiro)
+            _boxEnVerificacion = _selectedAsset.IdBox;
+
+            ShowResult(
+                success: true,
+                title: $"Puerta {_selectedAsset.IdBox} abierta.",
+                subtitle: "Por favor, al terminar cierre la puerta. Gracias",
+                seconds: 3,
+                onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
+            );
         }
-
-        // Cerraduras conectadas → nuevo flujo con verificación (igual que retiro)
-        _boxEnVerificacion = _selectedAsset.IdBox;
-
-        ShowResult(
-            success: true,
-            title: $"Puerta {_selectedAsset.IdBox} abierta.",
-            subtitle: "Por favor, al terminar cierre la puerta. Gracias",
-            seconds: 3,
-            onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
-        );
+        catch
+        {
+            ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
+        }
     }
-    catch
-    {
-        ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
-    }
-}
 
 
     void ShowDoorThenFinal(int box)
@@ -1050,7 +1050,7 @@
     {
         _countdownCts?.Cancel();
         _puertasAbiertasCts?.Cancel();
-    
+
         _rfid = null;
         _accion = null;
         _employeeName = "";
