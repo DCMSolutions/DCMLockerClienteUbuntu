@@ -60,9 +60,6 @@ namespace DCMLocker.Server.Controllers
         {
             try
             {
-                //_evento.AddEvento(new Evento($"Pedido de validación token {Token}", "token"));
-                //var ortaWebhook = await _webhookService.SendWebhookAsync("PeticionToken", $"Se envió al servidor el token {Token}", new { Token = Token });
-
                 req.NroSerieLocker = _base.Config.LockerID;
 
                 Uri uri = new Uri(_base.Config.UrlServer, "api/AssetsLocker");
@@ -105,7 +102,7 @@ namespace DCMLocker.Server.Controllers
                     int _CU = _IdBox.GetValueOrDefault() / 16;
                     int _Box = _IdBox.GetValueOrDefault() % 16;
                     _driver.SetBox(_CU, _Box);
-                    
+
                     return Ok(true);
                 }
                 return StatusCode(404);

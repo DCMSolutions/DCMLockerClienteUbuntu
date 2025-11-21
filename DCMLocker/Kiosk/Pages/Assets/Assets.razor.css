@@ -307,3 +307,17 @@
     border: none;
     cursor: pointer;
 }
+
+.puertas-screen .puertas-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.puerta-chip {
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+}

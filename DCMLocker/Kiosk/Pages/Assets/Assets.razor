@@ -8,7 +8,6 @@
     @if (_screen == Screen.Select)
     {
         <div class="select-layout">
-            <!-- Top: imagen grande + mensaje -->
             <div>
                 <div class="select-hero @(string.IsNullOrEmpty(_rfid) ? "image" : "blank")"></div>
 
@@ -67,6 +66,40 @@
             </div>
         </div>
     }
+    else if (_screen == Screen.PuertasAbiertas)
+    {
+        <div class="oos-screen puertas-screen">
+            <button class="hidden-admin-trigger" title=""
+                    @onclick="() => _screen = Screen.SecretPin"
+                    tabindex="-1"></button>
+
+            <div class="oos-content text-center">
+                <div class="oos-icon">⚠️</div>
+                <div class="oos-title">Puertas abiertas</div>
+
+                @if (_boxEnVerificacion != null)
+                {
+                    <div class="oos-code">
+                        La puerta @_boxEnVerificacion está abierta. Por favor, ciérrela para continuar.
+                    </div>
+                }
+
+                @if (_puertasAbiertas.Count > 0)
+                {
+                    <div class="mt-3">
+                        <div>Puertas actualmente abiertas:</div>
+                        <div class="puertas-list mt-2">
+                            @foreach (var id in _puertasAbiertas)
+                            {
+                                <span class="puerta-chip">Box @id</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
     else if (_screen == Screen.SecretPin)
     {
         <div class="kiosk-center text-center">
@@ -160,21 +193,6 @@
             }
         </div>
     }
-    @* else if (_screen == Screen.ConfirmRetiro)
-    {
-        <div class="kiosk-center text-center">
-            <h4 class="mb-3">¿Confirmar retiro?</h4>
-            <div class="mb-3">
-                <div class="lead mb-1">@_selectedAsset?.NombreAsset</div>
-                <div class="text-muted">ID: @_selectedAsset?.IdAsset &nbsp;|&nbsp; Box: @_selectedAsset?.IdBox</div>
-            </div>
-
-            <div>
-                <button class="btn btn-success btn-lg mr-2" @onclick="SendRetiro">Sí, confirmar</button>
-                <button class="btn btn-outline-secondary btn-lg" @onclick="CancelConfirm">No, volver</button>
-            </div>
-        </div>
-    } *@
     else if (_screen == Screen.ScanQr)
     {
         <div class="select-layout">
@@ -327,7 +345,7 @@
 </div>
 
 @code {
-    enum Screen { Select, Loading, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin, FueraServicio }
+    enum Screen { Select, Loading, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin, FueraServicio, PuertasAbiertas }
     Screen _screen = Screen.Select;
 
 
@@ -341,8 +359,9 @@
     private List<ShortAsset> _assets = new();
     private ShortAsset? _selectedAsset;
 
-    // devolución: estado del activo (guardado pero no usado aún para el backend)
+    // devolución: estado del activo 
     private AssetsEstado? _devolEstado;
+    private AssetsEstado? _devolEstadoElegido;
 
     // Resultado UI (éxito / error)
     private string _resTitle = "";
@@ -395,7 +414,10 @@
     private bool _ethernetOk = true;
     private bool _internetOk = true;
 
-
+    //lo de chequeo de sensores
+    private int? _boxEnVerificacion;
+    private CancellationTokenSource? _puertasAbiertasCts;
+    private List<int> _puertasAbiertas = new();
 
     // --- init ---
     protected override async Task OnInitializedAsync()
@@ -565,26 +587,308 @@
         {
             var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
 
-            // evento
-            var evt = new AssetsEventoLocker
+            // Si las cerraduras NO están conectadas, usamos el flujo viejo
+            if (!_cerradurasConectadas)
             {
-                IdAsset = _selectedAsset.IdAsset,
-                IdEmpleado = _rfid!,
-                Evento = AssetsEvento.CheckOut,
-                FechaEvento = DateTime.Now
-            };
-            await Cliente.ReportEvento(evt);
+                var evt = new AssetsEventoLocker
+                {
+                    IdAsset = _selectedAsset.IdAsset,
+                    IdEmpleado = _rfid!,
+                    Evento = AssetsEvento.CheckOut,
+                    FechaEvento = DateTime.Now
+                };
+                await Cliente.ReportEvento(evt);
 
-            // pantalla de éxito (10s)
-            ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                return;
+            }
 
+            // Cerraduras conectadas → nuevo flujo con verificación
+            _boxEnVerificacion = _selectedAsset.IdBox;
+
+            ShowResult(
+                success: true,
+                title: $"Puerta {_selectedAsset.IdBox} abierta.",
+                subtitle: "Por favor, al terminar cierre la puerta. Gracias",
+                seconds: 3,
+                onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
+            );
         }
-        catch (Exception ex)
+        catch
         {
             ShowError("Error al procesar retiro", "Por favor, intente nuevamente o comuníquese con el administrador.");
-
         }
     }
+
+    private async Task VerificarDespuesDePuertaAbiertaAsync()
+    {
+        if (_selectedAsset == null || _boxEnVerificacion == null)
+        {
+            ShowError("Operación fallida", "No se pudo verificar el estado del box.");
+            return;
+        }
+    
+        if (!_cerradurasConectadas)
+        {
+            // Se desconectaron las cerraduras en el medio; la lógica de fuera de servicio se encarga
+            return;
+        }
+    
+        BoxStatusDto? status;
+        try
+        {
+            status = await Cliente.GetBoxStatusPorId(_boxEnVerificacion.Value);
+        }
+        catch
+        {
+            ShowError("Operación fallida", "No se pudo obtener el estado del box.");
+            return;
+        }
+    
+        if (status == null)
+        {
+            ShowError("Operación fallida", "No se pudo encontrar el box.");
+            return;
+        }
+    
+        bool puertaCerrada = status.Puerta;   // true = cerrada
+        bool ocupado = status.Ocupacion;      // true = algo adentro
+        var accionActual = _accion ?? AssetsAccion.None;
+    
+        if (puertaCerrada)
+        {
+            if (accionActual == AssetsAccion.Retiro)
+            {
+                // RETIRO: éxito = puerta cerrada + box vacío
+                if (!ocupado)
+                {
+                    await RegistrarYMostrarExitoFinalAsync();
+                }
+                else
+                {
+                    ShowError("Operación fallida", "El asset no fue retirado.");
+                }
+            }
+            else if (accionActual == AssetsAccion.Devolucion)
+            {
+                // DEVOLUCIÓN: éxito = puerta cerrada + box ocupado
+                if (ocupado)
+                {
+                    await RegistrarYMostrarExitoFinalAsync();
+                }
+                else
+                {
+                    ShowError("Operación fallida", "El asset no fue devuelto.");
+                }
+            }
+            else
+            {
+                ShowError("Operación fallida", "Operación desconocida.");
+            }
+        }
+        else
+        {
+            // Puerta abierta (haya o no asset) → bloqueamos hasta que cierren todas
+            await MostrarPantallaPuertasAbiertasYMonitorearAsync();
+        }
+    }
+
+
+    private async Task MostrarPantallaPuertasAbiertasYMonitorearAsync()
+    {
+        _puertasAbiertasCts?.Cancel();
+        _puertasAbiertasCts = new CancellationTokenSource();
+
+        _screen = Screen.PuertasAbiertas;
+        await InvokeAsync(StateHasChanged);
+
+        _ = MonitorPuertasAbiertasAsync(_puertasAbiertasCts.Token);
+    }
+
+    private async Task MonitorPuertasAbiertasAsync(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            if (!_cerradurasConectadas)
+            {
+                // Fuera de servicio se va a encargar
+                return;
+            }
+
+            List<BoxPuertaDTO> estados;
+            try
+            {
+                estados = await Cliente.GetAllBoxStatus();
+            }
+            catch
+            {
+                await InvokeAsync(() =>
+                {
+                    ShowError("Operación fallida", "No se pudo obtener el estado de las puertas.");
+                });
+                return;
+            }
+
+            var abiertas = estados
+                .Where(b => !b.Puerta)   // false = abierta
+                .Select(b => b.IdBox)
+                .OrderBy(x => x)
+                .ToList();
+
+            await InvokeAsync(() =>
+            {
+                _puertasAbiertas = abiertas;
+                StateHasChanged();
+            });
+
+            if (abiertas.Count == 0)
+            {
+                // Todas cerradas
+                break;
+            }
+
+            try
+            {
+                await Task.Delay(1000, token);
+            }
+            catch
+            {
+                return;
+            }
+        }
+
+        if (!token.IsCancellationRequested)
+        {
+            await InvokeAsync(async () =>
+            {
+                await VerificarBoxAlCerrarAsync();
+            });
+        }
+    }
+
+    private async Task VerificarBoxAlCerrarAsync()
+    {
+        if (_boxEnVerificacion == null || _selectedAsset == null)
+        {
+            ShowError("Operación fallida", "No se pudo verificar el estado del box.");
+            return;
+        }
+        
+        if (!_cerradurasConectadas)
+        {
+            return;
+        }
+        
+        BoxStatusDto? status;
+        try
+        {
+            status = await Cliente.GetBoxStatusPorId(_boxEnVerificacion.Value);
+        }
+        catch
+        {
+            ShowError("Operación fallida", "No se pudo obtener el estado del box.");
+            return;
+        }
+        
+        if (status == null)
+        {
+            ShowError("Operación fallida", "No se pudo encontrar el box.");
+            return;
+        }
+        
+        bool puertaCerrada = status.Puerta;
+        bool ocupado = status.Ocupacion;
+        var accionActual = _accion ?? AssetsAccion.None;
+        
+        if (!puertaCerrada)
+        {
+            // Sigue abierta por alguna razón → volvemos a la pantalla de puertas abiertas
+            await MostrarPantallaPuertasAbiertasYMonitorearAsync();
+            return;
+        }
+        
+        if (accionActual == AssetsAccion.Retiro)
+        {
+            // RETIRO: éxito = cerrada + vacío
+            if (!ocupado)
+            {
+                await RegistrarYMostrarExitoFinalAsync();
+            }
+            else
+            {
+                ShowError("Operación fallida", "El asset no fue retirado.");
+            }
+        }
+        else if (accionActual == AssetsAccion.Devolucion)
+        {
+            // DEVOLUCIÓN: éxito = cerrada + ocupado
+            if (ocupado)
+            {
+                await RegistrarYMostrarExitoFinalAsync();
+            }
+            else
+            {
+                ShowError("Operación fallida", "El asset no fue devuelto.");
+            }
+        }
+        else
+        {
+            ShowError("Operación fallida", "Operación desconocida.");
+        }
+    }
+
+
+    private async Task RegistrarYMostrarExitoFinalAsync()
+    {
+        if (_selectedAsset == null || string.IsNullOrWhiteSpace(_rfid))
+        {
+            ShowError("Operación fallida", "No se pudo registrar la operación.");
+            return;
+        }
+    
+        var accionActual = _accion ?? AssetsAccion.None;
+    
+        try
+        {
+            if (accionActual == AssetsAccion.Retiro)
+            {
+                var evt = new AssetsEventoLocker
+                {
+                    IdAsset = _selectedAsset.IdAsset,
+                    IdEmpleado = _rfid!,
+                    Evento = AssetsEvento.CheckOut,
+                    FechaEvento = DateTime.Now
+                };
+                await Cliente.ReportEvento(evt);
+            }
+            else if (accionActual == AssetsAccion.Devolucion)
+            {
+                var evt = new AssetsEventoLocker
+                {
+                    IdAsset = _selectedAsset.IdAsset,
+                    IdEmpleado = _rfid!,
+                    Box = _selectedAsset.IdBox,
+                    Evento = AssetsEvento.CheckIn,
+                    EstadoNuevo = _devolEstadoElegido,
+                    FechaEvento = DateTime.Now
+                };
+                await Cliente.ReportEvento(evt);
+            }
+            else
+            {
+                // operación desconocida → no mandamos evento
+            }
+        }
+        catch
+        {
+            // En el futuro podés loguear; de cara al usuario la operación fue correcta
+        }
+    
+        // Pantalla final de éxito (3s) y luego Reset (porque ShowSuccess llama a ShowResult)
+        ShowSuccess("Operación exitosa", null, 3);
+    }
+    
+
 
     string AssetStateClass(ShortAsset a)
     {
@@ -604,6 +908,9 @@
     void HandleQrScan(string text)
     {
         var code = text?.Trim();
+        if (code.StartsWith("\\000026"))
+            code = code.Substring(7);
+
         var match = _assets.FirstOrDefault(a => string.Equals(a.IdAsset, code, StringComparison.OrdinalIgnoreCase));
 
         if (match == null)
@@ -631,41 +938,55 @@
     }
 
     async Task ProceedDevolucion()
+{
+    if (_selectedAsset == null) return;
+
+    // Guardamos el estado elegido para usarlo luego al registrar el evento
+    _devolEstadoElegido = _devolEstado;
+
+    _loadingText = "Procesando devolución…";
+    _screen = Screen.Loading;
+    StateHasChanged();
+
+    try
     {
-        if (_selectedAsset == null) return;
+        var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
 
-        // (Guardamos el estado elegido en memoria para usarlo luego en backend si hace falta)
-        var estadoElegido = _devolEstado;
-
-        _loadingText = "Procesando devolución…";
-        _screen = Screen.Loading;
-        StateHasChanged();
-
-        try
+        // Si las cerraduras NO están conectadas, usamos el flujo viejo
+        if (!_cerradurasConectadas)
         {
-            var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
-
-            // evento
             var evt = new AssetsEventoLocker
             {
                 IdAsset = _selectedAsset.IdAsset,
                 IdEmpleado = _rfid!,
                 Box = _selectedAsset.IdBox,
                 Evento = AssetsEvento.CheckIn,
-                EstadoNuevo = estadoElegido,
+                EstadoNuevo = _devolEstadoElegido,
                 FechaEvento = DateTime.Now
             };
             await Cliente.ReportEvento(evt);
 
-            // cadena de éxito: 5s + 10s
-            ShowDoorThenFinal(_selectedAsset.IdBox);
+            ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+            return;
         }
-        catch (Exception ex)
-        {
-            ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
 
-        }
+        // Cerraduras conectadas → nuevo flujo con verificación (igual que retiro)
+        _boxEnVerificacion = _selectedAsset.IdBox;
+
+        ShowResult(
+            success: true,
+            title: $"Puerta {_selectedAsset.IdBox} abierta.",
+            subtitle: "Por favor, al terminar cierre la puerta. Gracias",
+            seconds: 3,
+            onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
+        );
     }
+    catch
+    {
+        ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
+    }
+}
+
 
     void ShowDoorThenFinal(int box)
     {
@@ -728,20 +1049,26 @@
     void Reset()
     {
         _countdownCts?.Cancel();
-
+        _puertasAbiertasCts?.Cancel();
+    
         _rfid = null;
         _accion = null;
         _employeeName = "";
         _assets.Clear();
         _selectedAsset = null;
         _devolEstado = null;
-
+        _devolEstadoElegido = null;
+        _boxEnVerificacion = null;
+        _puertasAbiertas.Clear();
+    
         _screen = _errorCode == LockerErrorCode.None
             ? Screen.Select
             : Screen.FueraServicio;
-
+    
         StateHasChanged();
     }
+    
+
 
     // PANTALLA DE ID
     void PinAdd(string d)
@@ -1035,7 +1362,6 @@
         try { if (QRhubConnection != null) { await QRhubConnection.StopAsync(); await QRhubConnection.DisposeAsync(); } } catch { }
         try { if (_statusHub != null) { await _statusHub.StopAsync(); await _statusHub.DisposeAsync(); } } catch { }
         try { _countdownCts?.Cancel(); } catch { }
+        try { _puertasAbiertasCts?.Cancel(); } catch { }
     }
-
-
 }
