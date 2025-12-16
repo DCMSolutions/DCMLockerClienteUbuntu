@@ -1,4 +1,4 @@
-﻿@page "/assets"
+﻿@page "/assetsRapido"
 
 @implements IAsyncDisposable
 @inject IJSRuntime JS
@@ -12,32 +12,45 @@
                 <div class="select-hero @(string.IsNullOrEmpty(_rfid) ? "image" : "blank")"></div>
 
                 <div class="select-message">
-                    @if (string.IsNullOrEmpty(_rfid))
-                    {
-                        <span>Acerque la tarjeta al lector para comenzar a operar</span>
-                    }
-                    else
-                    {
-                        <span>Bienvenido/a</span>
-                    }
+                    <span>Acerque la tarjeta al lector para comenzar a operar</span>
                 </div>
             </div>
 
-            <!-- Bottom: acciones -->
+            <!-- sin acciones: en assetsRapido se envía la solicitud apenas se lee RFID -->
+            <div></div>
+        </div>
+
+        <button class="hidden-admin-trigger" title=""
+                @onclick="() => _screen = Screen.SecretPin"
+                tabindex="-1"></button>
+    }
+    else if (_screen == Screen.ChooseAccion)
+    {
+        <div class="select-layout">
+            <div>
+                <div class="select-hero blank"></div>
+
+                <div class="select-message">
+                    Bienvenido/a @(_employeeName?.Length > 0 ? _employeeName : "")
+                </div>
+            </div>
+
             <div class="select-bottom">
                 <h6>Seleccione una opción</h6>
                 <div class="select-actions">
-                    <!-- Ingresar ≡ Devolución -->
                     <button class="btn btn-primary option-btn @(IsSelected(AssetsAccion.Devolucion) ? "is-selected" : "")"
-                            @onclick="() => SelectAccion(AssetsAccion.Devolucion)">
+                            @onclick="() => SelectAccionAfterResponse(AssetsAccion.Devolucion)">
                         Ingresar
                     </button>
 
-                    <!-- Retirar ≡ Retiro -->
                     <button class="btn btn-primary option-btn @(IsSelected(AssetsAccion.Retiro) ? "is-selected" : "")"
-                            @onclick="() => SelectAccion(AssetsAccion.Retiro)">
+                            @onclick="() => SelectAccionAfterResponse(AssetsAccion.Retiro)">
                         Retirar
                     </button>
+                </div>
+
+                <div class="text-center mt-3">
+                    <button class="btn btn-cancel option-btn" @onclick="Reset">Cancelar</button>
                 </div>
             </div>
         </div>
@@ -103,13 +116,10 @@
     else if (_screen == Screen.SecretPin)
     {
         <div class="kiosk-center text-center">
-            <!-- Título grande como en el resto -->
             <div class="select-message mb-2">Acceso</div>
 
-            <!-- Dots con altura fija para que no se mueva el teclado -->
             <div class="pin-dots fixed mb-4">@GetPinDots()</div>
 
-            <!-- Teclado en grilla (3x4) con celdas iguales -->
             <div class="keypad-grid">
                 @foreach (var key in new[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "←" })
                 {
@@ -117,7 +127,6 @@
                 }
             </div>
 
-            <!-- Botones grandes y consistentes -->
             <div class="select-actions mt-3">
                 <button class="btn btn-primary option-btn"
                         disabled="@(_pinInput.Length == 0)"
@@ -156,7 +165,6 @@
             }
             else
             {
-                <!-- Card scrolleable: mantiene fijo el header y la botonera -->
                 <div class="card scroll-card shadow-sm">
                     <div class="card-body p-3">
                         <div class="row justify-content-center">
@@ -179,7 +187,6 @@
                     </div>
                 </div>
 
-                <!-- Botonera grande y consistente -->
                 <div class="select-bottom mt-3">
                     <div class="select-actions">
                         <button class="btn btn-primary option-btn"
@@ -196,7 +203,6 @@
     else if (_screen == Screen.ScanQr)
     {
         <div class="select-layout">
-            <!-- Top: imagen grande + mensaje -->
             <div>
                 <div class="select-hero" style="background-image:url('/img/7-rfid-tarjeta.png')"></div>
 
@@ -205,7 +211,6 @@
                 </div>
             </div>
 
-            <!-- Bottom: solo cancelar -->
             <div class="text-center">
                 <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
             </div>
@@ -214,27 +219,24 @@
     else if (_screen == Screen.DevolucionSetEstado)
     {
         <div class="kiosk-up">
-
-            <!-- Info del activo con la misma forma que la lista -->
             <div class="row justify-content-center">
                 <div class="col-12 col-lg-10 col-xl-9 mb-3">
                     <div class="card asset-card shadow-sm border-secondary" style="cursor: default;">
                         <div class="card-body text-center">
-                            <h5 class="mb-2">@_selectedAsset?.NombreAsset</h5>
+                            <h5 class="mb-2">@CurrentAssetNombre</h5>
                             <div class="small text-muted">
-                                ID: @_selectedAsset?.IdAsset &nbsp;|&nbsp; Box: @_selectedAsset?.IdBox
+                                ID: @(string.IsNullOrWhiteSpace(CurrentAssetId) ? "—" : CurrentAssetId)
+                                &nbsp;|&nbsp; Box: @CurrentBox
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Título grande -->
             <div class="select-message mb-3 text-center">
                 Seleccione en qué estado se encuentra el activo
             </div>
 
-            <!-- Opciones (auto-avanza) -->
             <div class="row justify-content-center">
                 <div class="col-sm-6 col-md-5 col-lg-4 mb-4">
                     <div class="card state-card shadow-sm @(_devolEstado == AssetsEstado.Funcional ? "selected" : "border-secondary")"
@@ -251,7 +253,6 @@
                 </div>
             </div>
 
-            <!-- Cancelar (discreto y unificado) -->
             <div class="text-center mt-3">
                 <button class="btn btn-cancel" @onclick="Reset">Cancelar</button>
             </div>
@@ -269,7 +270,6 @@
                 }
             </div>
 
-            <!-- sin botones; countdown corre “por detrás” -->
             <div></div>
         </div>
     }
@@ -346,21 +346,28 @@
 </div>
 
 @code {
-    enum Screen { Select, Loading, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin, FueraServicio, PuertasAbiertas }
+    enum Screen { Select, Loading, ChooseAccion, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin, FueraServicio, PuertasAbiertas }
     Screen _screen = Screen.Select;
-
 
     // entrada
     private string? _rfid;
+
+    // “tipo” de operación actual (para verificación)
     private AssetsAccion? _accion;
 
-
-    // respuesta SendRequest
+    // respuesta SendRequest (assetsRapido)
     private string _employeeName = "";
+    private string _employeeRole = ""; // "Empleado", "Administrador", "Mantenimiento"
+    private AssetRapido? _assetRapido;
+
+    private List<ShortAsset> _assetsRetiro = new();
+    private List<ShortAsset> _assetsDevolucion = new();
+
+    // lista activa (para UI vieja)
     private List<ShortAsset> _assets = new();
     private ShortAsset? _selectedAsset;
 
-    // devolución: estado del activo 
+    // devolución: estado del activo
     private AssetsEstado? _devolEstado;
     private AssetsEstado? _devolEstadoElegido;
 
@@ -369,24 +376,22 @@
     private string? _resSubtitle;
     private string _resImage = "";
 
-    // Countdown de resultado (nuevo default 10s)
+    // Countdown
     private int _countdown = 10;
 
-
-    // resultado final
+    // control flujo
     private CancellationTokenSource? _countdownCts;
     private bool _sending;
     private string _loadingText = "Enviando solicitud…";
 
     // JS / SignalR
     private IJSObjectReference? _scannerModule;
-    private DotNetObjectReference<Assets>? _selfRef;
+    private DotNetObjectReference<AssetsRapido>? _selfRef;
     private HubConnection? _hub;            // RFID
     private HubConnection? QRhubConnection; // QR
-    // Hub de estado (STATUS + cerraduras)
-    private HubConnection? _statusHub;
+    private HubConnection? _statusHub;      // STATUS + CERRADURAS
 
-    // para el pin para la pantalla de seguridad 
+    // pin
     private string _pinInput = "";
     private const int _pinMax = 8;
     private const string _adminPin = "39426641";
@@ -398,16 +403,16 @@
     private List<string> _adminIPs = new();
     private string? _adminMsg;
 
-    // lo de fuera de servicio
+    // fuera de servicio
     enum LockerErrorCode
     {
         None = 0,
-        Cerraduras = 1,          // 01
-        Servidor = 2,            // 02
-        RedEthernet = 3,         // 03
-        Internet = 4,            // 04
-        CerradurasYInternet = 5, // 05
-        Inesperado = 99          // 99
+        Cerraduras = 1,
+        Servidor = 2,
+        RedEthernet = 3,
+        Internet = 4,
+        CerradurasYInternet = 5,
+        Inesperado = 99
     }
     private LockerErrorCode _errorCode = LockerErrorCode.None;
     private bool _cerradurasConectadas = true;
@@ -415,15 +420,26 @@
     private bool _ethernetOk = true;
     private bool _internetOk = true;
 
-    //lo de chequeo de sensores
+    // chequeo sensores/puertas
     private int? _boxEnVerificacion;
     private CancellationTokenSource? _puertasAbiertasCts;
     private List<int> _puertasAbiertas = new();
 
+    // helpers de “asset actual” (sirve para admin y para normal)
+    private int CurrentBox => _selectedAsset?.IdBox ?? _assetRapido?.IdBox ?? 0;
+    private string CurrentAssetNombre => _selectedAsset?.NombreAsset ?? _assetRapido?.NombreAsset ?? string.Empty;
+    private string? CurrentAssetId => _selectedAsset?.IdAsset;
+
+    private bool EsRolNormal()
+        => string.Equals(_employeeRole, "Empleado", StringComparison.OrdinalIgnoreCase);
+
+    private bool EsRolPrivilegiado()
+        => string.Equals(_employeeRole, "Administrador", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(_employeeRole, "Mantenimiento", StringComparison.OrdinalIgnoreCase);
+
     // --- init ---
     protected override async Task OnInitializedAsync()
     {
-        // Hub de QR
         QRhubConnection = new HubConnectionBuilder()
             .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
             .WithAutomaticReconnect()
@@ -431,11 +447,10 @@
 
         QRhubConnection.On<string>("ReceiveToken", (string text) =>
         {
-            if (_screen != Screen.ScanQr) return;      // solo escuchamos durante el escaneo de QR
+            if (_screen != Screen.ScanQr) return;
             HandleQrScan(text);
         });
 
-        // Hub de RFID
         _hub = new HubConnectionBuilder()
             .WithUrl(Nav.ToAbsoluteUri("/RFIDReaderHub"))
             .WithAutomaticReconnect()
@@ -443,7 +458,6 @@
 
         _hub.On<string>("ReceiveRFID", token =>
         {
-            Console.WriteLine(token);
             if (_screen != Screen.Select) return;
             SetRfid(token);
         });
@@ -453,8 +467,6 @@
 
         await InitializeStatusAsync();
 
-        // 2) Hub de estado (ServerHub: STATUS + UpdateCerraduras)
-        //    Ajustá "/serverhub" si tu hub está mapeado con otro path.
         _statusHub = new HubConnectionBuilder()
             .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
             .WithAutomaticReconnect()
@@ -464,7 +476,6 @@
         _statusHub.On<string>("CERRADURAS", OnCerradurasChanged);
 
         await _statusHub.StartAsync();
-
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -488,77 +499,106 @@
     private void SetRfid(string token)
     {
         _rfid = token;
-        _ = TryProceedAsync();
+        _ = StartRapidoFlowAsync();
         StateHasChanged();
     }
 
     bool IsSelected(AssetsAccion a) => _accion == a;
-    void SelectAccion(AssetsAccion a)
-    {
-        if (_accion == a)
-        {
-            // si toco la misma, deselecciono
-            _accion = null;
-            StateHasChanged();
-            return;
-        }
 
-        _accion = a;
-        _ = TryProceedAsync();
-        StateHasChanged();
-    }
-
-    // --- paso 1: enviar solicitud y ramificar ---
-    async Task TryProceedAsync()
+    // --- Paso 1: enviar solicitud (sin elegir retiro/devolución) ---
+    async Task StartRapidoFlowAsync()
     {
         if (_sending) return;
-        if (string.IsNullOrWhiteSpace(_rfid) || _accion is null) return;
+        if (string.IsNullOrWhiteSpace(_rfid)) return;
 
         _sending = true;
-        _loadingText = "Enviando solicitud…";
+        _loadingText = "Consultando…";
         _screen = Screen.Loading;
         StateHasChanged();
 
         try
         {
-            var req = new AssetsRequest { IdEmpleado = _rfid!, Accion = _accion.Value };
-            var resp = await Cliente.SendRequest(req);
+            var req = new AssetsRapidoRequest
+            {
+                IdEmpleado = _rfid!
+                // Si tu request requiere algo más (ej. NroSerieLocker), agregalo acá.
+            };
+
+            var resp = await Cliente.SendRequestRapida(req);
 
             _employeeName = resp?.NombreEmpleado ?? "";
-            _assets = resp?.AssetsList ?? new List<ShortAsset>();
+            _employeeRole = resp?.RolEmpleado ?? "";
+            _assetRapido = resp?.AssetRapido;
+
+            _assetsRetiro = resp?.AssetsRetiroList ?? new List<ShortAsset>();
+            _assetsDevolucion = resp?.AssetsDevolucionList ?? new List<ShortAsset>();
 
             if (string.IsNullOrWhiteSpace(_employeeName))
             {
-                ShowError("Usuario no registrado", "Por favor, comuniquese con el administrador. Gracias.");
+                ShowError("Usuario no registrado", "Por favor, comuníquese con el administrador. Gracias.");
                 return;
             }
 
-            if (_accion == AssetsAccion.Retiro)
+            // Rol normal: el server decide retiro/devolución + box; se saltean pantallas.
+            if (EsRolNormal())
             {
-                if (_assets.Count == 0)
+                if (_assetRapido == null || _assetRapido.IdBox <= 0)
                 {
-                    ShowError($"No hay activos disponibles para {_employeeName}");
+                    ShowError("Operación no disponible", "No se pudo determinar el box a utilizar.");
                     return;
                 }
 
-                _selectedAsset = null;
-                _screen = Screen.ChooseAsset;
+                _accion = _assetRapido.IsRetiro ? AssetsAccion.Retiro : AssetsAccion.Devolucion;
+
+                if (_accion == AssetsAccion.Retiro)
+                {
+                    // Retiro rápido: abre directo el box
+                    _selectedAsset = null;
+                    _assets.Clear();
+                    await SendRetiro();
+                }
+                else
+                {
+                    // Devolución rápida: primero elige estado, luego abre
+                    _selectedAsset = null;
+                    _assets.Clear();
+                    _devolEstado = null;
+                    _devolEstadoElegido = null;
+                    _screen = Screen.DevolucionSetEstado;
+                    StateHasChanged();
+                }
+
+                return;
             }
-            else // Devolución
-            {
-                if (_assets.Count == 0)
-                {
-                    ShowError("No hay activos disponibles para devolución", "Por favor, intente en otro momento. Gracias.");
-                    return;
-                }
 
+            // Admin/Mantenimiento: elegimos retiro/devolución después de recibir la data
+            if (EsRolPrivilegiado())
+            {
+                _accion = null;
                 _selectedAsset = null;
+                _assets.Clear();
+                _screen = Screen.ChooseAccion;
+                StateHasChanged();
+                return;
+            }
+
+            // Fallback (rol desconocido): tratamos como “normal”
+            if (_assetRapido == null || _assetRapido.IdBox <= 0)
+            {
+                ShowError("Operación no disponible", "No se pudo determinar el box a utilizar.");
+                return;
+            }
+
+            _accion = _assetRapido.IsRetiro ? AssetsAccion.Retiro : AssetsAccion.Devolucion;
+            if (_accion == AssetsAccion.Retiro) await SendRetiro();
+            else
+            {
                 _devolEstado = null;
-                _screen = Screen.ScanQr; // esperar QR del activo
+                _devolEstadoElegido = null;
+                _screen = Screen.DevolucionSetEstado;
             }
-
         }
-        catch (Exception ex)
+        catch
         {
             ShowError("Error procesando la solicitud", "Por favor, intente nuevamente o comuníquese con el administrador.");
         }
@@ -569,8 +609,45 @@
         }
     }
 
+    // --- Paso 2: Admin/Mantenimiento eligen acción con la respuesta ya recibida ---
+    void SelectAccionAfterResponse(AssetsAccion a)
+    {
+        _accion = a;
+
+        if (_accion == AssetsAccion.Retiro)
+        {
+            _assets = _assetsRetiro ?? new List<ShortAsset>();
+
+            if (_assets.Count == 0)
+            {
+                ShowError($"No hay activos disponibles para {_employeeName}");
+                return;
+            }
+
+            _selectedAsset = null;
+            _screen = Screen.ChooseAsset;
+            StateHasChanged();
+            return;
+        }
+
+        // Devolución
+        _assets = _assetsDevolucion ?? new List<ShortAsset>();
+
+        if (_assets.Count == 0)
+        {
+            ShowError("No hay activos disponibles para devolución", "Por favor, intente en otro momento. Gracias.");
+            return;
+        }
+
+        _selectedAsset = null;
+        _devolEstado = null;
+        _screen = Screen.ScanQr; // conserva el flujo viejo para admin/mantenimiento
+        StateHasChanged();
+    }
+
     // --- RETIRO ---
     void SelectAsset(ShortAsset a) => _selectedAsset = a;
+
     async Task GoConfirmRetiro()
     {
         if (_selectedAsset == null) return;
@@ -579,37 +656,43 @@
 
     async Task SendRetiro()
     {
-        if (_selectedAsset == null) return;
+        var box = CurrentBox;
+        if (box <= 0) return;
+
         _loadingText = "Procesando retiro…";
         _screen = Screen.Loading;
         StateHasChanged();
 
         try
         {
-            var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
+            await Cliente.OpenBoxByFisico(box);
 
-            // Si las cerraduras NO están conectadas, usamos el flujo viejo
+            // Cerraduras NO conectadas: flujo viejo (sin verificación)
             if (!_cerradurasConectadas)
             {
-                var evt = new AssetsEventoLocker
+                // Solo reportamos evento si tenemos IdAsset (admin/mantenimiento).
+                if (_selectedAsset != null && !string.IsNullOrWhiteSpace(_rfid))
                 {
-                    IdAsset = _selectedAsset.IdAsset,
-                    IdEmpleado = _rfid!,
-                    Evento = AssetsEvento.CheckOut,
-                    FechaEvento = DateTime.Now
-                };
-                await Cliente.ReportEvento(evt);
+                    var evt = new AssetsEventoLocker
+                    {
+                        IdAsset = _selectedAsset.IdAsset,
+                        IdEmpleado = _rfid!,
+                        Evento = AssetsEvento.CheckOut,
+                        FechaEvento = DateTime.Now
+                    };
+                    await Cliente.ReportEvento(evt);
+                }
 
-                ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                ShowSuccess($"Puerta {box} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
                 return;
             }
 
-            // Cerraduras conectadas → nuevo flujo con verificación
-            _boxEnVerificacion = _selectedAsset.IdBox;
+            // Cerraduras conectadas: verificación por sensores
+            _boxEnVerificacion = box;
 
             ShowResult(
                 success: true,
-                title: $"Puerta {_selectedAsset.IdBox} abierta.",
+                title: $"Puerta {box} abierta.",
                 subtitle: "Por favor, al terminar cierre la puerta. Gracias",
                 seconds: 3,
                 onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
@@ -621,19 +704,104 @@
         }
     }
 
+    // --- DEVOLUCIÓN (admin: con QR / normal: sin QR, solo estado) ---
+    void HandleQrScan(string text)
+    {
+        var code = text?.Trim();
+        if (code.StartsWith("\\000026"))
+            code = code.Substring(7);
+
+        var match = _assets.FirstOrDefault(a => string.Equals(a.IdAsset, code, StringComparison.OrdinalIgnoreCase));
+
+        if (match == null)
+        {
+            ShowError("Activo no registrado", "Por favor, comuníquese con el administrador. Gracias.");
+            return;
+        }
+
+        if (match.IdBox == 0)
+        {
+            ShowError("No hay boxes disponibles", "Por favor, intente en otro momento. Gracias.");
+            return;
+        }
+
+        _selectedAsset = match;
+        _devolEstado = null;
+        _screen = Screen.DevolucionSetEstado;
+        StateHasChanged();
+    }
+
+    async Task SelectEstadoAndProceed(AssetsEstado estado)
+    {
+        _devolEstado = estado;
+        await ProceedDevolucion();
+    }
+
+    async Task ProceedDevolucion()
+    {
+        var box = CurrentBox;
+        if (box <= 0) return;
+
+        _devolEstadoElegido = _devolEstado;
+
+        _loadingText = "Procesando devolución…";
+        _screen = Screen.Loading;
+        StateHasChanged();
+
+        try
+        {
+            await Cliente.OpenBoxByFisico(box);
+
+            // Cerraduras NO conectadas: flujo viejo (sin verificación)
+            if (!_cerradurasConectadas)
+            {
+                // Solo reportamos evento si tenemos IdAsset (admin/mantenimiento).
+                if (_selectedAsset != null && !string.IsNullOrWhiteSpace(_rfid))
+                {
+                    var evt = new AssetsEventoLocker
+                    {
+                        IdAsset = _selectedAsset.IdAsset,
+                        IdEmpleado = _rfid!,
+                        Box = box,
+                        Evento = AssetsEvento.CheckIn,
+                        EstadoNuevo = _devolEstadoElegido,
+                        FechaEvento = DateTime.Now
+                    };
+                    await Cliente.ReportEvento(evt);
+                }
+
+                ShowSuccess($"Puerta {box} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                return;
+            }
+
+            // Cerraduras conectadas: verificación por sensores
+            _boxEnVerificacion = box;
+
+            ShowResult(
+                success: true,
+                title: $"Puerta {box} abierta.",
+                subtitle: "Por favor, al terminar cierre la puerta. Gracias",
+                seconds: 3,
+                onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
+            );
+        }
+        catch
+        {
+            ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
+        }
+    }
+
+    // --- Verificación de sensores / puertas (idéntica lógica, sin depender de _selectedAsset) ---
     private async Task VerificarDespuesDePuertaAbiertaAsync()
     {
-        if (_selectedAsset == null || _boxEnVerificacion == null)
+        if (_boxEnVerificacion == null)
         {
             ShowError("Operación fallida", "No se pudo verificar el estado del box.");
             return;
         }
 
         if (!_cerradurasConectadas)
-        {
-            // Se desconectaron las cerraduras en el medio; la lógica de fuera de servicio se encarga
             return;
-        }
 
         BoxStatusDto? status;
         try
@@ -660,27 +828,13 @@
         {
             if (accionActual == AssetsAccion.Retiro)
             {
-                // RETIRO: éxito = puerta cerrada + box vacío
-                if (!ocupado)
-                {
-                    await RegistrarYMostrarExitoFinalAsync();
-                }
-                else
-                {
-                    ShowError("Operación fallida", "El asset no fue retirado.");
-                }
+                if (!ocupado) await RegistrarYMostrarExitoFinalAsync();
+                else ShowError("Operación fallida", "El asset no fue retirado.");
             }
             else if (accionActual == AssetsAccion.Devolucion)
             {
-                // DEVOLUCIÓN: éxito = puerta cerrada + box ocupado
-                if (ocupado)
-                {
-                    await RegistrarYMostrarExitoFinalAsync();
-                }
-                else
-                {
-                    ShowError("Operación fallida", "El asset no fue devuelto.");
-                }
+                if (ocupado) await RegistrarYMostrarExitoFinalAsync();
+                else ShowError("Operación fallida", "El asset no fue devuelto.");
             }
             else
             {
@@ -689,11 +843,9 @@
         }
         else
         {
-            // Puerta abierta (haya o no asset) → bloqueamos hasta que cierren todas
             await MostrarPantallaPuertasAbiertasYMonitorearAsync();
         }
     }
-
 
     private async Task MostrarPantallaPuertasAbiertasYMonitorearAsync()
     {
@@ -711,10 +863,7 @@
         while (!token.IsCancellationRequested)
         {
             if (!_cerradurasConectadas)
-            {
-                // Fuera de servicio se va a encargar
                 return;
-            }
 
             List<BoxPuertaDTO> estados;
             try
@@ -723,15 +872,12 @@
             }
             catch
             {
-                await InvokeAsync(() =>
-                {
-                    ShowError("Operación fallida", "No se pudo obtener el estado de las puertas.");
-                });
+                await InvokeAsync(() => ShowError("Operación fallida", "No se pudo obtener el estado de las puertas."));
                 return;
             }
 
             var abiertas = estados
-                .Where(b => !b.Puerta)   // false = abierta
+                .Where(b => !b.Puerta)
                 .Select(b => b.IdBox)
                 .OrderBy(x => x)
                 .ToList();
@@ -742,43 +888,28 @@
                 StateHasChanged();
             });
 
-            if (abiertas.Count == 0)
-            {
-                // Todas cerradas
-                break;
-            }
+            if (abiertas.Count == 0) break;
 
-            try
-            {
-                await Task.Delay(1000, token);
-            }
-            catch
-            {
-                return;
-            }
+            try { await Task.Delay(1000, token); }
+            catch { return; }
         }
 
         if (!token.IsCancellationRequested)
         {
-            await InvokeAsync(async () =>
-            {
-                await VerificarBoxAlCerrarAsync();
-            });
+            await InvokeAsync(async () => await VerificarBoxAlCerrarAsync());
         }
     }
 
     private async Task VerificarBoxAlCerrarAsync()
     {
-        if (_boxEnVerificacion == null || _selectedAsset == null)
+        if (_boxEnVerificacion == null)
         {
             ShowError("Operación fallida", "No se pudo verificar el estado del box.");
             return;
         }
 
         if (!_cerradurasConectadas)
-        {
             return;
-        }
 
         BoxStatusDto? status;
         try
@@ -803,34 +934,19 @@
 
         if (!puertaCerrada)
         {
-            // Sigue abierta por alguna razón → volvemos a la pantalla de puertas abiertas
             await MostrarPantallaPuertasAbiertasYMonitorearAsync();
             return;
         }
 
         if (accionActual == AssetsAccion.Retiro)
         {
-            // RETIRO: éxito = cerrada + vacío
-            if (!ocupado)
-            {
-                await RegistrarYMostrarExitoFinalAsync();
-            }
-            else
-            {
-                ShowError("Operación fallida", "El asset no fue retirado.");
-            }
+            if (!ocupado) await RegistrarYMostrarExitoFinalAsync();
+            else ShowError("Operación fallida", "El asset no fue retirado.");
         }
         else if (accionActual == AssetsAccion.Devolucion)
         {
-            // DEVOLUCIÓN: éxito = cerrada + ocupado
-            if (ocupado)
-            {
-                await RegistrarYMostrarExitoFinalAsync();
-            }
-            else
-            {
-                ShowError("Operación fallida", "El asset no fue devuelto.");
-            }
+            if (ocupado) await RegistrarYMostrarExitoFinalAsync();
+            else ShowError("Operación fallida", "El asset no fue devuelto.");
         }
         else
         {
@@ -838,10 +954,9 @@
         }
     }
 
-
     private async Task RegistrarYMostrarExitoFinalAsync()
     {
-        if (_selectedAsset == null || string.IsNullOrWhiteSpace(_rfid))
+        if (string.IsNullOrWhiteSpace(_rfid))
         {
             ShowError("Operación fallida", "No se pudo registrar la operación.");
             return;
@@ -851,157 +966,55 @@
 
         try
         {
-            if (accionActual == AssetsAccion.Retiro)
+            // Nota: en modo rápido para rol “Empleado”, no tenemos IdAsset (solo box).
+            // Si querés registrar evento también en ese caso, necesitás:
+            // - agregar IdAsset a AssetRapido, o
+            // - crear un endpoint tipo ReportEventoRapido(box, empleado, accion, estado).
+            if (_selectedAsset != null)
             {
-                var evt = new AssetsEventoLocker
+                if (accionActual == AssetsAccion.Retiro)
                 {
-                    IdAsset = _selectedAsset.IdAsset,
-                    IdEmpleado = _rfid!,
-                    Evento = AssetsEvento.CheckOut,
-                    FechaEvento = DateTime.Now
-                };
-                await Cliente.ReportEvento(evt);
-            }
-            else if (accionActual == AssetsAccion.Devolucion)
-            {
-                var evt = new AssetsEventoLocker
+                    var evt = new AssetsEventoLocker
+                    {
+                        IdAsset = _selectedAsset.IdAsset,
+                        IdEmpleado = _rfid!,
+                        Evento = AssetsEvento.CheckOut,
+                        FechaEvento = DateTime.Now
+                    };
+                    await Cliente.ReportEvento(evt);
+                }
+                else if (accionActual == AssetsAccion.Devolucion)
                 {
-                    IdAsset = _selectedAsset.IdAsset,
-                    IdEmpleado = _rfid!,
-                    Box = _selectedAsset.IdBox,
-                    Evento = AssetsEvento.CheckIn,
-                    EstadoNuevo = _devolEstadoElegido,
-                    FechaEvento = DateTime.Now
-                };
-                await Cliente.ReportEvento(evt);
-            }
-            else
-            {
-                // operación desconocida → no mandamos evento
+                    var evt = new AssetsEventoLocker
+                    {
+                        IdAsset = _selectedAsset.IdAsset,
+                        IdEmpleado = _rfid!,
+                        Box = _selectedAsset.IdBox,
+                        Evento = AssetsEvento.CheckIn,
+                        EstadoNuevo = _devolEstadoElegido,
+                        FechaEvento = DateTime.Now
+                    };
+                    await Cliente.ReportEvento(evt);
+                }
             }
         }
         catch
         {
-            // En el futuro podés loguear; de cara al usuario la operación fue correcta
+            // silencioso: de cara al usuario la operación fue correcta
         }
 
-        // Pantalla final de éxito (3s) y luego Reset (porque ShowSuccess llama a ShowResult)
         ShowSuccess("Operación exitosa", null, 3);
     }
 
-
-
+    // --- UI helpers ---
     string AssetStateClass(ShortAsset a)
-    {
-        // Rojo si Defectuoso; Amarillo si NO es Funcional ; (Funcional sin clase)
-        return a.Estado == AssetsEstado.Defectuoso
-            ? "asset-defectuoso"
-            : (a.Estado == AssetsEstado.Funcional ? "" : "asset-warning");
-    }
+        => a.Estado == AssetsEstado.Defectuoso ? "asset-defectuoso"
+         : (a.Estado == AssetsEstado.Funcional ? "" : "asset-warning");
 
     string AssetCardClasses(ShortAsset a, bool isSel)
     {
         var state = AssetStateClass(a);
         return $"{(isSel ? "selected" : "border-secondary")} {state}".Trim();
-    }
-
-    // --- DEVOLUCIÓN ---
-    void HandleQrScan(string text)
-    {
-        var code = text?.Trim();
-        if (code.StartsWith("\\000026"))
-            code = code.Substring(7);
-
-        var match = _assets.FirstOrDefault(a => string.Equals(a.IdAsset, code, StringComparison.OrdinalIgnoreCase));
-
-        if (match == null)
-        {
-            ShowError("Activo no registrado", "Por favor, comuniquese con el administrador. Gracias.");
-            return;
-        }
-
-        if (match.IdBox == 0)
-        {
-            ShowError("No hay boxes disponibles", "Por favor, intente en otro momento. Gracias.");
-            return;
-        }
-
-        _selectedAsset = match;
-        _devolEstado = null;
-        _screen = Screen.DevolucionSetEstado;
-        StateHasChanged();
-    }
-
-    async Task SelectEstadoAndProceed(AssetsEstado estado)
-    {
-        _devolEstado = estado;
-        await ProceedDevolucion();
-    }
-
-    async Task ProceedDevolucion()
-    {
-        if (_selectedAsset == null) return;
-
-        // Guardamos el estado elegido para usarlo luego al registrar el evento
-        _devolEstadoElegido = _devolEstado;
-
-        _loadingText = "Procesando devolución…";
-        _screen = Screen.Loading;
-        StateHasChanged();
-
-        try
-        {
-            var ret = await Cliente.OpenBoxByFisico(_selectedAsset.IdBox);
-
-            // Si las cerraduras NO están conectadas, usamos el flujo viejo
-            if (!_cerradurasConectadas)
-            {
-                var evt = new AssetsEventoLocker
-            {
-                IdAsset = _selectedAsset.IdAsset,
-                IdEmpleado = _rfid!,
-                Box = _selectedAsset.IdBox,
-                Evento = AssetsEvento.CheckIn,
-                EstadoNuevo = _devolEstadoElegido,
-                FechaEvento = DateTime.Now
-            };
-                await Cliente.ReportEvento(evt);
-
-                ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
-                return;
-            }
-
-            // Cerraduras conectadas → nuevo flujo con verificación (igual que retiro)
-            _boxEnVerificacion = _selectedAsset.IdBox;
-
-            ShowResult(
-                success: true,
-                title: $"Puerta {_selectedAsset.IdBox} abierta.",
-                subtitle: "Por favor, al terminar cierre la puerta. Gracias",
-                seconds: 3,
-                onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
-            );
-        }
-        catch
-        {
-            ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
-        }
-    }
-
-
-    void ShowDoorThenFinal(int box)
-    {
-        // 1) 5s “Puerta abierta…”
-        ShowResult(true,
-            $"Puerta {box} abierta.",
-            "Por favor, al terminar cierre la puerta. Gracias",
-            3,
-            onFinished: async () =>
-            {
-                // 2) 3s “Operación exitosa”
-                ShowSuccess("Operación exitosa", null, 3);
-                await Task.CompletedTask;
-            });
     }
 
     // --- Result + countdown ---
@@ -1016,7 +1029,6 @@
         _countdownCts?.Cancel();
         _countdownCts = new CancellationTokenSource();
 
-        // por defecto, al finalizar volvemos a la pantalla inicial
         _ = StartCountdownAsync(seconds, _countdownCts.Token, onFinished ?? (async () => Reset()));
         StateHasChanged();
     }
@@ -1046,32 +1058,38 @@
         }
     }
 
-
     void Reset()
     {
         _countdownCts?.Cancel();
         _puertasAbiertasCts?.Cancel();
 
         _rfid = null;
+
         _accion = null;
         _employeeName = "";
+        _employeeRole = "";
+        _assetRapido = null;
+
+        _assetsRetiro.Clear();
+        _assetsDevolucion.Clear();
+
         _assets.Clear();
         _selectedAsset = null;
+
         _devolEstado = null;
         _devolEstadoElegido = null;
+
         _boxEnVerificacion = null;
         _puertasAbiertas.Clear();
-    
+
         _screen = _errorCode == LockerErrorCode.None
             ? Screen.Select
             : Screen.FueraServicio;
-    
+
         StateHasChanged();
     }
-    
 
-
-    // PANTALLA DE ID
+    // --- PIN ---
     void PinAdd(string d)
     {
         if (_pinInput.Length < _pinMax)
@@ -1094,7 +1112,6 @@
             : Screen.FueraServicio;
     }
 
-
     async Task SubmitPin()
     {
         var pin = _pinInput;
@@ -1108,7 +1125,6 @@
         }
         else
         {
-            // PIN incorrecto → volver a la pantalla principal
             PinCancel();
         }
     }
@@ -1135,7 +1151,7 @@
         {
             _adminVersion = await Cliente.GetVersion();
             _adminFecha = await Cliente.GetFecha();
-            var nets = await Cliente.System_GetIP(); // devuelve SystemNetwork[]
+            var nets = await Cliente.System_GetIP();
             if (nets != null)
                 _adminIPs = nets
                     .Select(n => n?.IP)
@@ -1197,9 +1213,7 @@
             : Screen.FueraServicio;
     }
 
-
-
-    // lo de conexion:
+    // --- estado de conexión (igual que antes) ---
     private async Task InitializeStatusAsync()
     {
         try
@@ -1207,10 +1221,7 @@
             try
             {
                 var estadoCerraduras = await Cliente.GetEstadoCerraduras();
-                _cerradurasConectadas = string.Equals(
-                    estadoCerraduras,
-                    "Conectadas",
-                    StringComparison.OrdinalIgnoreCase);
+                _cerradurasConectadas = string.Equals(estadoCerraduras, "Conectadas", StringComparison.OrdinalIgnoreCase);
             }
             catch
             {
@@ -1234,14 +1245,8 @@
                 _ethernetOk = true;
             }
 
-            try
-            {
-                _serverOk = await Cliente.PingServer();
-            }
-            catch
-            {
-                _serverOk = false;
-            }
+            try { _serverOk = await Cliente.PingServer(); }
+            catch { _serverOk = false; }
 
             _internetOk = _serverOk;
 
@@ -1254,31 +1259,17 @@
         }
     }
 
-
     private void OnStatusChanged(string status)
     {
         try
         {
             switch (status)
             {
-                case "Desconexion de red":
-                    _ethernetOk = false;
-                    break;
-
-                case "Desconexion del servidor":
-                    _serverOk = false;
-                    break;
-
-                case "Desconexion de internet":
-                    _internetOk = false;
-                    break;
-
+                case "Desconexion de red": _ethernetOk = false; break;
+                case "Desconexion del servidor": _serverOk = false; break;
+                case "Desconexion de internet": _internetOk = false; break;
                 case "Conexion al servidor":
-                    _serverOk = true;
-                    _ethernetOk = true;
-                    _internetOk = true;
-                    break;
-
+                    _serverOk = true; _ethernetOk = true; _internetOk = true; break;
                 default:
                     _errorCode = LockerErrorCode.Inesperado;
                     _screen = Screen.FueraServicio;
@@ -1299,9 +1290,7 @@
 
     private void OnCerradurasChanged(string estado)
     {
-        _cerradurasConectadas = string.Equals(estado, "Conectadas",
-            StringComparison.OrdinalIgnoreCase);
-
+        _cerradurasConectadas = string.Equals(estado, "Conectadas", StringComparison.OrdinalIgnoreCase);
         RecalculateErrorCode();
         InvokeAsync(StateHasChanged);
     }
@@ -1310,24 +1299,21 @@
     {
         LockerErrorCode nuevo;
 
-        // 05: cerraduras + cualquier error de red/servidor/internet
         if (!_cerradurasConectadas && (!_ethernetOk || !_serverOk || !_internetOk))
             nuevo = LockerErrorCode.CerradurasYInternet;
         else if (!_cerradurasConectadas)
-            nuevo = LockerErrorCode.Cerraduras;      // 01
+            nuevo = LockerErrorCode.Cerraduras;
         else if (!_serverOk)
-            nuevo = LockerErrorCode.Servidor;        // 02
+            nuevo = LockerErrorCode.Servidor;
         else if (!_ethernetOk)
-            nuevo = LockerErrorCode.RedEthernet;     // 03
+            nuevo = LockerErrorCode.RedEthernet;
         else if (!_internetOk)
-            nuevo = LockerErrorCode.Internet;        // 04
+            nuevo = LockerErrorCode.Internet;
         else
             nuevo = LockerErrorCode.None;
 
         _errorCode = nuevo;
 
-        // Si hay error: siempre vamos a FueraServicio.
-        // Si se recupera: si estábamos en FueraServicio volvemos a Select.
         if (_errorCode == LockerErrorCode.None)
         {
             if (_screen == Screen.FueraServicio)
@@ -1361,7 +1347,6 @@
         _ => ""
     };
 
-
     // --- dispose ---
     public async ValueTask DisposeAsync()
     {
@@ -1371,6 +1356,7 @@
         try { if (_hub != null) { await _hub.StopAsync(); await _hub.DisposeAsync(); } } catch { }
         try { if (QRhubConnection != null) { await QRhubConnection.StopAsync(); await QRhubConnection.DisposeAsync(); } } catch { }
         try { if (_statusHub != null) { await _statusHub.StopAsync(); await _statusHub.DisposeAsync(); } } catch { }
+
         try { _countdownCts?.Cancel(); } catch { }
         try { _puertasAbiertasCts?.Cancel(); } catch { }
     }

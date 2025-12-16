@@ -12,6 +12,11 @@ namespace DCMLocker.Shared
         public string NroSerieLocker { get; set; } = string.Empty;
         public AssetsAccion Accion { get; set; } = AssetsAccion.None;
     }
+    public class AssetsRapidoRequest
+    {
+        public string IdEmpleado { get; set; } = string.Empty;
+        public string NroSerieLocker { get; set; } = string.Empty;
+    }
 
     public enum AssetsAccion
     {
@@ -25,6 +30,22 @@ namespace DCMLocker.Shared
     {
         public string NombreEmpleado { get; set; } = string.Empty;
         public List<ShortAsset> AssetsList { get; set; } = new List<ShortAsset>();
+    }
+
+    public class AssetsRapidoResponse
+    {
+        public string NombreEmpleado { get; set; } = string.Empty;
+        public string RolEmpleado { get; set; } = string.Empty;
+        public AssetRapido? AssetRapido { get; set; } = new();
+        public List<ShortAsset>? AssetsRetiroList { get; set; } = new List<ShortAsset>();
+        public List<ShortAsset>? AssetsDevolucionList { get; set; } = new List<ShortAsset>();
+    }
+
+    public class AssetRapido
+    {
+        public string NombreAsset { get; set; } = string.Empty;
+        public int IdBox { get; set; }
+        public bool IsRetiro { get; set; }
     }
 
     public class ShortAsset

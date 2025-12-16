@@ -910,6 +910,38 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
+        public async Task<bool> System_ResetChromium()
+        {
+            var token = await _auth.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                _cliente.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+            try
+            {
+                var r = await _cliente.PostAsJsonAsync($"System/ResetChromium", "");
+                if (r.StatusCode == System.Net.HttpStatusCode.OK) return true;
+                return false;
+            }
+            catch (HttpRequestException er)
+            {
+                Console.WriteLine(er.Message);
+                if ((er.StatusCode == System.Net.HttpStatusCode.Forbidden) ||
+                   (er.StatusCode == System.Net.HttpStatusCode.Unauthorized))
+                {
+                    _nav.NavigateTo("/login");
+                    return false;
+                }
+                else throw;
+            }
+            catch (Exception er)
+            {
+                Console.WriteLine("EEROR:" + er.Message);
+                return false;
+            }
+        }
+
         public async Task<string> System_TewerID()
         {
             var token = await _auth.GetTokenAsync();
@@ -1203,17 +1235,17 @@ namespace DCMLocker.Kiosk.Cliente
             }
         }
 
-        public async Task<bool> GetIsAssets()
+        public async Task<string> GetModo()
         {
             try
             {
-                var response = await _cliente.GetAsync("system/isAssets");
-                var oRta = await response.Content.ReadFromJsonAsync<bool>();
+                var response = await _cliente.GetAsync("system/modo");
+                var oRta = await response.Content.ReadFromJsonAsync<string>();
                 return oRta;
             }
             catch (Exception)
             {
-                return false;
+                return "tokens";
             }
         }
 
@@ -1250,6 +1282,23 @@ namespace DCMLocker.Kiosk.Cliente
                 {
                     var result = await response.Content.ReadFromJsonAsync<AssetsResponse>();
                     return result ?? new AssetsResponse(); // por si viniera null
+                }
+                return new();
+            }
+            catch
+            {
+                return new();
+            }
+        }
+        public async Task<AssetsRapidoResponse> SendRequestRapida(AssetsRapidoRequest req)
+        {
+            try
+            {
+                var response = await _cliente.PostAsJsonAsync("assets/SendRequestRapida", req);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<AssetsRapidoResponse>();
+                    return result ?? new AssetsRapidoResponse(); // por si viniera null
                 }
                 return new();
             }

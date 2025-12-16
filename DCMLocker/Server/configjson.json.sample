@@ -3,6 +3,6 @@
   "TewerID": 0,
   "SuperadminTime": 10000,
   "AdminTime": 10000,
-  "IsAssets": false
+  "Modo": "Assets"
 }
 

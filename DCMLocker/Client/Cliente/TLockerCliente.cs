@@ -1397,25 +1397,25 @@ namespace DCMLocker.Client.Cliente
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
 
-        public async Task<bool> GetIsAssets()
+        public async Task<string> GetModo()
         {
             try
             {
-                var response = await _cliente.GetAsync("system/isAssets");
-                var oRta = await response.Content.ReadFromJsonAsync<bool>();
+                var response = await _cliente.GetAsync("system/modo");
+                var oRta = await response.Content.ReadFromJsonAsync<string>();
                 return oRta;
             }
             catch (Exception)
             {
-                return false;
+                return "tokens";
             }
         }
 
-        public async Task<bool> SetIsAssets(bool isAssets)
+        public async Task<bool> SetModo(string modo)
         {
             try
             {
-                var oRta = await _cliente.PostAsJsonAsync("system/isAssets", isAssets);
+                var oRta = await _cliente.PostAsJsonAsync("system/modo", modo);
                 return oRta.IsSuccessStatusCode;
             }
             catch (Exception)

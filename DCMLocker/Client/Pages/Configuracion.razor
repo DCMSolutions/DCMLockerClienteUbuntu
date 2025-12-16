@@ -31,13 +31,16 @@
             </div>
             <hr><br>
             <div class="form-group">
-                <label><strong>Configuracion de modo</strong></label>
-                <p>Conmutador entre modo tokens y modo assets.</p>
-                <div style="display: flex; justify-content: center;" class="form-check form-switch">
-                    <div style="display:flex;justify-content:center" class="custom-control custom-switch">
-                        <input type="checkbox" id="isAssetsSwitch" @bind="isAssets" class="custom-control-input" />
-                        <label class="custom-control-label" for="isAssetsSwitch"></label>
-                    </div>
+                <label><strong>Configuración de modo</strong></label>
+                <p>Seleccione el modo de uso.</p>
+
+                <div class="d-flex justify-content-center">
+                    <select class="form-select" style="max-width: 320px;"
+                            @bind="modo">
+                        <option value="tokens">Tokens</option>
+                        <option value="assets">Assets</option>
+                        <option value="assetsRapido">Assets rápido</option>
+                    </select>
                 </div>
             </div>
             <hr><br>
@@ -197,7 +200,7 @@ else
     int delayStatus, originalDelayStatus;
     int superadminTime, originalSuperadminTime;
     int adminTime, originalAdminTime;
-    bool isAssets, originalIsAssets;
+    string modo, originalModo;
 
 
     protected override async Task OnInitializedAsync()
@@ -205,12 +208,12 @@ else
         delayStatus = await Cliente.GetDelayStatus();
         superadminTime = await Cliente.GetSuperadminTime();
         adminTime = await Cliente.GetAdminTime();
-        isAssets = await Cliente.GetIsAssets();
+        modo = await Cliente.GetModo();
 
         originalDelayStatus = delayStatus;
         originalSuperadminTime = superadminTime;
         originalAdminTime = adminTime;
-        originalIsAssets = isAssets;
+        originalModo = modo;
 
         Config = await Cliente.GetConfig();
         url = $"{Config.UrlServer}";
@@ -241,10 +244,10 @@ else
                     Console.WriteLine("Error al guardar AdminTime.");
             }
             
-            if (isAssets != originalIsAssets)
+            if (modo != originalModo)
             {
-                if (!await Cliente.SetIsAssets(isAssets))
-                    Console.WriteLine("Error al guardar isAssets.");
+                if (!await Cliente.SetModo(modo))
+                    Console.WriteLine("Error al guardar modo.");
             }
 
             bool r = await Cliente.SetConfig(Config);

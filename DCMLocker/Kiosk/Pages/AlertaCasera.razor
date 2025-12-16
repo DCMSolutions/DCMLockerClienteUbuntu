@@ -50,6 +50,9 @@
                 case "actualizará":
                     await Cliente.System_Update();
                     break;
+                case "reiniciará el navegador de":
+                    await Cliente.System_ResetChromium();
+                    break;
                 default:
                     Navigation.NavigateTo("/");
                     break;

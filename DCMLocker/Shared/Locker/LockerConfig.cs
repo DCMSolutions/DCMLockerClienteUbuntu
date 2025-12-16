@@ -64,7 +64,7 @@ namespace DCMLocker.Shared.Locker
         public int LockerType { get; set; }
         public int LockerMode { get; set; }
         public Uri UrlServer { get; set; }
-        public bool IsAssets { get; set; }
+        public string Modo { get; set; }
     }
 
     public class TLockerMap

@@ -226,6 +226,23 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
+        [HttpPost("ResetChromium")]
+        public async Task<ActionResult> ResetChromium()
+        {
+            try
+            {
+                _evento.AddEvento(new Evento("Reseteo de navegador", "sistema"));
+                await _webhookService.SendWebhookAsync("Sistema", "Se reseteó el navegador", new { Accion = "ResetNavegador" });
+
+                string s0 = cmd("pkill -f chromium");
+                return Ok(s0);
+            }
+            catch (Exception er)
+            {
+                return BadRequest(er.Message);
+            }
+        }
+
         [HttpGet("ResetService")]
         public async Task<string> ResetService()
         {
@@ -614,8 +631,8 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpGet("isAssets")]
-        public ActionResult<bool> GetIsAssets()
+        [HttpGet("modo")]
+        public ActionResult<bool> GetModo()
         {
             try
             {
@@ -627,15 +644,15 @@ namespace DCMLocker.Server.Controllers
                     node = JsonNode.Parse(stream);
                 }
 
-                if (node is null || node["IsAssets"] is null)
+                if (node is null || node["Modo"] is null)
                     return NotFound();
 
-                bool isAssets = node["IsAssets"]!.GetValue<bool>();
-                return Ok(isAssets);
+                string modo = node["Modo"]!.GetValue<string>();
+                return Ok(modo);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error al leer IsAssets: " + ex.Message);
+                Console.WriteLine("Error al leer Modo: " + ex.Message);
                 return StatusCode(500);
             }
         }
@@ -754,8 +771,8 @@ namespace DCMLocker.Server.Controllers
             }
         }
 
-        [HttpPost("isAssets")]
-        public async Task<bool> UpdateIsAssets([FromBody] bool isAssets)
+        [HttpPost("Modo")]
+        public async Task<bool> UpdateModo([FromBody] string modo)
         {
             try
             {
@@ -769,11 +786,11 @@ namespace DCMLocker.Server.Controllers
                     node = JsonNode.Parse(stream);
                 }
 
-                if (node is null || node["IsAssets"] is null)
+                if (node is null || node["Modo"] is null)
                     return false;
 
                 // Modificar el valor
-                node["IsAssets"] = isAssets;
+                node["Modo"] = modo;
 
                 // Escribir el archivo de vuelta (sobrescribir)
                 using (var writeStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -784,10 +801,8 @@ namespace DCMLocker.Server.Controllers
                         WriteIndented = true
                     }));
                 }
-                var deViejoANuevo = isAssets ? "de modo tokens a modo assets" : "de modo assets a modo tokens";
-
-                _evento.AddEvento(new Evento($"Cambio de configuración: Modo de funcionamiento, {deViejoANuevo}", "sistema"));
-                await _webhookService.SendWebhookAsync("ConfiguracionModo", $"Se cambió la configuración del locker: el modo de funcionamiento cambio {deViejoANuevo}", new { Viejo = !isAssets, Nuevo = isAssets });
+                _evento.AddEvento(new Evento($"Cambio de configuración: Modo de funcionamiento a {modo}", "sistema"));
+                await _webhookService.SendWebhookAsync("ConfiguracionModo", $"Se cambió la configuración del locker: el modo de funcionamiento cambio a {modo}", new { modo });
 
                 return true;
             }

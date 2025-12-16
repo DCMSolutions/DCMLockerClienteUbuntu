@@ -93,19 +93,6 @@
         border-color: #007bff;
     }
 
-.hidden-admin-trigger {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 12vh;
-    height: 12vh;
-    background: transparent;
-    border: 0;
-    opacity: 0;
-    z-index: 100;
-    pointer-events: auto;
-}
-
 
 /* PIN */
 .pin-dots {
@@ -295,6 +282,20 @@
     font-size: 1.6rem;
     font-weight: 500;
 }
+
+.hidden-admin-trigger {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 12vh;
+    height: 12vh;
+    background: transparent;
+    border: 0;
+    opacity: 0;
+    z-index: 100;
+    pointer-events: auto;
+}
+
 
 .puertas-screen .puertas-list {
     display: flex;
