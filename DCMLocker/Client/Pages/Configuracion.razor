@@ -35,12 +35,16 @@
                 <p>Seleccione el modo de uso.</p>
 
                 <div class="d-flex justify-content-center">
-                    <select class="form-select" style="max-width: 320px;"
-                            @bind="modo">
-                        <option value="tokens">Tokens</option>
-                        <option value="assets">Assets</option>
-                        <option value="assetsRapido">Assets rápido</option>
-                    </select>
+                    <RadzenDropDown @bind-Value="modo"
+                                    Data="@_modos"
+                                    TextProperty="Label"
+                                    ValueProperty="Value"
+                                    Style="width: 320px"
+                                    Placeholder="Seleccione un modo"
+                                    AllowClear="false" />
+                </div>
+                <div class="d-flex justify-content-center mt-2">
+                    <RadzenBadge Text="@ModoLabelActual" />
                 </div>
             </div>
             <hr><br>
@@ -200,8 +204,21 @@ else
     int delayStatus, originalDelayStatus;
     int superadminTime, originalSuperadminTime;
     int adminTime, originalAdminTime;
-    string modo, originalModo;
 
+    private string modo = "tokens"; // IMPORTANTE: default válido antes del primer render
+    string originalModo;
+
+    private readonly List<ModeOption> _modos = new()
+    {
+        new("tokens", "Tokens"),
+        new("assets", "Assets"),
+        new("assetsRapido", "Assets rápido"),
+    };
+
+    private string ModoLabelActual =>
+        _modos.FirstOrDefault(x => x.Value == modo)?.Label ?? "—";
+
+    private record ModeOption(string Value, string Label);
 
     protected override async Task OnInitializedAsync()
     {

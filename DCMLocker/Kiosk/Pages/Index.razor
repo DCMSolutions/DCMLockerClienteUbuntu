@@ -286,6 +286,7 @@ else if (screen == "alerta")
     protected override async Task OnInitializedAsync()
     {
         var modo = await Cliente.GetModo();
+        Console.WriteLine("modo: " + modo);
         if (modo == "assets") Nav.NavigateTo("/assets");
         if (modo == "assetsRapido") Nav.NavigateTo("/assetsRapido");
 
