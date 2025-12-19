@@ -1239,6 +1239,7 @@ namespace DCMLocker.Kiosk.Cliente
         {
             try
             {
+                
                 var response = await _cliente.GetAsync("system/modo");
                 var oRta = await response.Content.ReadAsStringAsync();
                 return oRta;
