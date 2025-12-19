@@ -632,7 +632,7 @@ namespace DCMLocker.Server.Controllers
         }
 
         [HttpGet("modo")]
-        public ActionResult<bool> GetModo()
+        public ActionResult<string> GetModo()
         {
             try
             {
