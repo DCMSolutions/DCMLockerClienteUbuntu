@@ -82,6 +82,63 @@
 
             <hr><br>
 
+            <div class="form-group">
+                <label><strong>Tiempos de pantallas</strong></label>
+                <p>Duración (ms) de los mensajes/resultados en el flujo de Assets.</p>
+
+                <hr class="my-3" />
+
+                <div class="mb-3">
+                    <label><strong>Activo no registrado</strong></label>
+                    <p class="mb-1">Tiempo que se muestra el mensaje cuando el TAG/asset no existe.</p>
+                    <div style="display: flex; justify-content: center;">
+                        <input type="number" @bind="SystemConfig.TimeActivoNoRegistrado" class="form-control form-control-user col-6" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label><strong>Operación cancelada</strong></label>
+                    <p class="mb-1">Tiempo que se muestra el mensaje de cancelación.</p>
+                    <div style="display: flex; justify-content: center;">
+                        <input type="number" @bind="SystemConfig.TimeOperacionCancelada" class="form-control form-control-user col-6" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label><strong>Usuario no registrado</strong></label>
+                    <p class="mb-1">Tiempo que se muestra el mensaje cuando la tarjeta/empleado no existe.</p>
+                    <div style="display: flex; justify-content: center;">
+                        <input type="number" @bind="SystemConfig.TimeUsuarioNoRegistrado" class="form-control form-control-user col-6" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label><strong>No hay activos disponibles</strong></label>
+                    <p class="mb-1">Tiempo que se muestra el mensaje cuando no hay activos para la acción.</p>
+                    <div style="display: flex; justify-content: center;">
+                        <input type="number" @bind="SystemConfig.TimeNoHayActivosDisponibles" class="form-control form-control-user col-6" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label><strong>No hay boxes disponibles</strong></label>
+                    <p class="mb-1">Tiempo que se muestra el mensaje cuando no hay box asignable/usable.</p>
+                    <div style="display: flex; justify-content: center;">
+                        <input type="number" @bind="SystemConfig.TimeNoHayBoxesDisponibles" class="form-control form-control-user col-6" />
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label><strong>Operación exitosa</strong></label>
+                    <p class="mb-1">Tiempo que se muestra el mensaje de operación exitosa.</p>
+                    <div style="display: flex; justify-content: center;">
+                        <input type="number" @bind="SystemConfig.TimeOperacionExitosa" class="form-control form-control-user col-6" />
+                    </div>
+                </div>
+            </div>
+
+            <hr><br>
+
             <button type="button" class="btn btn-primary btn-user btn-block" @onclick="Save">Guardar</button>
 
         </form>
@@ -101,15 +158,22 @@ else
     LockerConfig Config;
     string url;
 
-    // Nueva config unificada (Modo/DelayStatus/AdminTime/SuperadminTime)
-    // Default defensivo para que el primer render sea válido.
-    Config2 SystemConfig = new Config2 { Modo = "tokens" };
+    // Config unificada (Modo/DelayStatus/AdminTime/SuperadminTime + tiempos Assets rápido)
+    // Importante: solo new(), sin defaults de modo “por adelantado”.
+    Config2 SystemConfig = new();
 
-    // Para evitar escribir si no hubo cambios (opcional, pero útil).
-    private string _originalModo;
+    // Para evitar escribir si no hubo cambios.
+    private string? _originalModo;
     private int _originalDelayStatus;
     private int _originalSuperadminTime;
     private int _originalAdminTime;
+
+    private int _originalTimeActivoNoRegistrado;
+    private int _originalTimeOperacionCancelada;
+    private int _originalTimeUsuarioNoRegistrado;
+    private int _originalTimeNoHayActivosDisponibles;
+    private int _originalTimeNoHayBoxesDisponibles;
+    private int _originalTimeOperacionExitosa;
 
     private readonly List<ModeOption> _modos = new()
     {
@@ -126,12 +190,23 @@ else
     protected override async Task OnInitializedAsync()
     {
         // 1) Config unificada (Config2)
-        SystemConfig = await Cliente.GetConfigAsync();
+        SystemConfig = await Cliente.GetConfigAsync() ?? new Config2();
+
+        // Normalización defensiva (sin “inicializar por adelantado”)
+        if (string.IsNullOrWhiteSpace(SystemConfig.Modo))
+            SystemConfig.Modo = "tokens";
 
         _originalDelayStatus = SystemConfig.DelayStatus;
         _originalSuperadminTime = SystemConfig.SuperadminTime;
         _originalAdminTime = SystemConfig.AdminTime;
         _originalModo = SystemConfig.Modo;
+
+        _originalTimeActivoNoRegistrado = SystemConfig.TimeActivoNoRegistrado;
+        _originalTimeOperacionCancelada = SystemConfig.TimeOperacionCancelada;
+        _originalTimeUsuarioNoRegistrado = SystemConfig.TimeUsuarioNoRegistrado;
+        _originalTimeNoHayActivosDisponibles = SystemConfig.TimeNoHayActivosDisponibles;
+        _originalTimeNoHayBoxesDisponibles = SystemConfig.TimeNoHayBoxesDisponibles;
+        _originalTimeOperacionExitosa = SystemConfig.TimeOperacionExitosa;
 
         // 2) Config anterior del locker (si todavía la usás)
         Config = await Cliente.GetConfig();
@@ -146,6 +221,18 @@ else
             var uriBuilder = new UriBuilder(url);
             Config.UrlServer = uriBuilder.Uri;
 
+            // Validación simple de tiempos (no negativos)
+            if (SystemConfig.DelayStatus < 0) SystemConfig.DelayStatus = 0;
+            if (SystemConfig.SuperadminTime < 0) SystemConfig.SuperadminTime = 0;
+            if (SystemConfig.AdminTime < 0) SystemConfig.AdminTime = 0;
+
+            if (SystemConfig.TimeActivoNoRegistrado < 0) SystemConfig.TimeActivoNoRegistrado = 0;
+            if (SystemConfig.TimeOperacionCancelada < 0) SystemConfig.TimeOperacionCancelada = 0;
+            if (SystemConfig.TimeUsuarioNoRegistrado < 0) SystemConfig.TimeUsuarioNoRegistrado = 0;
+            if (SystemConfig.TimeNoHayActivosDisponibles < 0) SystemConfig.TimeNoHayActivosDisponibles = 0;
+            if (SystemConfig.TimeNoHayBoxesDisponibles < 0) SystemConfig.TimeNoHayBoxesDisponibles = 0;
+            if (SystemConfig.TimeOperacionExitosa < 0) SystemConfig.TimeOperacionExitosa = 0;
+
             // Guardar config antigua del locker
             bool okLocker = await Cliente.SetConfig(Config);
 
@@ -154,7 +241,14 @@ else
                 _originalDelayStatus != SystemConfig.DelayStatus ||
                 _originalSuperadminTime != SystemConfig.SuperadminTime ||
                 _originalAdminTime != SystemConfig.AdminTime ||
-                !string.Equals(_originalModo, SystemConfig.Modo, StringComparison.OrdinalIgnoreCase);
+                !string.Equals(_originalModo, SystemConfig.Modo, StringComparison.OrdinalIgnoreCase) ||
+
+                _originalTimeActivoNoRegistrado != SystemConfig.TimeActivoNoRegistrado ||
+                _originalTimeOperacionCancelada != SystemConfig.TimeOperacionCancelada ||
+                _originalTimeUsuarioNoRegistrado != SystemConfig.TimeUsuarioNoRegistrado ||
+                _originalTimeNoHayActivosDisponibles != SystemConfig.TimeNoHayActivosDisponibles ||
+                _originalTimeNoHayBoxesDisponibles != SystemConfig.TimeNoHayBoxesDisponibles ||
+                _originalTimeOperacionExitosa != SystemConfig.TimeOperacionExitosa;
 
             bool okSystem = true;
             if (sysChanged)
@@ -163,11 +257,17 @@ else
 
                 if (okSystem)
                 {
-                    // Actualizamos los “originales” para que no vuelva a intentar guardar si no cambió nada
                     _originalDelayStatus = SystemConfig.DelayStatus;
                     _originalSuperadminTime = SystemConfig.SuperadminTime;
                     _originalAdminTime = SystemConfig.AdminTime;
                     _originalModo = SystemConfig.Modo;
+
+                    _originalTimeActivoNoRegistrado = SystemConfig.TimeActivoNoRegistrado;
+                    _originalTimeOperacionCancelada = SystemConfig.TimeOperacionCancelada;
+                    _originalTimeUsuarioNoRegistrado = SystemConfig.TimeUsuarioNoRegistrado;
+                    _originalTimeNoHayActivosDisponibles = SystemConfig.TimeNoHayActivosDisponibles;
+                    _originalTimeNoHayBoxesDisponibles = SystemConfig.TimeNoHayBoxesDisponibles;
+                    _originalTimeOperacionExitosa = SystemConfig.TimeOperacionExitosa;
                 }
             }
 
