@@ -67,6 +67,23 @@ namespace DCMLocker.Shared.Locker
         public string Modo { get; set; }
     }
 
+    public class Config2
+    {
+        public int DelayStatus { get; set; } = 2000;
+        public int TewerID { get; set; }
+        public int AdminTime { get; set; } = 15000;
+        public int SuperadminTime { get; set; } = 15000;
+        public string Modo { get; set; } = "tokens";
+        public bool DeteccionPuertasAbiertas { get; set; } = true;
+        public int TimeActivoNoRegistrado { get; set; } = 5000;
+        public int TimeOperacionCancelada { get; set; } = 5000;
+        public int TimeUsuarioNoRegistrado { get; set; } = 5000;
+        public int TimeNoHayActivosDisponibles { get; set; } = 5000;
+        public int TimeNoHayBoxesDisponibles { get; set; } = 5000;
+        public int TimeOperacionExitosa { get; set; } = 5000;
+    }
+
+
     public class TLockerMap
     {
        

@@ -345,6 +345,7 @@
 
 </div>
 
+
 @code {
     enum Screen { Select, Loading, ChooseAccion, ChooseAsset, ScanQr, DevolucionSetEstado, Result, SecretPin, Admin, FueraServicio, PuertasAbiertas }
     Screen _screen = Screen.Select;
@@ -376,9 +377,6 @@
     private string? _resSubtitle;
     private string _resImage = "";
 
-    // Countdown
-    private int _countdown = 10;
-
     // control flujo
     private CancellationTokenSource? _countdownCts;
     private bool _sending;
@@ -402,6 +400,12 @@
     private string? _adminFecha;
     private List<string> _adminIPs = new();
     private string? _adminMsg;
+
+    // Config (se carga, pero se inicializa solo con new())
+    private Config2 _cfg2 = new Config2();
+
+    // polling puertas abiertas (ms)
+    private int _puertasPollMs = 1000;
 
     // fuera de servicio
     enum LockerErrorCode
@@ -437,9 +441,30 @@
         => string.Equals(_employeeRole, "Administrador", StringComparison.OrdinalIgnoreCase)
         || string.Equals(_employeeRole, "Mantenimiento", StringComparison.OrdinalIgnoreCase);
 
+    // --- Config ---
+    private async Task LoadConfig2Async()
+    {
+        try
+        {
+            var cfg = await Cliente.GetConfigAsync();
+            if (cfg != null)
+                _cfg2 = cfg;
+        }
+        catch
+        {
+            // nos quedamos con los defaults del modelo
+        }
+
+        // DelayStatus se usa para polling (ms)
+        if (_cfg2.DelayStatus > 0)
+            _puertasPollMs = _cfg2.DelayStatus;
+    }
+
     // --- init ---
     protected override async Task OnInitializedAsync()
     {
+        await LoadConfig2Async();
+
         QRhubConnection = new HubConnectionBuilder()
             .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
             .WithAutomaticReconnect()
@@ -521,7 +546,6 @@
             var req = new AssetsRapidoRequest
             {
                 IdEmpleado = _rfid!
-                // Si tu request requiere algo más (ej. NroSerieLocker), agregalo acá.
             };
 
             var resp = await Cliente.SendRequestRapida(req);
@@ -535,7 +559,9 @@
 
             if (string.IsNullOrWhiteSpace(_employeeName))
             {
-                ShowError("Usuario no registrado", "Por favor, comuníquese con el administrador. Gracias.");
+                ShowError("Usuario no registrado",
+                          "Por favor, comuníquese con el administrador. Gracias.",
+                          _cfg2.TimeUsuarioNoRegistrado);
                 return;
             }
 
@@ -544,7 +570,9 @@
             {
                 if (_assetRapido == null || _assetRapido.IdBox <= 0)
                 {
-                    ShowError("Operación no disponible", "No se pudo determinar el box a utilizar.");
+                    ShowError("Operación no disponible",
+                              "No se pudo determinar el box a utilizar.",
+                              _cfg2.TimeOperacionCancelada);
                     return;
                 }
 
@@ -552,14 +580,12 @@
 
                 if (_accion == AssetsAccion.Retiro)
                 {
-                    // Retiro rápido: abre directo el box
                     _selectedAsset = null;
                     _assets.Clear();
                     await SendRetiro();
                 }
                 else
                 {
-                    // Devolución rápida: primero elige estado, luego abre
                     _selectedAsset = null;
                     _assets.Clear();
                     _devolEstado = null;
@@ -585,7 +611,9 @@
             // Fallback (rol desconocido): tratamos como “normal”
             if (_assetRapido == null || _assetRapido.IdBox <= 0)
             {
-                ShowError("Operación no disponible", "No se pudo determinar el box a utilizar.");
+                ShowError("Operación no disponible",
+                          "No se pudo determinar el box a utilizar.",
+                          _cfg2.TimeOperacionCancelada);
                 return;
             }
 
@@ -596,11 +624,14 @@
                 _devolEstado = null;
                 _devolEstadoElegido = null;
                 _screen = Screen.DevolucionSetEstado;
+                StateHasChanged();
             }
         }
         catch
         {
-            ShowError("Error procesando la solicitud", "Por favor, intente nuevamente o comuníquese con el administrador.");
+            ShowError("Error procesando la solicitud",
+                      "Por favor, intente nuevamente o comuníquese con el administrador.",
+                      _cfg2.TimeOperacionCancelada);
         }
         finally
         {
@@ -620,7 +651,9 @@
 
             if (_assets.Count == 0)
             {
-                ShowError($"No hay activos disponibles para {_employeeName}");
+                ShowError($"No hay activos disponibles para {_employeeName}",
+                          null,
+                          _cfg2.TimeNoHayActivosDisponibles);
                 return;
             }
 
@@ -635,7 +668,9 @@
 
         if (_assets.Count == 0)
         {
-            ShowError("No hay activos disponibles para devolución", "Por favor, intente en otro momento. Gracias.");
+            ShowError("No hay activos disponibles para devolución",
+                      "Por favor, intente en otro momento. Gracias.",
+                      _cfg2.TimeNoHayActivosDisponibles);
             return;
         }
 
@@ -683,7 +718,9 @@
                     await Cliente.ReportEvento(evt);
                 }
 
-                ShowSuccess($"Puerta {box} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                ShowSuccess($"Puerta {box} abierta.",
+                            "Por favor, al terminar cierre la puerta. Gracias",
+                            _cfg2.TimeOperacionExitosa);
                 return;
             }
 
@@ -694,13 +731,15 @@
                 success: true,
                 title: $"Puerta {box} abierta.",
                 subtitle: "Por favor, al terminar cierre la puerta. Gracias",
-                seconds: 3,
+                durationMs: _cfg2.TimeOperacionExitosa,
                 onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
             );
         }
         catch
         {
-            ShowError("Error al procesar retiro", "Por favor, intente nuevamente o comuníquese con el administrador.");
+            ShowError("Error al procesar retiro",
+                      "Por favor, intente nuevamente o comuníquese con el administrador.",
+                      _cfg2.TimeOperacionCancelada);
         }
     }
 
@@ -708,20 +747,24 @@
     void HandleQrScan(string text)
     {
         var code = text?.Trim();
-        if (code.StartsWith("\\000026"))
+        if (!string.IsNullOrEmpty(code) && code.StartsWith("\\000026"))
             code = code.Substring(7);
 
         var match = _assets.FirstOrDefault(a => string.Equals(a.IdAsset, code, StringComparison.OrdinalIgnoreCase));
 
         if (match == null)
         {
-            ShowError("Activo no registrado", "Por favor, comuníquese con el administrador. Gracias.");
+            ShowError("Activo no registrado",
+                      "Por favor, comuníquese con el administrador. Gracias.",
+                      _cfg2.TimeActivoNoRegistrado);
             return;
         }
 
         if (match.IdBox == 0)
         {
-            ShowError("No hay boxes disponibles", "Por favor, intente en otro momento. Gracias.");
+            ShowError("No hay boxes disponibles",
+                      "Por favor, intente en otro momento. Gracias.",
+                      _cfg2.TimeNoHayBoxesDisponibles);
             return;
         }
 
@@ -770,7 +813,9 @@
                     await Cliente.ReportEvento(evt);
                 }
 
-                ShowSuccess($"Puerta {box} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                ShowSuccess($"Puerta {box} abierta.",
+                            "Por favor, al terminar cierre la puerta. Gracias",
+                            _cfg2.TimeOperacionExitosa);
                 return;
             }
 
@@ -781,13 +826,15 @@
                 success: true,
                 title: $"Puerta {box} abierta.",
                 subtitle: "Por favor, al terminar cierre la puerta. Gracias",
-                seconds: 3,
+                durationMs: _cfg2.TimeOperacionExitosa,
                 onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
             );
         }
         catch
         {
-            ShowError("Error al procesar ingreso", "Por favor, intente nuevamente o comuníquese con el administrador.");
+            ShowError("Error al procesar ingreso",
+                      "Por favor, intente nuevamente o comuníquese con el administrador.",
+                      _cfg2.TimeOperacionCancelada);
         }
     }
 
@@ -796,7 +843,9 @@
     {
         if (_boxEnVerificacion == null)
         {
-            ShowError("Operación fallida", "No se pudo verificar el estado del box.");
+            ShowError("Operación fallida",
+                      "No se pudo verificar el estado del box.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
@@ -810,13 +859,17 @@
         }
         catch
         {
-            ShowError("Operación fallida", "No se pudo obtener el estado del box.");
+            ShowError("Operación fallida",
+                      "No se pudo obtener el estado del box.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
         if (status == null)
         {
-            ShowError("Operación fallida", "No se pudo encontrar el box.");
+            ShowError("Operación fallida",
+                      "No se pudo encontrar el box.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
@@ -829,16 +882,16 @@
             if (accionActual == AssetsAccion.Retiro)
             {
                 if (!ocupado) await RegistrarYMostrarExitoFinalAsync();
-                else ShowError("Operación fallida", "El asset no fue retirado.");
+                else ShowError("Operación fallida", "El asset no fue retirado.", _cfg2.TimeOperacionCancelada);
             }
             else if (accionActual == AssetsAccion.Devolucion)
             {
                 if (ocupado) await RegistrarYMostrarExitoFinalAsync();
-                else ShowError("Operación fallida", "El asset no fue devuelto.");
+                else ShowError("Operación fallida", "El asset no fue devuelto.", _cfg2.TimeOperacionCancelada);
             }
             else
             {
-                ShowError("Operación fallida", "Operación desconocida.");
+                ShowError("Operación fallida", "Operación desconocida.", _cfg2.TimeOperacionCancelada);
             }
         }
         else
@@ -872,7 +925,9 @@
             }
             catch
             {
-                await InvokeAsync(() => ShowError("Operación fallida", "No se pudo obtener el estado de las puertas."));
+                await InvokeAsync(() => ShowError("Operación fallida",
+                                                  "No se pudo obtener el estado de las puertas.",
+                                                  _cfg2.TimeOperacionCancelada));
                 return;
             }
 
@@ -890,7 +945,7 @@
 
             if (abiertas.Count == 0) break;
 
-            try { await Task.Delay(1000, token); }
+            try { await Task.Delay(_puertasPollMs, token); }
             catch { return; }
         }
 
@@ -904,7 +959,9 @@
     {
         if (_boxEnVerificacion == null)
         {
-            ShowError("Operación fallida", "No se pudo verificar el estado del box.");
+            ShowError("Operación fallida",
+                      "No se pudo verificar el estado del box.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
@@ -918,13 +975,17 @@
         }
         catch
         {
-            ShowError("Operación fallida", "No se pudo obtener el estado del box.");
+            ShowError("Operación fallida",
+                      "No se pudo obtener el estado del box.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
         if (status == null)
         {
-            ShowError("Operación fallida", "No se pudo encontrar el box.");
+            ShowError("Operación fallida",
+                      "No se pudo encontrar el box.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
@@ -941,16 +1002,16 @@
         if (accionActual == AssetsAccion.Retiro)
         {
             if (!ocupado) await RegistrarYMostrarExitoFinalAsync();
-            else ShowError("Operación fallida", "El asset no fue retirado.");
+            else ShowError("Operación fallida", "El asset no fue retirado.", _cfg2.TimeOperacionCancelada);
         }
         else if (accionActual == AssetsAccion.Devolucion)
         {
             if (ocupado) await RegistrarYMostrarExitoFinalAsync();
-            else ShowError("Operación fallida", "El asset no fue devuelto.");
+            else ShowError("Operación fallida", "El asset no fue devuelto.", _cfg2.TimeOperacionCancelada);
         }
         else
         {
-            ShowError("Operación fallida", "Operación desconocida.");
+            ShowError("Operación fallida", "Operación desconocida.", _cfg2.TimeOperacionCancelada);
         }
     }
 
@@ -958,7 +1019,9 @@
     {
         if (string.IsNullOrWhiteSpace(_rfid))
         {
-            ShowError("Operación fallida", "No se pudo registrar la operación.");
+            ShowError("Operación fallida",
+                      "No se pudo registrar la operación.",
+                      _cfg2.TimeOperacionCancelada);
             return;
         }
 
@@ -966,10 +1029,7 @@
 
         try
         {
-            // Nota: en modo rápido para rol “Empleado”, no tenemos IdAsset (solo box).
-            // Si querés registrar evento también en ese caso, necesitás:
-            // - agregar IdAsset a AssetRapido, o
-            // - crear un endpoint tipo ReportEventoRapido(box, empleado, accion, estado).
+            // Nota: en modo rápido no tengo idasset asi que no puedo loguear
             if (_selectedAsset != null)
             {
                 if (accionActual == AssetsAccion.Retiro)
@@ -1003,7 +1063,7 @@
             // silencioso: de cara al usuario la operación fue correcta
         }
 
-        ShowSuccess("Operación exitosa", null, 3);
+        ShowSuccess("Operación exitosa", null, _cfg2.TimeOperacionExitosa);
     }
 
     // --- UI helpers ---
@@ -1017,8 +1077,8 @@
         return $"{(isSel ? "selected" : "border-secondary")} {state}".Trim();
     }
 
-    // --- Result + countdown ---
-    void ShowResult(bool success, string title, string? subtitle, int seconds, Func<Task>? onFinished = null)
+    // --- Result (duración en ms) ---
+    void ShowResult(bool success, string title, string? subtitle, int durationMs, Func<Task>? onFinished = null)
     {
         _resTitle = title;
         _resSubtitle = subtitle;
@@ -1029,33 +1089,23 @@
         _countdownCts?.Cancel();
         _countdownCts = new CancellationTokenSource();
 
-        _ = StartCountdownAsync(seconds, _countdownCts.Token, onFinished ?? (async () => Reset()));
+        _ = DelayThenAsync(durationMs, _countdownCts.Token, onFinished ?? (async () => Reset()));
         StateHasChanged();
     }
 
-    void ShowSuccess(string title, string? subtitle = null, int seconds = 5)
-        => ShowResult(true, title, subtitle, seconds);
+    void ShowSuccess(string title, string? subtitle = null, int? durationMs = null)
+        => ShowResult(true, title, subtitle, durationMs ?? _cfg2.TimeOperacionExitosa);
 
-    void ShowError(string title, string? subtitle = null, int seconds = 5)
-        => ShowResult(false, title, subtitle, seconds);
+    void ShowError(string title, string? subtitle = null, int? durationMs = null)
+        => ShowResult(false, title, subtitle, durationMs ?? _cfg2.TimeOperacionCancelada);
 
-    async Task StartCountdownAsync(int seconds, CancellationToken token, Func<Task>? onFinished = null)
+    private async Task DelayThenAsync(int durationMs, CancellationToken token, Func<Task> onFinished)
     {
-        _countdown = seconds;
-        await InvokeAsync(StateHasChanged);
-
-        while (_countdown > 0 && !token.IsCancellationRequested)
-        {
-            try { await Task.Delay(1000, token); } catch { break; }
-            _countdown--;
-            await InvokeAsync(StateHasChanged);
-        }
+        try { await Task.Delay(durationMs, token); }
+        catch { return; }
 
         if (!token.IsCancellationRequested)
-        {
-            if (onFinished != null) await onFinished();
-            else Reset();
-        }
+            await onFinished();
     }
 
     void Reset()
@@ -1213,7 +1263,7 @@
             : Screen.FueraServicio;
     }
 
-    // --- estado de conexión (igual que antes) ---
+    // --- estado de conexión ---
     private async Task InitializeStatusAsync()
     {
         try

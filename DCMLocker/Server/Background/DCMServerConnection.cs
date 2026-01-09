@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.NetworkInformation;
@@ -305,33 +306,89 @@ namespace DCMLocker.Server.Background
         {
             try
             {
-                List<string> retorno = new List<string>() { };
-                var netinters = NetworkInterface.GetAllNetworkInterfaces();
+                // 1) Preferir Tailscale
+                var tsIp = GetTailscaleIPv4();
+                if (!string.IsNullOrWhiteSpace(tsIp))
+                    return tsIp;
 
-                foreach (NetworkInterface item in netinters)
-                {
-                    if (((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
-                        (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up)
-                    {
-                        foreach (UnicastIPAddressInformation ipe in item.GetIPProperties().UnicastAddresses)
-                        {
-                            if (ipe.Address.AddressFamily == AddressFamily.InterNetwork)
-                            {
-                                retorno.Add(ipe.Address.ToString());
-                            }
-                        }
-                    }
-
-                }
-                string ip = retorno.Where(ip => !ip.EndsWith(".2.3")).FirstOrDefault();
-
-                if (ip != null) return ip;
-                return "";
+                // 2) Fallback: IP de red (Ethernet/WiFi)
+                var lanIp = GetLanIPv4();
+                return lanIp ?? "";
             }
             catch
             {
                 return "";
             }
+        }
+
+        static string? GetTailscaleIPv4()
+        {
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.OperationalStatus != OperationalStatus.Up)
+                    continue;
+
+                // Tailscale suele aparecer como "Tailscale", "Tailscale Tunnel", "tailscale0", etc.
+                if (!IsTailscaleInterface(ni))
+                    continue;
+
+                foreach (var ua in ni.GetIPProperties().UnicastAddresses)
+                {
+                    if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+
+                    var ip = ua.Address.ToString();
+
+                    // Tailscale IPv4 normalmente es 100.64.0.0/10
+                    if (IsTailscaleIPv4(ua.Address))
+                        return ip;
+                }
+            }
+
+            return null;
+        }
+
+        static string? GetLanIPv4()
+        {
+            var ips = new List<string>();
+
+            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (((ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
+                     (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) &&
+                    ni.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (var ua in ni.GetIPProperties().UnicastAddresses)
+                    {
+                        if (ua.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            var ip = ua.Address.ToString();
+
+                            // Excluir Tailscale por si alguna vez cae acá, loopback y APIPA
+                            if (ip.StartsWith("127.")) continue;
+                            if (ip.StartsWith("169.254.")) continue;
+                            if (IsTailscaleIPv4(ua.Address)) continue;
+
+                            ips.Add(ip);
+                        }
+                    }
+                }
+            }
+
+            return ips.FirstOrDefault(ip => !ip.EndsWith(".2.3"));
+        }
+
+        static bool IsTailscaleInterface(NetworkInterface ni)
+        {
+            var n = (ni.Name ?? "").ToLowerInvariant();
+            var d = (ni.Description ?? "").ToLowerInvariant();
+            return n.Contains("tailscale") || d.Contains("tailscale");
+        }
+
+        static bool IsTailscaleIPv4(IPAddress ip)
+        {
+            var b = ip.GetAddressBytes();
+            return b.Length == 4 && b[0] == 100 && b[1] >= 64 && b[1] <= 127;
         }
 
     }

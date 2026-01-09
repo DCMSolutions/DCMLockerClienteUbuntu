@@ -1,7 +1,11 @@
 ﻿using DCMLocker.Server.Background;
 using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Hubs;
+using DCMLocker.Server.Interfaces;
+using DCMLocker.Server.Webhooks;
 using DCMLocker.Shared;
+using DCMLocker.Shared.Locker;
+using DCMLockerCommunication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,17 +15,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text.Json.Nodes;
 using System.Text.Json;
-using System.Threading.Tasks;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using DCMLockerCommunication;
-using System.Linq;
-using DCMLocker.Server.Webhooks;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DCMLocker.Server.Controllers
 {
@@ -34,6 +37,7 @@ namespace DCMLocker.Server.Controllers
         private readonly TBaseLockerController _base;
         private readonly LogController _evento;
         private readonly WebhookService _webhookService;
+        private readonly IConfig2Store _config;
 
         /// <summary> -----------------------------------------------------------------------
         /// Constructor
@@ -42,41 +46,50 @@ namespace DCMLocker.Server.Controllers
         /// <param name="context2"></param>
         /// <param name="logger"></param>
         /// <param name="Base"></param>------------------------------------------------------
-        public SystemController(TBaseLockerController Base, LogController logController, WebhookService webhookService)
+        public SystemController(TBaseLockerController Base, LogController logController, WebhookService webhookService, IConfig2Store config)
         {
             _base = Base;
             _evento = logController;
             _webhookService = webhookService;
+            _config = config;
         }
 
         [HttpGet("GetIP")]
         public SystemNetwork[] GetIP()
         {
-            List<SystemNetwork> retorno = new List<SystemNetwork>() { };
-            //var ips =Dns.GetHostEntry(Dns.GetHostName());
-            foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces())
+            var retorno = new List<SystemNetwork>();
+
+            foreach (var item in NetworkInterface.GetAllNetworkInterfaces())
             {
+                if (item.OperationalStatus != OperationalStatus.Up)
+                    continue;
 
+                bool esEthWifi =
+                    item.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                    item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211;
 
-                if (((item.NetworkInterfaceType == NetworkInterfaceType.Ethernet) ||
-                    (item.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) && item.OperationalStatus == OperationalStatus.Up)
+                bool esTailscale =
+                    item.Name.Equals("tailscale0", StringComparison.OrdinalIgnoreCase) ||
+                    item.Description.Contains("tailscale", StringComparison.OrdinalIgnoreCase) ||
+                    item.NetworkInterfaceType == NetworkInterfaceType.Tunnel;
+
+                if (!esEthWifi && !esTailscale)
+                    continue;
+
+                foreach (var ip in item.GetIPProperties().UnicastAddresses)
                 {
-                    foreach (UnicastIPAddressInformation ip in item.GetIPProperties().UnicastAddresses)
+                    if (ip.Address.AddressFamily != AddressFamily.InterNetwork)
+                        continue;
+
+                    retorno.Add(new SystemNetwork
                     {
-                        if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
-                        {
-                            SystemNetwork r = new SystemNetwork();
-                            r.NetworkInterfaceType = item.NetworkInterfaceType.ToString();
-                            r.NetworkOperationalStatus = item.OperationalStatus.ToString();
-                            r.IP = ip.Address.ToString();
-                            r.NetMask = ip.IPv4Mask.ToString();
-                            retorno.Add(r);
-                        }
-                    }
+                        NetworkInterfaceType = esTailscale ? "Tailscale" : item.NetworkInterfaceType.ToString(),
+                        NetworkOperationalStatus = item.OperationalStatus.ToString(),
+                        IP = ip.Address.ToString(),
+                        NetMask = ip.IPv4Mask?.ToString() ?? string.Empty
+                    });
                 }
-
             }
-
 
             return retorno.ToArray();
         }
@@ -809,6 +822,45 @@ namespace DCMLocker.Server.Controllers
             catch
             {
                 return false;
+            }
+        }
+
+
+
+
+
+
+        [HttpGet("config")]
+        public async Task<ActionResult<Config2>> GetConfig(CancellationToken ct)
+        {
+            var cfg = await _config.GetAsync(ct);
+            return Ok(cfg);
+        }
+
+        [HttpPost("config")]
+        public async Task<ActionResult<Config2>> UpdateConfig([FromBody] Config2 incoming, CancellationToken ct)
+        {
+            try
+            {
+                var (before, after) = await _config.SaveAsync(incoming, ct);
+
+                // Eventos solo si cambió algo relevante (ej. Modo)
+                if (!string.Equals(before.Modo, after.Modo, StringComparison.OrdinalIgnoreCase))
+                {
+                    _evento.AddEvento(new Evento($"Cambio de configuración: Modo de funcionamiento a {after.Modo}", "sistema"));
+                    await _webhookService.SendWebhookAsync(
+                        "ConfiguracionModo",
+                        $"Se cambió la configuración del locker: el modo de funcionamiento cambió a {after.Modo}",
+                        new { modo = after.Modo }
+                    );
+                }
+
+                return Ok(after);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error al guardar configuración: " + ex.Message);
+                return StatusCode(500);
             }
         }
     }

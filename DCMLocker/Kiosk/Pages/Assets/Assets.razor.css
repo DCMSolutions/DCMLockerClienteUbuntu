@@ -20,6 +20,43 @@
     min-height: 100vh;
 }
 
+.countdown-wrap {
+    width: min(520px, 90vw);
+    margin: 0 auto;
+}
+
+.countdown-bar {
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(0,0,0,.08);
+}
+
+.countdown-bar-fill {
+    display: block;
+    height: 100%;
+    width: 100%;
+    transform-origin: left;
+    animation: countdownShrink var(--duration) linear forwards;
+    background: rgba(13,110,253,.85);
+}
+
+@keyframes countdownShrink {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .countdown-bar-fill {
+        animation: none;
+    }
+}
+
 /* Botón "Cancelar" unificado (discreto) */
 .btn-cancel {
     background: transparent;

@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using DCMLocker.Server.Background;
+using DCMLocker.Server.Controllers;
+using DCMLocker.Server.Hubs;
+using DCMLocker.Server.Interfaces;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
-using Microsoft.Extensions.DependencyInjection;
-using DCMLocker.Server.Background;
-using DCMLocker.Server.Hubs;
-using DCMLocker.Server.Controllers;
 
 namespace DCMLocker.Server
 {
@@ -27,14 +28,13 @@ namespace DCMLocker.Server
                 {
                     webBuilder.UseStartup<Startup>();
                 })
-                .UseConsoleLifetime() // Enable Ctrl + C handling
                 .ConfigureServices(services=> 
                 {
 
                     services.AddHostedService<DCMLockerController>();
 
                     services.AddHostedService<AppInitializationService>();
-                    services.AddSingleton<AppInitializationService>();
+                    services.AddSingleton<IConfig2Store, Config2Store>();
 
                     services.AddSingleton<QRReaderHub>();
                     services.AddSingleton<ServerHub>();

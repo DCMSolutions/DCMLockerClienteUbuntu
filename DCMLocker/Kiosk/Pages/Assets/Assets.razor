@@ -263,13 +263,25 @@
             <div class="text-center">
                 <div class="select-hero" style="background-image:url('@_resImage')"></div>
                 <div class="select-message">@_resTitle</div>
+
                 @if (!string.IsNullOrWhiteSpace(_resSubtitle))
                 {
                     <div class="result-sub">@_resSubtitle</div>
                 }
+
+                <div class="countdown-wrap mt-3"
+                     @key="_countdownKey"
+                     style="--duration:@($"{_countdownTotalMs}ms")">
+                    <div class="countdown-bar">
+                        <span class="countdown-bar-fill"></span>
+                    </div>
+                    <div class="countdown-text text-muted mt-2">
+                        Volviendo en <strong>@Math.Max(1, (int)Math.Ceiling(_countdownRemainingMs / 1000.0))</strong> s
+                    </div>
+                </div>
+
             </div>
 
-            <!-- sin botones; countdown corre “por detrás” -->
             <div></div>
         </div>
     }
@@ -360,7 +372,7 @@
     private List<ShortAsset> _assets = new();
     private ShortAsset? _selectedAsset;
 
-    // devolución: estado del activo 
+    // devolución: estado del activo
     private AssetsEstado? _devolEstado;
     private AssetsEstado? _devolEstadoElegido;
 
@@ -369,8 +381,16 @@
     private string? _resSubtitle;
     private string _resImage = "";
 
-    // Countdown de resultado (nuevo default 10s)
-    private int _countdown = 10;
+    // Config unificada (ms)
+    private Config2 _cfg2 = new Config2 { Modo = "assets" };
+
+    // Countdown (ms)
+    private int _countdownTotalMs = 5000;
+    private int _countdownRemainingMs = 5000;
+    private string _countdownKey = Guid.NewGuid().ToString("N");
+
+    // Polling puertas abiertas
+    private int _puertasPollMs = 1000;
 
 
     // resultado final
@@ -386,7 +406,7 @@
     // Hub de estado (STATUS + cerraduras)
     private HubConnection? _statusHub;
 
-    // para el pin para la pantalla de seguridad 
+    // para el pin para la pantalla de seguridad
     private string _pinInput = "";
     private const int _pinMax = 8;
     private const string _adminPin = "39426641";
@@ -423,6 +443,8 @@
     // --- init ---
     protected override async Task OnInitializedAsync()
     {
+        await LoadAssetsTimingAsync();
+
         // Hub de QR
         QRhubConnection = new HubConnectionBuilder()
             .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
@@ -474,6 +496,15 @@
         _selfRef = DotNetObjectReference.Create(this);
         await _scannerModule.InvokeVoidAsync("attach", _selfRef, new { acceptTabAsEnter = true });
     }
+
+    private async Task LoadAssetsTimingAsync()
+    {
+        _cfg2 = await Cliente.GetConfigAsync();
+
+        // usamos DelayStatus como polling (ya es ms)
+        _puertasPollMs = Math.Max(200, _cfg2.DelayStatus);
+    }
+
 
     [JSInvokable]
     public async Task OnScanEnter(string text)
@@ -529,15 +560,20 @@
 
             if (string.IsNullOrWhiteSpace(_employeeName))
             {
-                ShowError("Usuario no registrado", "Por favor, comuniquese con el administrador. Gracias.");
+                ShowError("Usuario no registrado",
+                          "Por favor, comuníquese con el administrador. Gracias.",
+                          _cfg2.TimeUsuarioNoRegistrado);
                 return;
             }
+
 
             if (_accion == AssetsAccion.Retiro)
             {
                 if (_assets.Count == 0)
                 {
-                    ShowError($"No hay activos disponibles para {_employeeName}");
+                    ShowError($"No hay activos disponibles para {_employeeName}",
+                              null,
+                              _cfg2.TimeNoHayActivosDisponibles);
                     return;
                 }
 
@@ -548,7 +584,9 @@
             {
                 if (_assets.Count == 0)
                 {
-                    ShowError("No hay activos disponibles para devolución", "Por favor, intente en otro momento. Gracias.");
+                    ShowError("No hay activos disponibles para devolución",
+                              "Por favor, intente en otro momento. Gracias.",
+                              _cfg2.TimeNoHayActivosDisponibles);
                     return;
                 }
 
@@ -600,7 +638,9 @@
                 };
                 await Cliente.ReportEvento(evt);
 
-                ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
+                ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.",
+                            "Por favor, al terminar cierre la puerta. Gracias",
+                            _cfg2.TimeOperacionExitosa);
                 return;
             }
 
@@ -608,12 +648,12 @@
             _boxEnVerificacion = _selectedAsset.IdBox;
 
             ShowResult(
-                success: true,
-                title: $"Puerta {_selectedAsset.IdBox} abierta.",
-                subtitle: "Por favor, al terminar cierre la puerta. Gracias",
-                seconds: 3,
-                onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
-            );
+                    success: true,
+                    title: $"Puerta {_selectedAsset.IdBox} abierta.",
+                    subtitle: "Por favor, al terminar cierre la puerta. Gracias",
+                    durationMs: _cfg2.TimeOperacionExitosa,
+                    onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
+                );
         }
         catch
         {
@@ -689,9 +729,16 @@
         }
         else
         {
-            // Puerta abierta (haya o no asset) → bloqueamos hasta que cierren todas
+            // Puerta abierta. Si no queremos detección, no bloqueamos.
+            if (!_cfg2.DeteccionPuertasAbiertas)
+            {
+                await RegistrarYMostrarExitoFinalAsync();
+                return;
+            }
+
             await MostrarPantallaPuertasAbiertasYMonitorearAsync();
         }
+
     }
 
 
@@ -750,7 +797,7 @@
 
             try
             {
-                await Task.Delay(1000, token);
+                await Task.Delay(_puertasPollMs, token);
             }
             catch
             {
@@ -886,7 +933,7 @@
         }
 
         // Pantalla final de éxito (3s) y luego Reset (porque ShowSuccess llama a ShowResult)
-        ShowSuccess("Operación exitosa", null, 3);
+        ShowSuccess("Operación exitosa");
     }
 
 
@@ -916,15 +963,20 @@
 
         if (match == null)
         {
-            ShowError("Activo no registrado", "Por favor, comuniquese con el administrador. Gracias.");
+            ShowError("Activo no registrado",
+                      "Por favor, comuníquese con el administrador. Gracias.",
+                      _cfg2.TimeActivoNoRegistrado);
             return;
         }
 
         if (match.IdBox == 0)
         {
-            ShowError("No hay boxes disponibles", "Por favor, intente en otro momento. Gracias.");
+            ShowError("No hay boxes disponibles",
+                      "Por favor, intente en otro momento. Gracias.",
+                      _cfg2.TimeNoHayBoxesDisponibles);
             return;
         }
+
 
         _selectedAsset = match;
         _devolEstado = null;
@@ -957,14 +1009,14 @@
             if (!_cerradurasConectadas)
             {
                 var evt = new AssetsEventoLocker
-            {
-                IdAsset = _selectedAsset.IdAsset,
-                IdEmpleado = _rfid!,
-                Box = _selectedAsset.IdBox,
-                Evento = AssetsEvento.CheckIn,
-                EstadoNuevo = _devolEstadoElegido,
-                FechaEvento = DateTime.Now
-            };
+                {
+                    IdAsset = _selectedAsset.IdAsset,
+                    IdEmpleado = _rfid!,
+                    Box = _selectedAsset.IdBox,
+                    Evento = AssetsEvento.CheckIn,
+                    EstadoNuevo = _devolEstadoElegido,
+                    FechaEvento = DateTime.Now
+                };
                 await Cliente.ReportEvento(evt);
 
                 ShowSuccess($"Puerta {_selectedAsset.IdBox} abierta.", "Por favor, al terminar cierre la puerta. Gracias");
@@ -975,12 +1027,14 @@
             _boxEnVerificacion = _selectedAsset.IdBox;
 
             ShowResult(
-                success: true,
-                title: $"Puerta {_selectedAsset.IdBox} abierta.",
-                subtitle: "Por favor, al terminar cierre la puerta. Gracias",
-                seconds: 3,
-                onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
-            );
+                    success: true,
+                    title: $"Puerta {_selectedAsset.IdBox} abierta.",
+                    subtitle: "Por favor, al terminar cierre la puerta. Gracias",
+                    durationMs: _cfg2.TimeOperacionExitosa,
+                    onFinished: async () => await VerificarDespuesDePuertaAbiertaAsync()
+                );
+
+
         }
         catch
         {
@@ -988,24 +1042,20 @@
         }
     }
 
-
     void ShowDoorThenFinal(int box)
     {
-        // 1) 5s “Puerta abierta…”
         ShowResult(true,
             $"Puerta {box} abierta.",
             "Por favor, al terminar cierre la puerta. Gracias",
-            3,
+            _cfg2.TimeOperacionExitosa,
             onFinished: async () =>
             {
-                // 2) 3s “Operación exitosa”
-                ShowSuccess("Operación exitosa", null, 3);
+                ShowSuccess("Operación exitosa");
                 await Task.CompletedTask;
             });
     }
 
-    // --- Result + countdown ---
-    void ShowResult(bool success, string title, string? subtitle, int seconds, Func<Task>? onFinished = null)
+    void ShowResult(bool success, string title, string? subtitle, int durationMs, Func<Task>? onFinished = null)
     {
         _resTitle = title;
         _resSubtitle = subtitle;
@@ -1013,29 +1063,38 @@
 
         _screen = Screen.Result;
 
+        _countdownTotalMs = Math.Max(500, durationMs);          // mínimo 0.5s para que se vea
+        _countdownRemainingMs = _countdownTotalMs;
+        _countdownKey = Guid.NewGuid().ToString("N");           // reinicia animación
+
         _countdownCts?.Cancel();
         _countdownCts = new CancellationTokenSource();
 
-        // por defecto, al finalizar volvemos a la pantalla inicial
-        _ = StartCountdownAsync(seconds, _countdownCts.Token, onFinished ?? (async () => Reset()));
+        _ = StartCountdownAsync(_countdownTotalMs, _countdownCts.Token, onFinished ?? (async () => Reset()));
         StateHasChanged();
     }
 
-    void ShowSuccess(string title, string? subtitle = null, int seconds = 5)
-        => ShowResult(true, title, subtitle, seconds);
+    void ShowSuccess(string title, string? subtitle = null, int? durationMs = null)
+        => ShowResult(true, title, subtitle, durationMs ?? _cfg2.TimeOperacionExitosa);
 
-    void ShowError(string title, string? subtitle = null, int seconds = 5)
-        => ShowResult(false, title, subtitle, seconds);
+    void ShowError(string title, string? subtitle = null, int? durationMs = null)
+        => ShowResult(false, title, subtitle, durationMs ?? _cfg2.TimeOperacionCancelada);
 
-    async Task StartCountdownAsync(int seconds, CancellationToken token, Func<Task>? onFinished = null)
+    async Task StartCountdownAsync(int durationMs, CancellationToken token, Func<Task>? onFinished = null)
     {
-        _countdown = seconds;
+        _countdownTotalMs = Math.Max(500, durationMs);
+        _countdownRemainingMs = _countdownTotalMs;
         await InvokeAsync(StateHasChanged);
 
-        while (_countdown > 0 && !token.IsCancellationRequested)
+        // Actualizamos el número cada 200ms para que se vea más “vivo” (la barra ya es suave).
+        const int tickMs = 200;
+
+        while (_countdownRemainingMs > 0 && !token.IsCancellationRequested)
         {
-            try { await Task.Delay(1000, token); } catch { break; }
-            _countdown--;
+            try { await Task.Delay(tickMs, token); }
+            catch { break; }
+
+            _countdownRemainingMs = Math.Max(0, _countdownRemainingMs - tickMs);
             await InvokeAsync(StateHasChanged);
         }
 
@@ -1045,6 +1104,7 @@
             else Reset();
         }
     }
+
 
 
     void Reset()
@@ -1061,14 +1121,14 @@
         _devolEstadoElegido = null;
         _boxEnVerificacion = null;
         _puertasAbiertas.Clear();
-    
+
         _screen = _errorCode == LockerErrorCode.None
             ? Screen.Select
             : Screen.FueraServicio;
-    
+
         StateHasChanged();
     }
-    
+
 
 
     // PANTALLA DE ID

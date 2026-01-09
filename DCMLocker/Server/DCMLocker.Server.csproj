@@ -18,7 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="configjson.json.sample" />
     <Content Include="Content\icon-512.png">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -52,11 +51,7 @@
 
 
 	<Target Name="CopyExtrasAfterPublish" AfterTargets="Publish">
-		<Copy SourceFiles="$(MSBuildProjectDirectory)\.gitignore"
-			  DestinationFiles="$(PublishDir).gitignore"
-			  SkipUnchangedFiles="true" />
-		<Copy SourceFiles="$(MSBuildProjectDirectory)\configjson.json.sample"
-			  DestinationFiles="$(PublishDir)configjson.json.sample"
-			  SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(MSBuildProjectDirectory)\.gitignore" DestinationFiles="$(PublishDir).gitignore" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(MSBuildProjectDirectory)\configjson.json.sample" DestinationFiles="$(PublishDir)configjson.json.sample" SkipUnchangedFiles="true" />
 	</Target>
 </Project>

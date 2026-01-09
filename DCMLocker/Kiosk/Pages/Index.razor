@@ -275,8 +275,7 @@ else if (screen == "alerta")
     string codigo;
     string pregunta;
     bool disableTick = false;
-    CancellationTokenSource? _cts;      //es para cancelar los task.delay
-
+    CancellationTokenSource? _cts;      // es para cancelar los task.delay
 
     SystemNetwork[] Ips { get; set; }
     SystemNetwork[] IpsFiltered { get; set; }
@@ -284,14 +283,29 @@ else if (screen == "alerta")
     string fecha;
     string nroSerie;
 
+    // NUEVO: config unificada
+    private Config2 _config2 = new Config2 { Modo = "tokens" };
+
     protected override async Task OnInitializedAsync()
     {
-        var modo = await Cliente.GetModo();
-        if (modo == "assets") Nav.NavigateTo("/assets");
-        if (modo == "assetsRapido") Nav.NavigateTo("/assetsRapido");
+        // 1) Cargar config y decidir navegación por modo
+        _config2 = await Cliente.GetConfigAsync();
 
+        if (string.Equals(_config2.Modo, "assets", StringComparison.OrdinalIgnoreCase))
+        {
+            Nav.NavigateTo("/assets");
+            return;
+        }
+        else if (string.Equals(_config2.Modo, "assetsRapido", StringComparison.OrdinalIgnoreCase))
+        {
+            Nav.NavigateTo("/assetsRapido");
+            return;
+        }
+
+        // 2) Resto de tu init
         Ips = await Cliente.System_GetIP();
         IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
+
         bool pingServer = await Cliente.PingServer();
         if (!pingServer) statusRed = "Desconexion del servidor";
         if (IpsFiltered.Count() == 0) statusRed = "Desconexion de red";
@@ -301,14 +315,14 @@ else if (screen == "alerta")
         nroSerie = await Cliente.GetNroSerie();
 
         QRhubConnection = new HubConnectionBuilder()
-        .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
-        .WithAutomaticReconnect()
-        .Build();
+            .WithUrl(Nav.ToAbsoluteUri("/QRReaderHub"))
+            .WithAutomaticReconnect()
+            .Build();
 
         ServerHubConnection = new HubConnectionBuilder()
-        .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
-        .WithAutomaticReconnect()
-        .Build();
+            .WithUrl(Nav.ToAbsoluteUri("/ServerHub"))
+            .WithAutomaticReconnect()
+            .Build();
 
         QRhubConnection.On<string>("ReceiveToken", (string text) =>
         {
@@ -321,15 +335,14 @@ else if (screen == "alerta")
                 for (int i = 0; i < text.Length; i++)
                 {
                     if (char.IsDigit(text[i]))
-                    {
-                        token[i] = text[i] - '0'; // Convert character to integer
-                    }
+                        token[i] = text[i] - '0';
                     else
                     {
                         validText = false;
                         break;
                     }
                 }
+
                 if (validText && statusRed == "Conexion al servidor")
                 {
                     send();
@@ -351,7 +364,6 @@ else if (screen == "alerta")
                 ShowNotificationError("El código contiene mas de 6 números.");
             }
 
-
             StateHasChanged();
         });
 
@@ -372,6 +384,17 @@ else if (screen == "alerta")
 
         estadoCerraduras = await Cliente.GetEstadoCerraduras();
         CheckEstados();
+    }
+
+    // NUEVO: helper para recargar config cuando se necesite (por si cambió en runtime)
+    private async Task EnsureConfigLoadedAsync()
+    {
+        if (_config2 == null)
+            _config2 = new Config2 { Modo = "tokens" };
+
+        // Si querés siempre lo último, descomentá:
+        // _config2 = await Cliente.GetConfigAsync();
+        await Task.CompletedTask;
     }
 
     async void fastServicioTecnico()
@@ -421,9 +444,7 @@ else if (screen == "alerta")
     void deleteNumber()
     {
         if (token.Length > 0)
-        {
             Array.Resize(ref token, token.Length - 1);
-        }
     }
 
     async void send()
@@ -438,40 +459,46 @@ else if (screen == "alerta")
             await Cliente.PostEvento(new Evento("Se ingresó código 3942", "debug"));
             Cliente.SendWebhookAsync("Debug", "Se ingresó el código de superadmin", new { Accion = "Superadmin" });
 
-            int superadminTime = await Cliente.GetSuperadminTime();
+            await EnsureConfigLoadedAsync();
+            int superadminTime = _config2.SuperadminTime;
+
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "red";
             StateHasChanged();
+
             _cts = new CancellationTokenSource();
             try
             {
                 await Task.Delay(superadminTime, _cts.Token);
                 CheckEstados();
             }
-            catch (TaskCanceledException) { } // no hacer nada, el usuario apretó "Volver"
+            catch (TaskCanceledException) { }
         }
         else if (resultado == "6641")
         {
             await Cliente.PostEvento(new Evento("Se ingresó código 6641", "debug"));
             Cliente.SendWebhookAsync("Debug", "Se ingresó el código de admin", new { Accion = "Admin" });
 
-            int adminTime = await Cliente.GetAdminTime();
+            await EnsureConfigLoadedAsync();
+            int adminTime = _config2.AdminTime;
+
             estadoCerraduras = await Cliente.GetEstadoCerraduras();
             Ips = await Cliente.System_GetIP();
             IpsFiltered = Ips.Where(ip => !ip.IP.EndsWith(".2.3")).ToArray();
             screen = "ip";
             StateHasChanged();
+
             _cts = new CancellationTokenSource();
             try
             {
-                await Task.Delay(adminTime);
+                await Task.Delay(adminTime, _cts.Token); // FIX: ahora sí se cancela con "Volver"
                 CheckEstados();
             }
-            catch (TaskCanceledException) { } // no hacer nada, el usuario apretó "Volver"
+            catch (TaskCanceledException) { }
         }
-        else if (resultado != "" && resultado != null && resultado != "0")
+        else if (!string.IsNullOrWhiteSpace(resultado) && resultado != "0")
         {
             try
             {
@@ -490,6 +517,7 @@ else if (screen == "alerta")
                 CheckEstados();
             }
         }
+
         disableTick = false;
         StateHasChanged();
     }
@@ -508,57 +536,50 @@ else if (screen == "alerta")
 
     async Task esperarQueSeAbra(string resultado)
     {
-        // int iter = 0;
-        // bool abierta = false;
-
-        // var inicialState = await Cliente.GetState();
-
         door = await Cliente.TokenKey(resultado);
-
-        //while (iter < 10 && abierta != true)
-        //{
-        //    Console.WriteLine("iter: " + $"{iter + 1}");
-
-        //    var otroState = await Cliente.GetState();
-
-        //    abierta = inicialState.Zip(otroState, (initial, otro) =>
-        //            initial.Box.Zip(otro.Box, (initialBox, otroBox) =>
-        //                initialBox.Door != otroBox.Door))
-        //        .SelectMany(x => x)
-        //        .Any(x => x);
-
-        //    Console.WriteLine("abierta " + abierta);
-
-        //    iter++;
-        //    if (iter == 10) throw new Exception("connectionError");
-        //    await Task.Delay(500);
-        //}
     }
 
     public async void confirmar()
     {
         if (pregunta == "apagará") await Cliente.System_Shutdown();
         else if (pregunta == "reseteará") await Cliente.System_Reset();
-        // else if (pregunta == "actualizará a testing") await Cliente.System_UpdateTesting();
         else if (pregunta == "actualizará") await Cliente.System_Update();
         else CheckEstados();
     }
-
-    // protected async void InfoTewer()
-    // {
-    //     tewerID = await Cliente.System_TewerID();
-    //     StateHasChanged();
-    // }
-
-    // protected async void PassTewer()
-    // {
-    //     tewerPASS = await Cliente.System_TewerPASS();
-    //     StateHasChanged();
-    // }
 
     public void alertaGeneral(string funcion)
     {
         pregunta = funcion;
         screen = "alerta";
     }
+
+
+    // async Task esperarQueSeAbra(string resultado)
+    // {
+    //     // int iter = 0;
+    //     // bool abierta = false;
+
+    //     // var inicialState = await Cliente.GetState();
+
+    //     door = await Cliente.TokenKey(resultado);
+
+    //     //while (iter < 10 && abierta != true)
+    //     //{
+    //     //    Console.WriteLine("iter: " + $"{iter + 1}");
+
+    //     //    var otroState = await Cliente.GetState();
+
+    //     //    abierta = inicialState.Zip(otroState, (initial, otro) =>
+    //     //            initial.Box.Zip(otro.Box, (initialBox, otroBox) =>
+    //     //                initialBox.Door != otroBox.Door))
+    //     //        .SelectMany(x => x)
+    //     //        .Any(x => x);
+
+    //     //    Console.WriteLine("abierta " + abierta);
+
+    //     //    iter++;
+    //     //    if (iter == 10) throw new Exception("connectionError");
+    //     //    await Task.Delay(500);
+    //     //}
+    // }
 }

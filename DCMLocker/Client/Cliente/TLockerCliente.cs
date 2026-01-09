@@ -1,14 +1,15 @@
-﻿using System;
+﻿using DCMLocker.Client.Authentication;
+using DCMLocker.Shared;
+using DCMLocker.Shared.Locker;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.SignalR.Client;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Json;
-using DCMLocker.Shared.Locker;
-using DCMLocker.Client.Authentication;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.AspNetCore.Components;
-using DCMLocker.Shared;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DCMLocker.Client.Cliente
 {
@@ -1308,121 +1309,49 @@ namespace DCMLocker.Client.Cliente
         }
 
         /// <summary>--------------------------------------------------------------------
-        /// Tiempos configurables
+        /// La otra config
         /// </summary>
         /// <returns></returns>----------------------------------------------------------
 
-        public async Task<int> GetDelayStatus()
+        public async Task<Config2> GetConfigAsync(CancellationToken ct = default)
         {
             try
             {
-                var response = await _cliente.GetAsync("system/DelayStatus");
-                var oRta = await response.Content.ReadFromJsonAsync<int>();
-                return oRta;
+                // GET system/config
+                var cfg = await _cliente.GetFromJsonAsync<Config2>("system/config", ct);
+
+                // Fallback por si el server devuelve null por algún motivo
+                return cfg ?? new Config2();
             }
-            catch (Exception)
+            catch
             {
-                return 1000;
+                // Default local si falla la API
+                return new Config2();
             }
         }
 
-        public async Task<bool> SetDelayStatus(int delayStatus)
+        public async Task<bool> UpdateConfigAsync(Config2 incoming, CancellationToken ct = default)
         {
+            if (incoming is null) throw new ArgumentNullException(nameof(incoming));
+
             try
             {
-                var oRta = await _cliente.PostAsJsonAsync("system/DelayStatus", delayStatus);
-                return oRta.IsSuccessStatusCode;
+                // PUT system/config
+                var resp = await _cliente.PostAsJsonAsync("system/config", incoming, ct);
+                if (!resp.IsSuccessStatusCode)
+                    return false;
+
+                // El server devuelve Ok(after) => Config2
+                var updated = await resp.Content.ReadFromJsonAsync<Config2>(cancellationToken: ct);
+                return true;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }
         }
 
-        public async Task<int> GetSuperadminTime()
-        {
-            try
-            {
-                var response = await _cliente.GetAsync("system/SuperadminTime");
-                var oRta = await response.Content.ReadFromJsonAsync<int>();
-                return oRta;
-            }
-            catch (Exception)
-            {
-                return 10000;
-            }
-        }
 
-        public async Task<bool> SetSuperadminTime(int superadminTime)
-        {
-            try
-            {
-                var oRta = await _cliente.PostAsJsonAsync("system/SuperadminTime", superadminTime);
-                return oRta.IsSuccessStatusCode;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public async Task<int> GetAdminTime()
-        {
-            try
-            {
-                var response = await _cliente.GetAsync("system/AdminTime");
-                var oRta = await response.Content.ReadFromJsonAsync<int>();
-                return oRta;
-            }
-            catch (Exception)
-            {
-                return 10000;
-            }
-        }
-
-        public async Task<bool> SetAdminTime(int adminTime)
-        {
-            try
-            {
-                var oRta = await _cliente.PostAsJsonAsync("system/AdminTime", adminTime);
-                return oRta.IsSuccessStatusCode;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-        /// <summary>--------------------------------------------------------------------
-        /// Assets config 
-        /// </summary>
-        /// <returns></returns>----------------------------------------------------------
-
-        public async Task<string> GetModo()
-        {
-            try
-            {
-                var response = await _cliente.GetAsync("system/modo");
-                var oRta = await response.Content.ReadAsStringAsync();
-                return oRta;
-            }
-            catch (Exception)
-            {
-                return "tokens";
-            }
-        }
-
-        public async Task<bool> SetModo(string modo)
-        {
-            try
-            {
-                var oRta = await _cliente.PostAsJsonAsync("system/modo", modo);
-                return oRta.IsSuccessStatusCode;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
         /// <summary>--------------------------------------------------------------------
         /// El log y eso xd
         /// </summary>
