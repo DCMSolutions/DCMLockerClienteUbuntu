@@ -1,27 +1,24 @@
 ﻿using DCMLocker.Server.BaseController;
 using DCMLocker.Server.Controllers;
 using DCMLocker.Server.Hubs;
+using DCMLocker.Server.Interfaces;
 using DCMLocker.Server.Webhooks;
 using DCMLocker.Shared;
 using DCMLocker.Shared.Locker;
 using DCMLockerCommunication;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Radzen.Blazor.Rendering;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Runtime.ConstrainedExecution;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,24 +27,50 @@ namespace DCMLocker.Server.Background
     public class DCMServerConnection : BackgroundService
     {
         private readonly IHubContext<ServerHub> _hubContext;
-
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly TBaseLockerController _base;
         private readonly IDCMLockerController _driver;
         private readonly IConfiguration _configuration;
+        private readonly IConfig2Store _config;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly WebhookService _webhookService;
 
-        private HttpClient _http; // instancia que obtenemos de la factory
+        private HttpClient _http;
+        private HubConnection? _lockerHub;
 
-        public DCMServerConnection(IHubContext<ServerHub> hubContext, IHttpClientFactory httpClientFactory, TBaseLockerController Base, IDCMLockerController driver,
-            IConfiguration configuration, IServiceScopeFactory scopeFactory, WebhookService webhookService)
+        private volatile bool _configSynced = false;
+        private TaskCompletionSource<bool>? _configAckTcs;
+
+        private readonly SemaphoreSlim _sendMutex = new(1, 1);
+        private DateTime _nextConfigUtc = DateTime.MinValue;
+
+        private bool _cerrConectadasPrev = false;
+
+        // Estado anterior por IdBox
+        private readonly Dictionary<int, (bool Puerta, bool Ocupacion)> _previousStates = new();
+
+        private class AckDto
+        {
+            public bool Ok { get; set; }
+            public string? Error { get; set; }
+        }
+
+        public DCMServerConnection(
+            IHubContext<ServerHub> hubContext,
+            IHttpClientFactory httpClientFactory,
+            TBaseLockerController Base,
+            IDCMLockerController driver,
+            IConfiguration configuration,
+            IConfig2Store config,
+            IServiceScopeFactory scopeFactory,
+            WebhookService webhookService)
         {
             _hubContext = hubContext;
             _httpClientFactory = httpClientFactory;
             _base = Base;
             _driver = driver;
             _configuration = configuration;
+            _config = config;
             _scopeFactory = scopeFactory;
             _webhookService = webhookService;
         }
@@ -56,17 +79,51 @@ namespace DCMLocker.Server.Background
         {
             bool estaConectado = true;
             int contadorFallos = 0;
+
+            // defaults
             int delayStatus = 1000;
             int tewerID = 0;
-            bool _cerrConectadasPrev = false;
 
             _http = _httpClientFactory.CreateClient("ServerStatusClient");
+            _lockerHub = BuildLockerHubConnection();
 
-            Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates = new();
-
-            async Task checkFail()
+            // ACK Config
+            _lockerHub.On<AckDto>("AckConfig", ack =>
             {
-                if (stoppingToken.IsCancellationRequested) return;
+                if (ack?.Ok == true)
+                    _configAckTcs?.TrySetResult(true);
+                else
+                    _configAckTcs?.TrySetException(new Exception(ack?.Error ?? "AckConfig Ok=false"));
+            });
+
+            _lockerHub.Reconnected += _ =>
+            {
+                // por seguridad: al reconectar, obligamos config nuevamente antes de seguir
+                _configSynced = false;
+                return Task.CompletedTask;
+            };
+
+            _lockerHub.Closed += async _ =>
+            {
+                _configSynced = false;
+                try { await Task.Delay(1000, stoppingToken); } catch { }
+            };
+
+            async Task EnsureHubConnectedAsync(CancellationToken ct)
+            {
+                if (_lockerHub == null) return;
+
+                if (_lockerHub.State == HubConnectionState.Connected ||
+                    _lockerHub.State == HubConnectionState.Connecting ||
+                    _lockerHub.State == HubConnectionState.Reconnecting)
+                    return;
+
+                await _lockerHub.StartAsync(ct);
+            }
+
+            async Task CheckFailAsync(CancellationToken ct)
+            {
+                if (ct.IsCancellationRequested) return;
 
                 using var scope = _scopeFactory.CreateScope();
                 var evento = scope.ServiceProvider.GetRequiredService<LogController>();
@@ -74,149 +131,156 @@ namespace DCMLocker.Server.Background
                 if (GetIP() == "")
                 {
                     evento.AddEvento(new Evento("Se desconectó de red", "conexión falla"));
-                    await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de red", stoppingToken);
+                    await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de red", ct);
                 }
                 else
                 {
                     try
                     {
-                        using var response = await _http.GetAsync("https://www.google.com/generate_204", stoppingToken);
+                        using var response = await _http.GetAsync("https://www.google.com/generate_204", ct);
                         if (response.IsSuccessStatusCode)
                         {
                             evento.AddEvento(new Evento("Se desconectó del servidor", "conexión falla"));
-                            await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion del servidor", stoppingToken);
+                            await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion del servidor", ct);
                         }
                         else
                         {
                             evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
-                            await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de internet", stoppingToken);
+                            await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de internet", ct);
                         }
                     }
-                    catch (OperationCanceledException) { /* frenado a mano */ }
+                    catch (OperationCanceledException) { }
                     catch
                     {
                         evento.AddEvento(new Evento("Se desconectó de internet", "conexión falla"));
-                        await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de internet", stoppingToken);
+                        await _hubContext.Clients.All.SendAsync("STATUS", "Desconexion de internet", ct);
                     }
                 }
 
                 estaConectado = false;
             }
 
-            List<TLockerMapDTO> GetLockerStatus(Dictionary<int, (bool Puerta, bool Ocupacion)> previousStates, bool cerrConectadas)
+            // ---------- Sync de Config: obligatorio al iniciar ----------
+            async Task SyncConfigOrRetryAsync(CancellationToken ct)
             {
-                try
+                if (_lockerHub == null) return;
+
+                var backoff = TimeSpan.FromSeconds(1);
+                var maxBackoff = TimeSpan.FromSeconds(30);
+
+                while (!ct.IsCancellationRequested && !_configSynced)
                 {
-                    using var scope = _scopeFactory.CreateScope();
-                    var evento = scope.ServiceProvider.GetRequiredService<LogController>();
-                    var newList = new List<TLockerMapDTO>();
-
-                    bool fireEvents = cerrConectadas && _cerrConectadasPrev;
-
-                    if (!cerrConectadas) //si esta desconectado pasa rapido
+                    try
                     {
-                        foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
-                        {
-                            var hasPrev = previousStates.TryGetValue(locker.IdBox, out var prev);
-                            var puerta = hasPrev && prev.Puerta;
-                            var ocup = hasPrev && prev.Ocupacion;
+                        await EnsureHubConnectedAsync(ct);
 
-                            newList.Add(new TLockerMapDTO
-                            {
-                                Id = locker.IdBox,
-                                Enable = locker.Enable,
-                                AlamrNro = locker.AlamrNro,
-                                Size = locker.Size,
-                                TempMax = locker.TempMax,
-                                TempMin = locker.TempMin,
-                                Puerta = puerta,
-                                Ocupacion = ocup
-                            });
+                        if (_lockerHub.State != HubConnectionState.Connected)
+                            throw new Exception("Hub no conectado.");
+
+                        // refrescar config local ANTES de construir el snapshot
+                        (delayStatus, tewerID) = await ReadLocalConfigAsync(ct);
+
+                        var status = BuildFullConfig(delayStatus, tewerID);
+
+                        _configAckTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                        await _sendMutex.WaitAsync(ct);
+                        try
+                        {
+                            await _lockerHub.InvokeAsync("Config", status, ct);
+                        }
+                        finally
+                        {
+                            _sendMutex.Release();
                         }
 
-                        _cerrConectadasPrev = false;
-                        return newList;
-                    }
+                        // Esperar ACK (timeout)
+                        var timeout = Task.Delay(TimeSpan.FromSeconds(10), ct);
+                        var done = await Task.WhenAny(_configAckTcs.Task, timeout);
 
-                    foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
-                    {
-                        var idFisico = locker.IdFisico.GetValueOrDefault();
-                        var _CU = idFisico / 16;
-                        var _Box = idFisico % 16;
-
-                        var status = _driver.GetCUState(_CU);
-
-                        bool _puerta = status.DoorStatus[_Box];
-                        bool _ocupacion = status.SensorStatus[_Box];
-
-                        if (fireEvents && previousStates.TryGetValue(locker.IdBox, out var previousState))
+                        if (done == _configAckTcs.Task)
                         {
-                            if (previousState.Puerta != _puerta)
+                            await _configAckTcs.Task; // propaga error si hubo
+
+                            _configSynced = true;
+                            _nextConfigUtc = DateTime.UtcNow.AddDays(1);
+
+                            if (estaConectado != true)
                             {
-                                if (_puerta)
+                                estaConectado = true;
+                                contadorFallos = 0;
+
+                                using (var scope = _scopeFactory.CreateScope())
                                 {
-                                    evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
-                                    _webhookService.SendWebhook("LockerCerrado", $"Se cerró la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
+                                    var evento = scope.ServiceProvider.GetRequiredService<LogController>();
+                                    evento.AddEvento(new Evento("Se conectó al servidor (Config OK)", "conexión"));
                                 }
-                                else
-                                {
-                                    evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
-                                    _webhookService.SendWebhook("LockerAbierto", $"Se abrió la puerta del box {locker.IdBox}", new { Box = locker.IdBox });
-                                }
+
+                                await _hubContext.Clients.All.SendAsync("STATUS", "Conexion al servidor", ct);
                             }
-                            if (previousState.Ocupacion != _ocupacion)
-                            {
-                                if (_ocupacion)
-                                {
-                                    evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
-                                    _webhookService.SendWebhook("SensorOcupado", $"Se detectó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
-                                }
-                                else
-                                {
-                                    evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
-                                    _webhookService.SendWebhook("SensorLiberado", $"Se liberó presencia en el box {locker.IdBox}", new { Box = locker.IdBox });
-                                }
-                            }
+
+                            return;
                         }
 
-                        previousStates[locker.IdBox] = (_puerta, _ocupacion);
+                        Console.WriteLine("[Locker->Hub] Config ACK timeout. Reintentando...");
+                    }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Locker->Hub] Falló SyncConfig. HubState={_lockerHub?.State}. Error={ex}");
 
-                        newList.Add(new TLockerMapDTO
-                        {
-                            Id = locker.IdBox,
-                            Enable = locker.Enable,
-                            AlamrNro = locker.AlamrNro,
-                            Size = locker.Size,
-                            TempMax = locker.TempMax,
-                            TempMin = locker.TempMin,
-                            Puerta = _puerta,
-                            Ocupacion = _ocupacion
-                        });
+                        if (estaConectado != false || contadorFallos % 10 == 9)
+                            await CheckFailAsync(ct);
+                        else
+                            contadorFallos++;
+
+                        _http = _httpClientFactory.CreateClient("ServerStatusClient");
                     }
 
-                    _cerrConectadasPrev = true;
-                    return newList;
-                }
-                catch
-                {
-                    _cerrConectadasPrev = false;
-                    return new();
+                    try { await Task.Delay(backoff, ct); } catch { }
+                    backoff = TimeSpan.FromSeconds(Math.Min(maxBackoff.TotalSeconds, backoff.TotalSeconds * 2));
                 }
             }
 
-            while (true)
+            // ---------- arranque: esperar config OK ----------
+            (delayStatus, tewerID) = await ReadLocalConfigAsync(stoppingToken);
+            await SyncConfigOrRetryAsync(stoppingToken);
+
+            // ---------- loop principal ----------
+            while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    //parece troll que esté arriba pero da tiempo a que arranquen los drivers y no nos de desconectado todo el primer status
+                    (delayStatus, tewerID) = await ReadLocalConfigAsync(stoppingToken);
+
                     await Task.Delay(Math.Max(100, delayStatus), stoppingToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                try
-                {
+
+                    // si perdimos sync por reconexión, re-sync antes de seguir
+                    if (!_configSynced)
+                    {
+                        await SyncConfigOrRetryAsync(stoppingToken);
+                        continue;
+                    }
+
+                    // config diario
+                    if (DateTime.UtcNow >= _nextConfigUtc)
+                    {
+                        _configSynced = false;
+                        await SyncConfigOrRetryAsync(stoppingToken);
+
+                        if (!_configSynced)
+                            continue;
+                    }
+
+                    await EnsureHubConnectedAsync(stoppingToken);
+
+                    if (_lockerHub == null || _lockerHub.State != HubConnectionState.Connected)
+                        throw new Exception("No conectado al Hub del servidor.");
+
+                    // leer estado cerraduras
                     string cerraduras;
                     using (var scope = _scopeFactory.CreateScope())
                     {
@@ -224,94 +288,251 @@ namespace DCMLocker.Server.Background
                         cerraduras = system.GetEstadoCerraduras();
                     }
 
+                    bool cerrConectadas = (cerraduras == "Conectadas");
+
+                    // detectar cambios + loguear eventos (SIN webhooks)
+                    var changedBoxes = DetectChangedBoxesAndLog(cerrConectadas);
+
+                    // si hay cambios -> Boxes, si no -> Heartbeat
+                    await _sendMutex.WaitAsync(stoppingToken);
                     try
                     {
-                        using var stream = new FileStream("configjson.json", FileMode.Open, FileAccess.Read, FileShare.Read);
-                        var node = System.Text.Json.Nodes.JsonNode.Parse(stream)!;
-                        delayStatus = node["DelayStatus"]?.GetValue<int>() ?? 1000;
-                        tewerID = node["TewerID"]?.GetValue<int>() ?? 0;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error al leer configjson: {ex.Message}");
-                        delayStatus = 1000;
-                        tewerID = 0;
-                    }
-
-                    var serverCommunication = new ServerStatus
-                    {
-                        NroSerie = _base.Config.LockerID,
-                        Version = _configuration["Version"],
-                        IP = GetIP(),
-                        EstadoCerraduras = cerraduras,
-                        DelayStatus = delayStatus,
-                        TewerID = tewerID,
-                        LastUpdateTime = DateTime.Now,
-                        Locker = GetLockerStatus(previousStates, cerraduras == "Conectadas")
-                    };
-
-                    using var response = await _http.PostAsJsonAsync(
-                        $"{_base.Config.UrlServer}api/locker/status",
-                        serverCommunication,
-                        stoppingToken);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        if (estaConectado != true)
-                        {
-                            estaConectado = true;
-                            contadorFallos = 0;
-                            using (var scope = _scopeFactory.CreateScope())
-                            {
-                                var evento = scope.ServiceProvider.GetRequiredService<LogController>();
-                                evento.AddEvento(new Evento("Se conectó al servidor", "conexión"));
-                            }
-                            _webhookService.SendWebhook("Conexion", "El locker se reconectó", new { Accion = "Conexión" });
-                            await _hubContext.Clients.All.SendAsync("STATUS", "Conexion al servidor", stoppingToken);
-                        }
-                    }
-                    else
-                    {
-                        if (estaConectado != false || contadorFallos % 10 == 9)
-                        {
-                            await checkFail();
-                        }
+                        if (changedBoxes.Count > 0)
+                            await _lockerHub.InvokeAsync("Boxes", _base.Config.LockerID, changedBoxes, stoppingToken);
                         else
+                            await _lockerHub.InvokeAsync("Heartbeat", _base.Config.LockerID, stoppingToken);
+                    }
+                    finally
+                    {
+                        _sendMutex.Release();
+                    }
+
+                    // éxito => conectado
+                    if (estaConectado != true)
+                    {
+                        estaConectado = true;
+                        contadorFallos = 0;
+
+                        using (var scope = _scopeFactory.CreateScope())
                         {
-                            contadorFallos++;
+                            var evento = scope.ServiceProvider.GetRequiredService<LogController>();
+                            evento.AddEvento(new Evento("Se conectó al servidor", "conexión"));
                         }
+
+                        // si querés eliminar 100% webhooks del locker, sacá esto también
+                        _webhookService.SendWebhook("Conexion", "El locker se reconectó", new { Accion = "Conexión" });
+                        await _hubContext.Clients.All.SendAsync("STATUS", "Conexion al servidor", stoppingToken);
                     }
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)// esto es el caso de apagar la app a mano
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
                     break;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Console.WriteLine($"[Locker->Hub] Loop error. HubState={_lockerHub?.State}. Error={ex}");
+
                     if (estaConectado != false || contadorFallos % 10 == 9)
-                    {
-                        await checkFail();
-                    }
+                        await CheckFailAsync(stoppingToken);
                     else
-                    {
                         contadorFallos++;
-                    }
+
                     _http = _httpClientFactory.CreateClient("ServerStatusClient");
                 }
             }
-
         }
 
-        string GetIP()
+        private async Task<(int DelayStatus, int TewerID)> ReadLocalConfigAsync(CancellationToken ct)
         {
             try
             {
-                // 1) Preferir Tailscale
+                var cfg = await _config.GetAsync(ct);
+                var delay = (cfg.DelayStatus > 0) ? cfg.DelayStatus : 2000;
+                delay = Math.Clamp(delay, 250, 30000);
+
+                return (delay, cfg.TewerID);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch
+            {
+                return (2000, 0);
+            }
+        }
+
+        /// <summary>
+        /// Devuelve SOLO los boxes que cambiaron (Puerta u Ocupación).
+        /// Además, registra eventos en LogController como antes, pero SIN webhooks.
+        /// </summary>
+        private List<TLockerMapDTO> DetectChangedBoxesAndLog(bool cerrConectadas)
+        {
+            var changed = new List<TLockerMapDTO>();
+
+            // Igual que antes: solo “dispara eventos” si veníamos conectados y seguimos conectados
+            bool fireEvents = cerrConectadas && _cerrConectadasPrev;
+
+            using var scope = _scopeFactory.CreateScope();
+            var evento = scope.ServiceProvider.GetRequiredService<LogController>();
+
+            if (!cerrConectadas)
+            {
+                _cerrConectadasPrev = false;
+                return changed;
+            }
+
+            foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
+            {
+                var idFisico = locker.IdFisico.GetValueOrDefault();
+                var cu = idFisico / 16;
+                var box = idFisico % 16;
+
+                var st = _driver.GetCUState(cu);
+
+                bool puerta = st.DoorStatus[box];
+                bool ocup = st.SensorStatus[box];
+
+                if (_previousStates.TryGetValue(locker.IdBox, out var prev))
+                {
+                    bool puertaChanged = prev.Puerta != puerta;
+                    bool ocupChanged = prev.Ocupacion != ocup;
+
+                    if (puertaChanged || ocupChanged)
+                    {
+                        if (fireEvents && puertaChanged)
+                        {
+                            if (puerta)
+                                evento.AddEvento(new Evento($"Se cerró la puerta del box {locker.IdBox}", "cerraduras"));
+                            else
+                                evento.AddEvento(new Evento($"Se abrió la puerta del box {locker.IdBox}", "cerraduras"));
+                        }
+
+                        if (fireEvents && ocupChanged)
+                        {
+                            if (ocup)
+                                evento.AddEvento(new Evento($"Se detectó presencia en el box {locker.IdBox}", "sensores"));
+                            else
+                                evento.AddEvento(new Evento($"Se liberó presencia en el box {locker.IdBox}", "sensores"));
+                        }
+
+                        changed.Add(new TLockerMapDTO
+                        {
+                            Id = locker.IdBox,
+                            Enable = locker.Enable,
+                            AlamrNro = locker.AlamrNro,
+                            Size = locker.Size,
+                            TempMax = locker.TempMax,
+                            TempMin = locker.TempMin,
+                            Puerta = puerta,
+                            Ocupacion = ocup
+                        });
+                    }
+                }
+
+                _previousStates[locker.IdBox] = (puerta, ocup);
+            }
+
+            _cerrConectadasPrev = true;
+            return changed;
+        }
+
+        private ServerStatus BuildFullConfig(int delayStatus, int tewerID)
+        {
+            string cerraduras;
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var system = scope.ServiceProvider.GetRequiredService<SystemController>();
+                cerraduras = system.GetEstadoCerraduras();
+            }
+
+            bool cerrConectadas = (cerraduras == "Conectadas");
+
+            var full = new List<TLockerMapDTO>();
+            foreach (var locker in _base.LockerMap.LockerMaps.Values.Where(x => x.IdFisico != null))
+            {
+                bool puerta = false;
+                bool ocup = false;
+
+                if (cerrConectadas)
+                {
+                    var idFisico = locker.IdFisico.GetValueOrDefault();
+                    var cu = idFisico / 16;
+                    var box = idFisico % 16;
+
+                    var st = _driver.GetCUState(cu);
+                    puerta = st.DoorStatus[box];
+                    ocup = st.SensorStatus[box];
+                }
+
+                full.Add(new TLockerMapDTO
+                {
+                    Id = locker.IdBox,
+                    Enable = locker.Enable,
+                    AlamrNro = locker.AlamrNro,
+                    Size = locker.Size,
+                    TempMax = locker.TempMax,
+                    TempMin = locker.TempMin,
+                    Puerta = puerta,
+                    Ocupacion = ocup
+                });
+            }
+
+            return new ServerStatus
+            {
+                NroSerie = _base.Config.LockerID,
+                Version = _configuration["Version"],
+                IP = GetIP(),
+                EstadoCerraduras = cerraduras,
+                DelayStatus = delayStatus,
+                TewerID = tewerID,
+                LastUpdateTime = DateTime.Now,
+                Locker = full
+            };
+        }
+
+        private HubConnection BuildLockerHubConnection()
+        {
+            var hubUrl = $"{_base.Config.UrlServer}".TrimEnd('/') + "/hubs/locker";
+
+            return new HubConnectionBuilder()
+                .WithUrl(hubUrl, options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                })
+                .WithAutomaticReconnect(new[]
+                {
+                    TimeSpan.Zero,
+                    TimeSpan.FromSeconds(2),
+                    TimeSpan.FromSeconds(5),
+                    TimeSpan.FromSeconds(10),
+                    TimeSpan.FromSeconds(20),
+                })
+                .Build();
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            if (_lockerHub != null)
+            {
+                try { await _lockerHub.StopAsync(cancellationToken); } catch { }
+                try { await _lockerHub.DisposeAsync(); } catch { }
+            }
+
+            await base.StopAsync(cancellationToken);
+        }
+
+        // ------------------------------
+        // IP helpers (igual que antes)
+        // ------------------------------
+        private string GetIP()
+        {
+            try
+            {
                 var tsIp = GetTailscaleIPv4();
                 if (!string.IsNullOrWhiteSpace(tsIp))
                     return tsIp;
 
-                // 2) Fallback: IP de red (Ethernet/WiFi)
                 var lanIp = GetLanIPv4();
                 return lanIp ?? "";
             }
@@ -321,14 +542,13 @@ namespace DCMLocker.Server.Background
             }
         }
 
-        static string? GetTailscaleIPv4()
+        private static string? GetTailscaleIPv4()
         {
             foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (ni.OperationalStatus != OperationalStatus.Up)
                     continue;
 
-                // Tailscale suele aparecer como "Tailscale", "Tailscale Tunnel", "tailscale0", etc.
                 if (!IsTailscaleInterface(ni))
                     continue;
 
@@ -337,18 +557,14 @@ namespace DCMLocker.Server.Background
                     if (ua.Address.AddressFamily != AddressFamily.InterNetwork)
                         continue;
 
-                    var ip = ua.Address.ToString();
-
-                    // Tailscale IPv4 normalmente es 100.64.0.0/10
                     if (IsTailscaleIPv4(ua.Address))
-                        return ip;
+                        return ua.Address.ToString();
                 }
             }
-
             return null;
         }
 
-        static string? GetLanIPv4()
+        private static string? GetLanIPv4()
         {
             var ips = new List<string>();
 
@@ -364,7 +580,6 @@ namespace DCMLocker.Server.Background
                         {
                             var ip = ua.Address.ToString();
 
-                            // Excluir Tailscale por si alguna vez cae acá, loopback y APIPA
                             if (ip.StartsWith("127.")) continue;
                             if (ip.StartsWith("169.254.")) continue;
                             if (IsTailscaleIPv4(ua.Address)) continue;
@@ -378,18 +593,17 @@ namespace DCMLocker.Server.Background
             return ips.FirstOrDefault(ip => !ip.EndsWith(".2.3"));
         }
 
-        static bool IsTailscaleInterface(NetworkInterface ni)
+        private static bool IsTailscaleInterface(NetworkInterface ni)
         {
             var n = (ni.Name ?? "").ToLowerInvariant();
             var d = (ni.Description ?? "").ToLowerInvariant();
             return n.Contains("tailscale") || d.Contains("tailscale");
         }
 
-        static bool IsTailscaleIPv4(IPAddress ip)
+        private static bool IsTailscaleIPv4(IPAddress ip)
         {
             var b = ip.GetAddressBytes();
             return b.Length == 4 && b[0] == 100 && b[1] >= 64 && b[1] <= 127;
         }
-
     }
 }

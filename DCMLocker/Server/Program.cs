@@ -11,12 +11,9 @@ namespace DCMLocker.Server
 {
     public class Program
     {
-        
-
         public static void Main(string[] args)
         {
             System.IO.Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
-            
             CreateHostBuilder(args).Build().Run();
         }
 
@@ -28,9 +25,8 @@ namespace DCMLocker.Server
                 {
                     webBuilder.UseStartup<Startup>();
                 })
-                .ConfigureServices(services=> 
+                .ConfigureServices(services =>
                 {
-
                     services.AddHostedService<DCMLockerController>();
 
                     services.AddHostedService<AppInitializationService>();
@@ -40,9 +36,12 @@ namespace DCMLocker.Server
                     services.AddSingleton<ServerHub>();
 
                     services.AddSingleton<IDCMLockerController, DCMLockerConector>();
-                    services.AddHostedService<DCMServerConnection>();
 
-                    
+                    // ✅ CAMBIO: una sola instancia que sirve para:
+                    // 1) correr como BackgroundService
+                    // 2) poder inyectarse desde otros servicios y llamar SendBoxesChangedAsync(...)
+                    services.AddSingleton<DCMServerConnection>();
+                    services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<DCMServerConnection>());
                 });
     }
 }
