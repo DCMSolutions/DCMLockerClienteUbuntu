@@ -411,6 +411,11 @@
     private const int _pinMax = 8;
     private const string _adminPin = "39426641";
 
+    // para el post del evento del rfid
+    private string? _lastRfidEvento;
+    private DateTime _lastRfidEventoAt = DateTime.MinValue;
+
+
     // --- Admin ---
     private bool _adminBusy;
     private string? _adminVersion;
@@ -519,6 +524,8 @@
     private void SetRfid(string token)
     {
         _rfid = token;
+        _ = PostEventoRfidAsync(token);
+
         _ = TryProceedAsync();
         StateHasChanged();
     }
@@ -1420,6 +1427,32 @@
         LockerErrorCode.Inesperado => "Error inesperado.",
         _ => ""
     };
+
+    private async Task PostEventoRfidAsync(string rfid)
+    {
+        if (string.IsNullOrWhiteSpace(rfid)) return;
+
+        // Dedup: mismo RFID en una ventana corta (evita doble evento)
+        var now = DateTime.Now;
+        if (_lastRfidEvento == rfid && (now - _lastRfidEventoAt).TotalMilliseconds < 1000)
+            return;
+
+        _lastRfidEvento = rfid;
+        _lastRfidEventoAt = now;
+
+        try
+        {
+            var evento = new Evento(rfid, "AssetRFID"); // Descripcion=rfid, Identificador="AssetRFID"
+
+            await Cliente.PostEvento(evento);
+            await Cliente.SendWebhookAsync("AssetRFID", rfid, null);
+        }
+        catch
+        {
+            // No bloqueamos el flujo de la pantalla si el log falla
+        }
+    }
+
 
 
     // --- dispose ---
