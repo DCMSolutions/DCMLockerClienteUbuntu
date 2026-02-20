@@ -660,29 +660,54 @@ namespace DCMLocker.Kiosk.Cliente
                 _cliente.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             }
+
             try
             {
                 var r = await _cliente.PostAsJsonAsync<string>("Locker/Token", tokenkey);
+
                 var cerr = await GetEstadoCerraduras();
+                if (cerr != "Conectadas")
+                    throw new Exception("cerradurasError");
+
+                // 203 => rechazo válido con motivo en body
+                if (r.StatusCode == System.Net.HttpStatusCode.NonAuthoritativeInformation) // 203
+                {
+                    string motivo = "El token no existe";
+
+                    // puede venir como JSON string o texto plano
+                    try
+                    {
+                        var s = await r.Content.ReadFromJsonAsync<string>();
+                        if (!string.IsNullOrWhiteSpace(s)) motivo = s;
+                    }
+                    catch
+                    {
+                        var s = await r.Content.ReadAsStringAsync();
+                        if (!string.IsNullOrWhiteSpace(s)) motivo = s.Trim().Trim('"');
+                    }
+
+                    var ex = new Exception("invalidToken");
+                    ex.Data["motivo"] = motivo;
+                    throw ex;
+                }
+
                 if (r.StatusCode == System.Net.HttpStatusCode.Forbidden
                     || r.StatusCode == System.Net.HttpStatusCode.BadRequest
                     || r.StatusCode == System.Net.HttpStatusCode.NotFound
-                    || r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout) throw new Exception("serverConnectionError");
-                if (cerr != "Conectadas") throw new Exception("cerradurasError");
-                if (r.StatusCode == System.Net.HttpStatusCode.OK) return await r.Content.ReadFromJsonAsync<int>();
-                else throw new Exception("invalidToken");
+                    || r.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+                    throw new Exception("serverConnectionError");
+
+                if (r.StatusCode == System.Net.HttpStatusCode.OK)
+                    return await r.Content.ReadFromJsonAsync<int>();
+
+                throw new Exception("serverConnectionError");
             }
             catch (HttpRequestException)
             {
                 throw new Exception("lockerConnectionError");
             }
-            catch (Exception er)
-            {
-                Console.WriteLine(er.Message);
-                throw;
-            }
-
         }
+
 
         public async Task<TokenAccessBox[]> GetMyTokenKey()
         {

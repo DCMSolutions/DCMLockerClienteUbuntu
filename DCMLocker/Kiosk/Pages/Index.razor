@@ -129,7 +129,7 @@ else if (screen == "success")
 }
 else if (screen == "invalidToken")
 {
-    <TokenInvalid />
+    <TokenInvalid Motivo="motivoTokenInvalid" />
 }
 else if (screen == "serverConnectionError")
 {
@@ -282,6 +282,7 @@ else if (screen == "alerta")
     string version;
     string fecha;
     string nroSerie;
+    private string? motivoTokenInvalid;
 
     // NUEVO: config unificada
     private Config2 _config2 = new Config2 { Modo = "tokens" };
@@ -511,11 +512,26 @@ else if (screen == "alerta")
             catch (Exception er)
             {
                 Console.WriteLine(er.Message);
-                screen = er.Message;
+
+                if (er.Message == "invalidToken")
+                {
+                    motivoTokenInvalid = er.Data.Contains("motivo")
+                        ? er.Data["motivo"]?.ToString()
+                        : null;
+
+                    screen = "invalidToken";
+                }
+                else
+                {
+                    motivoTokenInvalid = null;
+                    screen = er.Message;
+                }
+
                 StateHasChanged();
                 await Task.Delay(3000);
                 CheckEstados();
             }
+
         }
 
         disableTick = false;

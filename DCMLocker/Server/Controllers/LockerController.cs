@@ -169,23 +169,34 @@ namespace DCMLocker.Server.Controllers
                             {
                                 _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, el box enviado por el servidor no tiene id físico asignado", "token falla"));
                                 _webhookService.SendWebhook("RespuestaToken", $"Token {Token}: Respuesta del servidor invalida, el box enviado ({serverResponse.Box}) no tiene id físico asignado", new { Token = Token, Box = serverResponse.Box, Respuesta = "Error: el box enviado por el servidor no tiene id físico asignado" });
-                                return StatusCode(203);
+                                return StatusCode(203, "Respuesta del servidor con box invalido");
                             }
                         }
                         else
                         {
-                            _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, no se recibió un box en la respuesta del servidor", "token falla"));
-                            _webhookService.SendWebhook("RespuestaToken", $"Token {Token}: Respuesta del servidor invalida, el box enviado ({serverResponse.Box}) no tiene id físico asignado", new { Token = Token, Box = 0, Respuesta = "Error: el box enviado por el servidor no tiene id físico asignado" });
-                            return StatusCode(203);
+                            // Negativo válido: motivo viene en Token si el server es nuevo.
+                            // Si el server es viejo, Token vuelve igual al enviado => fallback.
+                            string motivo = "El token no existe";
 
+                            if (!string.IsNullOrWhiteSpace(serverResponse.Token) &&
+                                !string.Equals(serverResponse.Token, Token, StringComparison.Ordinal))
+                            {
+                                motivo = serverResponse.Token;
+                            }
+
+                            _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado ({motivo})","token"));
+                            _webhookService.SendWebhook("RespuestaToken",$"Token {Token} rechazado: {motivo}",new { Token = Token, Box = 0, Respuesta = motivo });
+
+                            return StatusCode(203, motivo); // opcional, pero útil para el cliente
                         }
+
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.ToString());
                         _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado, la respuesta del servidor tiene formato erróneo", "token falla"));
                         _webhookService.SendWebhook("RespuestaToken", $"Token {Token}: Respuesta del servidor invalida, formato erroneo", new { Token = Token, Box = 0, Respuesta = "Error: la respuesta del servidor tiene formato erróneo" });
-                        return StatusCode((int)response.StatusCode);
+                        return StatusCode((int)response.StatusCode, "Respuesta del servidor con formato invalido");
                     }
                 }
                 else
@@ -194,16 +205,18 @@ namespace DCMLocker.Server.Controllers
                     {
                         _evento.AddEvento(new Evento($"Respuesta al pedido de validación token {Token}: Rechazado", "token"));
                         _webhookService.SendWebhook("RespuestaToken", $"Token {Token} rechazado", new { Token = Token, Box = 0, Respuesta = "Rechazado" });
+
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        return StatusCode((int)response.StatusCode, "Fallo de respuesta de servidor");
                     }
                     else
                     {
                         _evento.AddEvento(new Evento($"Pedido de validación token {Token} ignorado por falta de conexión de cerraduras", "token"));
                         _webhookService.SendWebhook("RespuestaToken", $"Token {Token}: Respuesta del servidor ignorada por falta de conexión de cerraduras", new { Token = Token, Box = 0, Respuesta = "Ignorado: falta de conexión a las cerraduras" });
-                    }
 
-                    // Handle non-successful status codes, e.g., response.StatusCode, response.ReasonPhrase, etc.
-                    Console.WriteLine($"Request failed with status code: {response.StatusCode}");
-                    return StatusCode((int)response.StatusCode);
+                        Console.WriteLine($"Request failed with status code: {response.StatusCode}");
+                        return StatusCode((int)response.StatusCode, "Falla de cerraduras");
+                    }
                 }
             }
             catch (HttpRequestException ex)
@@ -213,7 +226,7 @@ namespace DCMLocker.Server.Controllers
 
                 // Maneja errores de solicitud HTTP (por ejemplo, problemas de red, servidor inaccesible, etc.)
                 Console.WriteLine("Error de solicitud HTTP: " + ex.Message);
-                return StatusCode(403);
+                return StatusCode(403, "Falla de conexion");
 
             }
             catch (Exception ex)
@@ -223,7 +236,7 @@ namespace DCMLocker.Server.Controllers
 
                 // Maneja otros errores no esperados
                 Console.WriteLine("Error inesperado: " + ex.Message);
-                return StatusCode(403);
+                return StatusCode(403, "Falla inesperada");
 
             }
         }

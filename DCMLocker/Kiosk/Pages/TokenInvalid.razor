@@ -3,11 +3,17 @@
     <br />
     <br />
     <img style="width:35vh;" src="/img/cross.png" />
-    <br/>
-    <br/>
-    <h1> <strong>CÓDIGO INVÁLIDO</strong></h1>
     <br />
+    <br />
+    <h1><strong>CÓDIGO INVÁLIDO</strong></h1>
 
+    @if (!string.IsNullOrWhiteSpace(Motivo))
+    {
+        <br />
+        <h3><strong>@Motivo</strong></h3>
+    }
+
+    <br />
     <strong>
         <h3>Por favor, ingrese un nuevo código.</h3>
         <h3>Gracias</h3>
@@ -15,7 +21,7 @@
         <h4>(Invalid code. Please enter new code. Thank you.)</h4>
     </strong>
 </center>
-@code {
-    [Parameter] public int door { get; set; }
 
+@code {
+    [Parameter] public string? Motivo { get; set; }
 }
